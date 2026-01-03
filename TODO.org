@@ -1,0 +1,21 @@
+* TODO better extension popup ui
+** TODO preview current bookmark
+** TODO smaller bookmarks list elements
+* TODO better bookmark UX
+possibilities:
+1. separate extension that allows one-click bookmarking?
+2. add contextmenu entry for two-click bookmarking
+* TODO integrate tailwind compiler
+* TODO dont allow duplicate bookmarks
+** TODO indicate if current page is already bookmarked
+- might require more permissions and a background worker
+* TODO search option
+* TODO dark/light mode switch
+* TODO category divider
+* TODO collapsible categories
+* TODO customizable settings for every bookmark
+* TODO syncthing-able bookmarks.json/bookmarks.html
+- needs file watcher to check for changes
+* TODO simple docker container
+- bookmarks db inside data/ folder
+* TODO test running on vps behind reverse proxy w/ basic auth

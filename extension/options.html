@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bookmarkd Options</title>
+    <style>
+        body { font-family: sans-serif; padding: 40px; max-width: 500px; margin: 0 auto; background: #f9fafb; }
+        h1 { color: #333; }
+        .group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em; color: #555; }
+        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background: #4f46e5; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 1em; }
+        button:hover { background: #4338ca; }
+        #status { margin-top: 10px; font-size: 0.9em; color: green; height: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Bookmarkd Settings</h1>
+    
+    <div class="group">
+        <label>Server URL</label>
+        <input type="text" id="serverUrl" placeholder="http://localhost:8080">
+    </div>
+
+    <div class="group">
+        <label>Username (Optional)</label>
+        <input type="text" id="username">
+    </div>
+
+    <div class="group">
+        <label>Password (Optional)</label>
+        <input type="password" id="password">
+    </div>
+
+    <button id="save">Save Settings</button>
+    <div id="status"></div>
+
+    <script src="options.js"></script>
+</body>
+</html>
