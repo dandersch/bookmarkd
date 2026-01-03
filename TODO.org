@@ -5,17 +5,39 @@
 possibilities:
 1. separate extension that allows one-click bookmarking?
 2. add contextmenu entry for two-click bookmarking
-* TODO integrate tailwind compiler
+3. *javascript bookmarklet to add bookmark*
+* TODO auto-generate javascript bookmarklet
+- on index.html (no access auth data?)
+- OR inside options.html
 * TODO dont allow duplicate bookmarks
 ** TODO indicate if current page is already bookmarked
 - might require more permissions and a background worker
+- indicate by changing the icon of the extension
 * TODO search option
-* TODO dark/light mode switch
+* TODO dark/light mode
+** TODO dark/light mode switch on dashboard (default to system default)
+** TODO use system default on extension popup, switch in options.html
 * TODO category divider
 * TODO collapsible categories
 * TODO customizable settings for every bookmark
+* TODO start using tailwind compiler
 * TODO syncthing-able bookmarks.json/bookmarks.html
 - needs file watcher to check for changes
+- maybe switch to NETSCAPE-Bookmark-file-1 (html)
 * TODO simple docker container
 - bookmarks db inside data/ folder
 * TODO test running on vps behind reverse proxy w/ basic auth
+* TODO feat: pastebin
+** TODO add button to send clipboard to bookmarkd
+** TODO add button to copy into clipboard from bookmarkd
+** TODO display clipboard on dashboard
+** TODO shareable pastebin
+
+* TODO feat: simple filestash
+* other
+see:
+- https://try.karakeep.app/dashboard/bookmarks
+- https://github.com/awesome-selfhosted/awesome-selfhosted?tab=readme-ov-file#bookmarks-and-link-sharing
+- https://homarr.dev/
+- datastar
+- daisyui
