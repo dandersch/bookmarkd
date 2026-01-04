@@ -1,12 +1,22 @@
 * TODO better extension popup ui
 ** TODO preview current bookmark
 ** TODO smaller bookmarks list elements
-* TODO better bookmark UX
+* DONE better one-click add-bookmark UX
+CLOSED: [2026-01-04 Sun 00:37]
 possibilities:
-1. separate extension that allows one-click bookmarking?
-2. add contextmenu entry for two-click bookmarking
-3. *javascript bookmarklet to add bookmark*
-* TODO auto-generate javascript bookmarklet
+- +separate extension that allows one-click bookmarking?+
+- +add contextmenu entry for two-click bookmarking+
+- javascript bookmarklet to add bookmark
+* TODO improve "add-bookmark" js bookmarklet
+** TODO fix CORS problem that occurs on some sites (if possible)
+Current understanding of the problem:
+- js bookmarklets run in the context of the current page's js execution
+  environment (and not on a separate thread in its own environment).
+- this means we have to respect the site's Content Security Policies (CSP)
+- some sites block any external script or fetch call from running
+- confirmed: GitHub
+
+** TODO auto-generate bookmarklet
 - on index.html (no access auth data?)
 - OR inside options.html
 * TODO dont allow duplicate bookmarks
@@ -14,19 +24,34 @@ possibilities:
 - might require more permissions and a background worker
 - indicate by changing the icon of the extension
 * TODO search option
+* TODO import existing bookmarks
+- directly from browser using an api/permission if that is possible
+- via a bookmarks.html / bookmarks.json file
 * TODO dark/light mode
 ** TODO dark/light mode switch on dashboard (default to system default)
 ** TODO use system default on extension popup, switch in options.html
-* TODO category divider
-* TODO collapsible categories
 * TODO customizable settings for every bookmark
-* TODO start using tailwind compiler
+* TODO improve category UI/UX
+** TODO add divider between categories
+** TODO collapsible categories
+* TODO support sidebar/sidepanel view (using sidebar API)
+- is this compatible with both firefox & chrome?
+- maybe allow setting preference in options.html
+- maybe make it default (remove popup?) 
+* TODO simple docker container
+- bookmarks db inside data/ folder
 * TODO syncthing-able bookmarks.json/bookmarks.html
 - needs file watcher to check for changes
 - maybe switch to NETSCAPE-Bookmark-file-1 (html)
-* TODO simple docker container
-- bookmarks db inside data/ folder
-* TODO test running on vps behind reverse proxy w/ basic auth
+* TODO start using tailwind compiler
+* DONE test running on vps behind reverse proxy w/ basic auth
+CLOSED: [2026-01-04 Sun 00:35]
+solution:
+- allow OPTIONS requests at PathPrefix(`/api`) to pass-through without
+  basic-auth
+- needed so browser can send its preflight requests (no way to set it to use
+  basic-auth possible it seems)
+- service set to run at docker bridge ip via .env
 * TODO feat: pastebin
 ** TODO add button to send clipboard to bookmarkd
 ** TODO add button to copy into clipboard from bookmarkd
