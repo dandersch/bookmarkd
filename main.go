@@ -149,7 +149,7 @@ func renderBookmarksFragment(w http.ResponseWriter) {
 	// Simple HTML template inline for the fragment
 	const tpl = `
 	{{range .}}
-	<li class="flex items-center p-3 border-b border-gray-100 hover:bg-gray-50 transition">
+	<li class="flex items-center p-1 border-b border-gray-100 hover:bg-gray-50 transition">
 		<img src="{{.Favicon}}" class="w-5 h-5 mr-3 rounded" alt="icon">
 		<div class="overflow-hidden">
 			<a href="{{.URL}}" target="_blank" class="block text-sm font-medium text-gray-800 truncate">{{.Title}}</a>
