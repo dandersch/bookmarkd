@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/joho/godotenv" // loading envars from .env
 	"github.com/google/uuid"
 )
 
@@ -33,6 +34,12 @@ var (
 )
 
 func main() {
+
+	var err error
+	if err = godotenv.Load(); err != nil { 
+		log.Fatal("Error loading .env file (see env.template): ", err)
+	}
+
 	// Load bookmarks on startup
 	if err := loadBookmarks(); err != nil {
 		log.Printf("Warning: Could not load bookmarks (creating new file on save): %v", err)
@@ -42,9 +49,10 @@ func main() {
 	http.HandleFunc("/", handleIndex)                // The main dashboard
 	http.HandleFunc("/api/bookmarks", handleAPI)     // GET (list fragments) & POST (add)
 
-	port := "8081"
-	fmt.Printf("Bookmarkd server running on http://localhost:%s\n", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	port := os.Getenv("BOOKMARKD_PORT");
+	host := os.Getenv("BOOKMARKD_HOST");
+	fmt.Printf("Bookmarkd server running on http://%s:%s\n", host, port)
+	log.Fatal(http.ListenAndServe(host+":"+port, nil))
 }
 
 // --- Handlers ---
