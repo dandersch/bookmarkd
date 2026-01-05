@@ -47,14 +47,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // Success
             status.innerText = "Saved!";
-            status.className = "text-center text-xs mt-2 text-green-600 block";
+            status.className = "alert alert-success text-center text-xs mt-2 block";
             
             // Refresh list
             await fetchBookmarks(serverUrl, config.authHeader);
 
         } catch (err) {
             status.innerText = "Error: " + err.message;
-            status.className = "text-center text-xs mt-2 text-red-600 block";
+            status.className = "alert alert-error text-center text-xs mt-2 block";
         } finally {
             btn.disabled = false;
             btn.innerText = "Bookmark This Page";

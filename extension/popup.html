@@ -1,25 +1,23 @@
 <!DOCTYPE html>
-<html>
+<html data-theme="dark">
 <head>
     <meta charset="UTF-8">
+    <link rel="stylesheet" href="daisyui.css">
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="w-[350px] bg-white text-gray-800">
-    
-    <div class="bg-indigo-600 p-2 text-white flex justify-between items-center">
-        <a id="open-settings" href="options.html" class="text-xs text-indigo-200 hover:text-white cursor-pointer">⚙</a>
-        <!-- <h1 class="font-bold text-lg">Bookmarkd</h1> -->
-        <div>
-            <button id="btn-save" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded transition flex justify-center items-center">
-                Bookmark Page
-            </button>
-            <div id="status-msg" class="text-center text-xs mt-2 hidden"></div>
-        </div>
-        <a id="open-web" href="#" class="text-xs text-indigo-200 hover:text-white cursor-pointer">Dashboard</a>
-    </div>
+<body class="w-[350px] bg-base-100 text-base-content">
 
-    <ul id="bookmark-list" class=" rounded shadow-sm divide-y divide-gray-100 overflow-y-auto">
-        <li class="p-4 text-center text-gray-400 text-sm">Loading...</li>
+    <div class="bg-primary p-2 text-primary-content grid grid-cols-3 items-center gap-2">
+        <a id="open-settings" href="options.html" class="link link-hover text-xs cursor-pointer justify-self-start">⚙</a>
+        <button id="btn-save" class="btn btn-primary btn-sm justify-self-center">
+            Bookmark Page
+        </button>
+        <a id="open-web" href="#" class="link link-hover text-xs cursor-pointer justify-self-end">Dashboard</a>
+    </div>
+    <div id="status-msg" class="text-center text-xs mt-2 hidden"></div>
+
+    <ul id="bookmark-list" class="menu bg-base-100 rounded shadow-sm divide-y divide-base-300 overflow-y-auto max-h-[400px]">
+        <li class="p-4 text-center text-base-content/50 text-sm">Loading...</li>
     </ul>
 
     <script src="popup.js"></script>
