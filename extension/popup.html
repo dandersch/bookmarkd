@@ -3,21 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="daisyui.css">
-    <link rel="stylesheet" href="style.css">
+    <script src="./tailwindcss_cdn.js"></script>
 </head>
-<body class="w-[350px] bg-base-100 text-base-content">
+<body class="w-[350px] bg-base-100 text-base-content overflow-x-hidden">
 
-    <div class="bg-primary p-2 text-primary-content grid grid-cols-3 items-center gap-2">
-        <a id="open-settings" href="options.html" class="link link-hover text-xs cursor-pointer justify-self-start">⚙</a>
-        <button id="btn-save" class="btn btn-primary btn-sm justify-self-center">
-            Bookmark Page
-        </button>
-        <a id="open-web" href="#" class="link link-hover text-xs cursor-pointer justify-self-end">Dashboard</a>
+    <!-- Header -->
+    <div class="bg-primary p-3 text-primary-content relative flex items-center justify-between">
+        <a id="open-settings" href="options.html" class="hover:opacity-80 transition-opacity">⚙</a>
+
+        <div class="absolute left-1/2 -translate-x-1/2">
+            <button id="btn-save" class="btn btn-ghost btn-sm border border-primary-content/20 text-primary-content">
+                Bookmark Page
+            </button>
+        </div>
+
+        <a id="open-web" href="#" class="text-xs hover:opacity-80 transition-opacity">
+            Dashboard
+        </a>
     </div>
-    <div id="status-msg" class="text-center text-xs mt-2 hidden"></div>
 
-    <ul id="bookmark-list" class="menu bg-base-100 rounded shadow-sm divide-y divide-base-300 overflow-y-auto max-h-[400px]">
-        <li class="p-4 text-center text-base-content/50 text-sm">Loading...</li>
+    <div id="status-msg" class="text-center text-xs py-2 hidden"></div>
+
+    <!-- Bookmarks list with vertical scroll only -->
+    <ul id="bookmark-list" class="list">
+      <li class="p-3 text-center text-base-content/50 text-sm">Loading...</li>
     </ul>
 
     <script src="popup.js"></script>

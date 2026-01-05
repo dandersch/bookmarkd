@@ -118,7 +118,7 @@ func createBookmark(w http.ResponseWriter, r *http.Request) {
 	if parsedURL != nil {
 		domain = parsedURL.Hostname()
 	}
-	faviconURL := fmt.Sprintf("https://www.google.com/s2/favicons?domain=%s&sz=64", domain)
+	faviconURL := fmt.Sprintf("https://www.google.com/s2/favicons?domain=%s", domain)
 
 	newBM := Bookmark{
 		ID:        uuid.New().String(),
@@ -149,12 +149,10 @@ func renderBookmarksFragment(w http.ResponseWriter) {
 	// Simple HTML template inline for the fragment
 	const tpl = `
 	{{range .}}
-	<li class="flex items-center p-1 border-b border-base-300 hover:bg-base-200 transition">
-		<div class="overflow-hidden">
-		    <img src="{{.Favicon}}" class="w-1 h-1 mr-1 rounded" alt="icon">
-			<a href="{{.URL}}" target="_blank" class="link link-primary block text-sm font-medium truncate">{{.Title}}</a>
-			<span class="badge badge-ghost badge-xs">{{.Category}}</span>
-		</div>
+	<li class="list-row">
+      <img src="{{.Favicon}}" class="size-5" alt="icon">
+      <a href="{{.URL}}" target="_blank" class="link link-primary text-sm block truncate">{{.Title}}</a>
+      <span class="badge badge-ghost badge-xs mt-1">{{.Category}}</span>
 	</li>
 	{{end}}`
 
