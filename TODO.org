@@ -1,13 +1,72 @@
-* TODO better extension popup ui
+* TODO extension: better sidebar ui
+** DONE smaller bookmarks list elements
+CLOSED: [2026-01-06 Tue 23:33]
 ** TODO preview current bookmark
-** TODO smaller bookmarks list elements
-* DONE better one-click add-bookmark UX
-CLOSED: [2026-01-04 Sun 00:37]
-possibilities:
-- +separate extension that allows one-click bookmarking?+
-- +add contextmenu entry for two-click bookmarking+
-- javascript bookmarklet to add bookmark
-* TODO improve "add-bookmark" js bookmarklet
+** TODO better colorscheme
+** TODO switch to icon-only view when sidebar is small
+- minimum-width for both chrome & firefox is too small by default
+- can only be achieved with custom userChrome.css
+* TODO extension: switch to sidebar/sidepanel view
+** TODO chrome support
+- uses sidePanel api. manifest.json:
+  #+begin_src json
+  "permissions": [
+    "sidePanel",
+    ...
+  ],
+  "side_panel": {
+    "default_path": "popup.html"
+  },
+  #+end_src
+
+- requires background worker:
+  #+begin_src javascript
+  chrome.action.onClicked.addListener((tab) => {
+    chrome.sidePanel.setOptions({
+      tabId: tab.id,
+      path: 'popup.html',
+      enabled: true
+    });
+    chrome.sidePanel.setPanelBehavior({
+      openPanelOnActionClick: true // toggles sidebar when clicking extension icon
+    });
+    chrome.sidePanel.open({ tabId: tab.id });
+  });
+  #+end_src
+
+** TODO firefox support
+- firefox uses sidebar_action in manifest.json:
+  #+begin_src json
+  "sidebar_action": {
+    "default_icon": "icon.png",
+    "default_title": "My sidebar",
+    "default_panel": "popup.html",
+    "open_at_install": true
+  },
+  #+end_src
+
+- requires background worker:
+  #+begin_src javascript
+  chrome.action.onClicked.addListener((tab) => {
+    browser.sidebarAction.toggle();
+  });
+  #+end_src
+
+- set sidebar.revamp to false to get (better) old ui
+
+- to be able to get smaller min/max-width sidebar:
+  + open profile directory (about:support -> Profile Directory)
+  + create folder "chrome"
+  + create "userChrome.css" inside "chrome", add:
+  #+begin_src css
+  /* remove maximum/minimum width restriction of sidebar */
+  #sidebar-box {
+    max-width: none !important;
+    min-width: 0px !important;
+  }
+  #+end_src
+
+* TODO extension: improve "add-bookmark" js bookmarklet
 ** TODO fix CORS problem that occurs on some sites (if possible)
 Current understanding of the problem:
 - js bookmarklets run in the context of the current page's js execution
@@ -20,10 +79,10 @@ Current understanding of the problem:
 - on index.html (no access auth data?)
 - OR inside options.html
 * TODO dont allow duplicate bookmarks
-** TODO indicate if current page is already bookmarked
+** TODO extension: indicate if current page is already bookmarked
 - might require more permissions and a background worker
 - indicate by changing the icon of the extension
-* TODO search option
+* TODO feat: search option
 * TODO import existing bookmarks
 - directly from browser using an api/permission if that is possible
 - via a bookmarks.html / bookmarks.json file
@@ -34,16 +93,158 @@ Current understanding of the problem:
 * TODO improve category UI/UX
 ** TODO add divider between categories
 ** TODO collapsible categories
-* TODO support sidebar/sidepanel view (using sidebar API)
-- is this compatible with both firefox & chrome?
-- maybe allow setting preference in options.html
-- maybe make it default (remove popup?) 
-* TODO simple docker container
+see [[https://daisyui.com/components/collapse/][Tailwind Collapse Component – daisyUI]] 
+* TODO dev: docker dev image
+#+begin_src yaml
+# --- Development Stage ---
+FROM golang:1.24-alpine AS dev
+WORKDIR /app
+
+# Install air for hot reloading
+RUN go install github.com/air-verse/air@latest
+
+# Copy go.mod and go.sum first to leverage Docker cache
+COPY go.mod go.sum ./
+RUN go mod download
+
+# We don't COPY the rest of the code here for dev,·
+# because we will bind-mount it in docker-compose.
+CMD ["air", "-c", ".air.toml"]
+
+# --- Production Stage ---
+FROM alpine:latest AS prod
+WORKDIR /root/
+# Copy the built binary from a previous build if needed,·
+# or use this as a base for your final VPS deployment.
+COPY --from=dev /app/tmp/main .
+CMD ["./main"]
+#+end_src
+
+#+begin_src yaml
+services:
+  server:
+    build:
+      context: .
+      target: dev
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/app          # Mounts your local folder to /app in container
+      - pkg_cache:/go/pkg # Caches Go modules so they don't redownload
+    environment:
+      - APP_ENV=dev
+    restart: always
+
+volumes:
+  pkg_cache:
+#+end_src
+
+Ensure your air config points to the right build paths. You can generate a
+default one with air init.
+#+begin_src toml
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  cmd = "go build -o ./tmp/main ."
+  bin = "./tmp/main"
+  include_ext = ["go", "tpl", "tmpl", "html", "json"]
+  exclude_dir = ["assets", "tmp", "vendor", "extension"]
+  delay = 500 # ms
+#+end_src
+
+* TODO dev: simple docker container
 - bookmarks db inside data/ folder
 * TODO syncthing-able bookmarks.json/bookmarks.html
-- needs file watcher to check for changes
+- needs file watcher in go backend to check for changes
 - maybe switch to NETSCAPE-Bookmark-file-1 (html)
-* TODO start using tailwind compiler
+* TODO dev: start using tailwind compiler
+* TODO dev: use datastar (?)
+* TODO feat: pastebin
+** TODO add button to send clipboard to bookmarkd
+** TODO add button to copy into clipboard from bookmarkd
+** TODO display clipboard on dashboard
+** TODO shareable pastebin
+
+* TODO feat: simple filestash
+* TODO feat: tags
+- bookmarks can have several tags
+- tags can be searched for
+* TODO feat: auto-tag by url
+- user-editable list of urls to auto-tag
+- comes with a list 
+- can be turned on/off
+- example:
+#+begin_src txt
+youtube.com                      video
+substack.com                     blog
+food.com                         recipe
+#+end_src
+** TODO auto-tag specialization
+- ability to add more specific urls of the same domain for auto-tagging
+- apparently known as Longest Prefix Match (LPM) or Most Specific Match
+- example (3rd pattern implies tag "issue", though 1st+2nd pattern also match):
+#+begin_src txt
+github.com                       software
+github.com/.*/[a-Z]*             repo
+github.com/.*/.*/issues/[0-9]*   issue 
+#+end_src
+
+* TODO feat: rss/opml integration
+** TODO auto-find rss feed
+- maybe use rsshub's json db (~800kB)
+- https://rsshub.domain.xyz/api/radar/rules
+** TODO opml as a shareable html blogroll
+- [[https://web.archive.org/web/20251223065249/https://kmaasrud.com/blog/opml-is-underrated.html][opml is underrated]]
+- [[https://web.archive.org/web/20251223065250/https://kmaasrud.com/blogroll.xml][example of opml as html]]
+* TODO feat: sort-by
+- when added
+- title of bookmark
+- url of bookmark
+* TODO feat: detect changes of bookmark
+** TODO periodically pull html and check if it has changed
+- maybe provide a (visual) diff
+** TODO add sort-by "last changed"
+* TODO feat: last visited
+** TODO log timestamp when user visits a bookmark in extension
+** TODO log timestamp when user visits a bookmark on dashboard
+** TODO add sort by: "last visited"
+** TODO log timestamp when user visits a bookmark outside ui/webpage
+- extension background worker could be used for that
+- might require additional permissions
+- should be opt-in/opt-out
+
+* TODO feat: snapshot webpage
+** TODO take screenshot of webpage
+** TODO save pdf of webpage
+* TODO feat: annotate webpages
+- could perhaps be integrated within sidebar?
+  + sidebar scroll needs to be able to sync with webpage
+- challenge: anchoring notes so that they survive markup changes
+  + see https://web.hypothes.is/blog/fuzzy-anchoring/
+  + maybe integrate with "detect changes" feature somehow?
+* TODO feat: notification integration
+* TODO feat: wayback machine integration
+- button that takes you to wayback 
+- "save page now" button
+
+* TODO feat: rss-hub integration
+* TODO look at similar projects
+- [[https://try.karakeep.app/dashboard/bookmarks][karakeep]]:
+  + bookmark manager
+  + save as pdf or offline archive
+  + annotation feature (highlights)
+  + thumbnail extraction (for youtube videos)
+  + browser extension
+- [[https://github.com/ndom91/briefkasten][briefkasten]]: bookmark manager + extension
+- [[https://wallabag.org/][wallabag]]: archive & annotate webpages + extension
+- [[https://github.com/awesome-selfhosted/awesome-selfhosted?tab=readme-ov-file#bookmarks-and-link-sharing][awesome selfhosted: bookmarks & link sharing]]
+* DONE better one-click add-bookmark UX
+CLOSED: [2026-01-04 Sun 00:37]
+possibilities:
+- +separate extension that allows one-click bookmarking?+
+- +add contextmenu entry for two-click bookmarking+
+- javascript bookmarklet to add bookmark
 * DONE test running on vps behind reverse proxy w/ basic auth
 CLOSED: [2026-01-04 Sun 00:35]
 solution:
@@ -52,17 +253,3 @@ solution:
 - needed so browser can send its preflight requests (no way to set it to use
   basic-auth possible it seems)
 - service set to run at docker bridge ip via .env
-* TODO feat: pastebin
-** TODO add button to send clipboard to bookmarkd
-** TODO add button to copy into clipboard from bookmarkd
-** TODO display clipboard on dashboard
-** TODO shareable pastebin
-
-* TODO feat: simple filestash
-* other
-see:
-- https://try.karakeep.app/dashboard/bookmarks
-- https://github.com/awesome-selfhosted/awesome-selfhosted?tab=readme-ov-file#bookmarks-and-link-sharing
-- https://homarr.dev/
-- datastar
-- daisyui

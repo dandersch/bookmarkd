@@ -149,10 +149,10 @@ func renderBookmarksFragment(w http.ResponseWriter) {
 	// Simple HTML template inline for the fragment
 	const tpl = `
 	{{range .}}
-	<li class="list-row">
+    <li class="list-row p-2 hover:bg-blue-500">
       <img src="{{.Favicon}}" class="size-5" alt="icon">
-      <a href="{{.URL}}" target="_blank" class="link link-primary text-sm block truncate">{{.Title}}</a>
-      <span class="badge badge-ghost badge-xs mt-1">{{.Category}}</span>
+      <a href="{{.URL}}" target="_blank" class="text-sm block truncate">{{.Title}}</a>
+      <span class="badge bg-gray-600 badge-xs mt-1">{{.Category}}</span>
 	</li>
 	{{end}}`
 
