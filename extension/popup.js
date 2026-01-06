@@ -19,7 +19,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         const status = document.getElementById('status-msg');
         
         // Get current tab info
+        // TODO doesnt work with sidepanel after switching tabs
+        // see https://stackoverflow.com/questions/77276350/chrome-extension-how-to-show-the-active-tab-url-with-updates-when-it-changes
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        console.log(tab);
         
         if (!tab) return;
 
