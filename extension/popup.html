@@ -8,25 +8,44 @@
 <body class="w-full h-screen bg-base-100 text-base-content overflow-x-hidden flex flex-col">
 
     <!-- Header -->
-    <div class="bg-primary p-3 text-primary-content relative flex items-center justify-between">
-        <a id="open-settings" href="options.html" class="hover:opacity-80 transition-opacity">⚙</a>
+    <div class="flex-none">
+        <div class="bg-primary p-3 text-primary-content relative flex items-center justify-between">
+            <a id="open-settings" href="options.html" class="hover:opacity-80 transition-opacity">⚙</a>
 
-        <div class="absolute left-1/2 -translate-x-1/2">
-            <button id="btn-save" class="btn btn-ghost btn-sm border border-primary-content/20 text-primary-content">
-                Bookmark Page
-            </button>
+            <div class="absolute left-1/2 -translate-x-1/2">
+                <button id="btn-save" class="btn btn-ghost btn-sm border border-primary-content/20 text-primary-content">
+                    Bookmark Page
+                </button>
+            </div>
+
+            <a id="open-web" href="#" class="text-xs hover:opacity-80 transition-opacity">↗</a>
         </div>
 
-        <a id="open-web" href="#" class="text-xs hover:opacity-80 transition-opacity">↗</a>
+        <div id="preview-card" class="hidden bg-base-200 p-3 border-b border-base-300 transition-all">
+            <div class="flex items-start gap-3">
+                <div class="avatar">
+                    <div class="w-10 h-10 rounded bg-base-100 p-1 shadow-sm ring-1 ring-base-content/10">
+                        <img id="preview-icon" src="" alt="icon" class="object-contain" />
+                    </div>
+                </div>
+                <div class="flex-1 min-w-0 overflow-hidden">
+                    <!-- <p class="text-[10px] font-bold uppercase tracking-wider text-base-content/50 mb-0.5">Ready to Bookmark</p> -->
+                    <h3 id="preview-title" class="text-sm font-bold truncate leading-tight text-base-content"></h3>
+                    <p id="preview-url" class="text-xs text-base-content/70 truncate mt-1"></p>
+                </div>
+            </div>
+        </div>
+        <div id="status-msg" class="text-center text-xs py-2 hidden"></div>
     </div>
 
-    <div id="status-msg" class="text-center text-xs py-2 hidden"></div>
-
     <!-- Bookmarks list with vertical scroll only -->
-    <ul id="bookmark-list" class="list">
-      <li class="p-2 text-center text-base-content/50 text-sm">Loading...</li>
-    </ul>
+    <div class="flex-1 overflow-y-auto">
+        <ul id="bookmark-list" class="list">
+            <li class="p-2 text-center text-base-content/50 text-sm">Loading...</li>
+        </ul>
+    </div>
 
     <script src="popup.js"></script>
 </body>
 </html>
+

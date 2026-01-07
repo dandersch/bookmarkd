@@ -1,7 +1,8 @@
 * TODO extension: better sidebar ui
 ** DONE smaller bookmarks list elements
 CLOSED: [2026-01-06 Tue 23:33]
-** TODO preview current bookmark
+** DONE preview current bookmark
+CLOSED: [2026-01-07 Wed 04:03]
 ** TODO better colorscheme
 ** TODO switch to icon-only view when sidebar is small
 - minimum-width for both chrome & firefox is too small by default
