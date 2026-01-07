@@ -219,8 +219,19 @@ github.com/.*/.*/issues/[0-9]*   issue
 ** TODO take screenshot of webpage
 ** TODO save pdf of webpage
 * TODO feat: annotate webpages
-- could perhaps be integrated within sidebar?
-  + sidebar scroll needs to be able to sync with webpage
+- integrated within sidebar
+** TODO taking notes via pastebin
+- one "pastebin" ready for every bookmark
+- just a text input field in the sidebar
+- maybe auto-bookmark a site somewhere when user starts "annotating"
+- reasoning: if you want notes for a site, you probably also want to remember
+  that site, i.e. you do want it bookmarked somewhere
+** TODO sync annotation scroll with page scroll
+- sidebar scroll needs to be able to sync with webpage
+- try to anchor a notes position to a position on the webpage
+- problem: mapping depends on zoom, screen dimensions, etc.
+- maybe we can sync zoom level too
+** TODO look into "real" web annotation
 - challenge: anchoring notes so that they survive markup changes
   + see https://web.hypothes.is/blog/fuzzy-anchoring/
   + maybe integrate with "detect changes" feature somehow?

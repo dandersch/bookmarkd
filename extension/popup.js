@@ -25,34 +25,30 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // --- CORE LOGIC: Reactive Tab Preview ---
 
+    let lastTabUrl = ""; // Track to prevent overwriting user edits on small updates
+
     async function updatePreview() {
-        // Query the active tab in the last focused "normal" window
         const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
 
-        // Logic: Is this a valid page to bookmark?
-        if (tab && tab.url && (tab.url.startsWith('http') || tab.url.startsWith('https'))) {
+        if (tab && tab.url && (tab.url.startsWith('http'))) {
             currentValidTab = tab;
-            
-            // Show Preview
             previewCard.classList.remove('hidden');
             saveBtn.disabled = false;
-            saveBtn.classList.remove('btn-disabled');
 
-            // Populate Data
-            previewTitle.textContent = tab.title || "No Title";
-            previewUrl.textContent = new URL(tab.url).hostname; // Show just domain to keep it clean
-            
-            // Favicon Fallback
+            // ONLY update the text if the URL actually changed
+            // This prevents the title from resetting if the page is still loading
+            if (tab.url !== lastTabUrl) {
+                previewTitle.textContent = tab.title || "No Title";
+                lastTabUrl = tab.url;
+            }
+
+            previewUrl.textContent = new URL(tab.url).hostname;
             previewIcon.src = tab.favIconUrl || 'icon.png'; 
-            
         } else {
-            // Invalid Page (New Tab, Settings, Local file, etc.)
             currentValidTab = null;
+            lastTabUrl = "";
             previewCard.classList.add('hidden');
-            
-            // Disable Save Button
             saveBtn.disabled = true;
-            saveBtn.classList.add('btn-disabled');
         }
     }
 
@@ -71,54 +67,70 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-
     // --- ACTION: Save Bookmark ---
-
     saveBtn.addEventListener('click', async () => {
         if (!currentValidTab) return;
 
-        // UI Feedback: Loading
+        // Grab the potentially edited title
+        const editedTitle = document.getElementById('preview-title').innerText;
+
         saveBtn.disabled = true;
-        const originalText = saveBtn.innerText;
         saveBtn.innerText = "Saving...";
 
         try {
-            const payload = {
-                url: currentValidTab.url,
-                title: currentValidTab.title,
-                category: "Uncategorized" // We can make this dynamic later
+           const payload = {
+           url: currentValidTab.url,
+           title: editedTitle, // Use the edited version!
+           category: "Uncategorized"
             };
 
-            const headers = { "Content-Type": "application/json" };
-            if (config.authHeader) headers["Authorization"] = config.authHeader;
+           const headers = { "Content-Type": "application/json" };
+           if (config.authHeader) headers["Authorization"] = config.authHeader;
 
-            const res = await fetch(`${serverUrl}/api/bookmarks`, {
-                method: "POST",
-                headers: headers,
-                body: JSON.stringify(payload)
+           const res = await fetch(`${serverUrl}/api/bookmarks`, {
+           method: "POST",
+           headers: headers,
+           body: JSON.stringify(payload)
             });
 
-            if (!res.ok) throw new Error("Server error: " + res.status);
+           if (!res.ok) throw new Error("Server error: " + res.status);
 
-            // Success
-            status.innerText = "Saved!";
-            status.className = "alert alert-success text-center text-xs mt-2 block p-2 rounded";
-            
-            // Refresh list
-            await fetchBookmarks(serverUrl, config.authHeader);
+           // Success
+           status.innerText = "Saved!";
+           status.className = "alert alert-success text-center text-xs mt-2 block p-2 rounded";
+           
+           // Refresh list
+           await fetchBookmarks(serverUrl, config.authHeader);
 
         } catch (err) {
-            status.innerText = "Error: " + err.message;
-            status.className = "alert alert-error text-center text-xs mt-2 block p-2 rounded";
+           status.innerText = "Error: " + err.message;
+           status.className = "alert alert-error text-center text-xs mt-2 block p-2 rounded";
         } finally {
-            saveBtn.innerText = originalText;
-            // Note: We don't re-enable immediately if the preview is still valid, 
-            // but usually we want to allow saving again or just wait.
-            // Let's re-enable after a short delay or keep disabled if you want "Save Once"
-            setTimeout(() => {
-                saveBtn.disabled = false;
-                status.classList.add('hidden');
+           saveBtn.innerText = originalText;
+           // Note: We don't re-enable immediately if the preview is still valid, 
+           // but usually we want to allow saving again or just wait.
+           // Let's re-enable after a short delay or keep disabled if you want "Save Once"
+           setTimeout(() => {
+           saveBtn.disabled = false;
+           status.classList.add('hidden');
             }, 1500);
+        }
+    });
+
+    // Auto-select text on click for the editable title
+    document.getElementById('preview-title').addEventListener('focus', (e) => {
+        const range = document.createRange();
+        range.selectNodeContents(e.target);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+    });
+
+    // Prevent "Enter" key from adding new lines (optional, keeps it a single line)
+    document.getElementById('preview-title').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('btn-save').click(); // Enter to Save!
         }
     });
 });
