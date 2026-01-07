@@ -223,6 +223,7 @@ github.com/.*/.*/issues/[0-9]*   issue
 - challenge: anchoring notes so that they survive markup changes
   + see https://web.hypothes.is/blog/fuzzy-anchoring/
   + maybe integrate with "detect changes" feature somehow?
+- see [[https://www.w3.org/TR/annotation-model/][w3c web annotation standard]]
 * TODO feat: notification integration
 * TODO feat: wayback machine integration
 - button that takes you to wayback 
@@ -239,6 +240,15 @@ github.com/.*/.*/issues/[0-9]*   issue
 - [[https://github.com/ndom91/briefkasten][briefkasten]]: bookmark manager + extension
 - [[https://wallabag.org/][wallabag]]: archive & annotate webpages + extension
 - [[https://github.com/awesome-selfhosted/awesome-selfhosted?tab=readme-ov-file#bookmarks-and-link-sharing][awesome selfhosted: bookmarks & link sharing]]
+* DONE extension: bookmarking current page doesnt work after switching tabs
+CLOSED: [2026-01-07 Wed 03:41]
+see https://stackoverflow.com/questions/77276350/chrome-extension-how-to-show-the-active-tab-url-with-updates-when-it-changes
+
+#+begin_src js
+// Get current tab info
+const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+#+end_src
+[[file:~/dev/bookmarkd/extension/popup.js::const \[tab\] = await chrome.tabs.query({ active: true, currentWindow: true });]]
 * DONE better one-click add-bookmark UX
 CLOSED: [2026-01-04 Sun 00:37]
 possibilities:
