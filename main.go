@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	// "sort"
+	"sort"
 	"sync"
 	"time"
 
@@ -29,9 +29,38 @@ type Bookmark struct {
 const dbFile = "bookmarks.json"
 
 var (
-	bookmarks []Bookmark
-	mu        sync.RWMutex // Protects the bookmarks slice during concurrent writes
+	bookmarks map[string]Bookmark
+	mu        sync.RWMutex // Protects the bookmarks map during concurrent reads/writes
 )
+
+// bookmarksToSortedSlice converts the map to a slice sorted by timestamp (newest first)
+// Must be called while holding mu.RLock()
+func bookmarksToSortedSlice() []Bookmark {
+	if len(bookmarks) == 0 {
+		return []Bookmark{}
+	}
+
+	result := make([]Bookmark, 0, len(bookmarks))
+	for _, bm := range bookmarks {
+		result = append(result, bm)
+	}
+
+	// Sort by timestamp descending (newest first)
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Timestamp > result[j].Timestamp
+	})
+
+	return result
+}
+
+// sliceToMap converts a slice to a map keyed by ID
+func sliceToMap(slice []Bookmark) map[string]Bookmark {
+	result := make(map[string]Bookmark, len(slice))
+	for _, bm := range slice {
+		result[bm.ID] = bm
+	}
+	return result
+}
 
 func main() {
 
@@ -62,18 +91,19 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	
+
 	mu.RLock()
-	defer mu.RUnlock()
+	sortedBookmarks := bookmarksToSortedSlice()
+	mu.RUnlock()
 
 	tmpl, err := template.ParseFiles("index.html")
 	if err != nil {
 		http.Error(w, "Could not load template", http.StatusInternalServerError)
 		return
 	}
-	
-	// Pass the bookmarks to the template
-	tmpl.Execute(w, bookmarks)
+
+	// Pass the sorted slice to the template
+	tmpl.Execute(w, sortedBookmarks)
 }
 
 func handleAPI(w http.ResponseWriter, r *http.Request) {
@@ -120,8 +150,11 @@ func createBookmark(w http.ResponseWriter, r *http.Request) {
 	}
 	faviconURL := fmt.Sprintf("https://www.google.com/s2/favicons?domain=%s", domain)
 
+	// u := uuid.NewSHA1(uuid.NameSpaceURL, []byte(payload.URL))
+	// ID:        uuid.New().String(),
+	// NOTE: we don't normalize the URL, maybe we should
 	newBM := Bookmark{
-		ID:        uuid.New().String(),
+		ID:        uuid.NewSHA1(uuid.NameSpaceURL, []byte(payload.URL)).String(),
 		URL:       payload.URL,
 		Title:     payload.Title,
 		Category:  payload.Category,
@@ -133,8 +166,8 @@ func createBookmark(w http.ResponseWriter, r *http.Request) {
 	}
 
 	mu.Lock()
-	// Prepend to list (newest first)
-	bookmarks = append([]Bookmark{newBM}, bookmarks...)
+	// Insert into map (O(1) operation, deduplicates automatically)
+	bookmarks[newBM.ID] = newBM
 	saveBookmarks()
 	mu.Unlock()
 
@@ -144,7 +177,8 @@ func createBookmark(w http.ResponseWriter, r *http.Request) {
 // renderBookmarksFragment returns purely HTML <li> items for the extension
 func renderBookmarksFragment(w http.ResponseWriter) {
 	mu.RLock()
-	defer mu.RUnlock()
+	sortedBookmarks := bookmarksToSortedSlice()
+	mu.RUnlock()
 
 	// Simple HTML template inline for the fragment
 	const tpl = `
@@ -157,7 +191,7 @@ func renderBookmarksFragment(w http.ResponseWriter) {
 	{{end}}`
 
 	t, _ := template.New("fragment").Parse(tpl)
-	t.Execute(w, bookmarks)
+	t.Execute(w, sortedBookmarks)
 }
 
 // --- Persistence ---
@@ -167,11 +201,26 @@ func loadBookmarks() error {
 	if err != nil {
 		return err
 	}
-	return json.Unmarshal(file, &bookmarks)
+
+	// Unmarshal into temporary slice (JSON file format)
+	var bookmarksSlice []Bookmark
+	if err := json.Unmarshal(file, &bookmarksSlice); err != nil {
+		return err
+	}
+
+	// Convert to map for in-memory storage
+	mu.Lock()
+	bookmarks = sliceToMap(bookmarksSlice)
+	mu.Unlock()
+
+	return nil
 }
 
 func saveBookmarks() error {
-	data, err := json.MarshalIndent(bookmarks, "", "  ")
+	// Convert map to sorted slice for persistence
+	bookmarksSlice := bookmarksToSortedSlice()
+
+	data, err := json.MarshalIndent(bookmarksSlice, "", "  ")
 	if err != nil {
 		return err
 	}
