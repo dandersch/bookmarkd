@@ -17,6 +17,7 @@
         <ul class="divide-y divide-base-300">
             {{range .}}
             <li class="p-4 hover:bg-base-200 flex items-center transition">
+                <input type="hidden" name="id" value="{{.ID}}">
                 <img src="{{.Favicon}}" class="w-8 h-8 rounded-md mr-4" alt="icon">
                 <div class="flex-1 min-w-0">
                     <a href="{{.URL}}" target="_blank" class="link link-primary text-lg font-medium truncate block">

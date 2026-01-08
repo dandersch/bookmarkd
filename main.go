@@ -184,6 +184,7 @@ func renderBookmarksFragment(w http.ResponseWriter) {
 	const tpl = `
 	{{range .}}
     <li class="list-row p-2 flex hover:bg-blue-500 relative">
+      <input type="hidden" name="id" value="{{.ID}}">
       <img src="{{.Favicon}}" class="size-5 flex-none" alt="icon">
       <a href="{{.URL}}" target="_blank" class="flex-grow text-sm block truncate after:absolute after:inset-0">{{.Title}}</a>
       <span class="badge bg-gray-600 badge-xs mt-1 flex-none">{{.Category}}</span>
