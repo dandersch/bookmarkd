@@ -1,6 +1,6 @@
 class BookmarkItem extends HTMLElement {
     static get observedAttributes() {
-        return ['bookmark-id', 'url', 'title', 'category', 'favicon'];
+        return ['bookmark-id', 'url', 'title', 'category', 'favicon', 'timestamp'];
     }
 
     constructor() {
@@ -26,8 +26,18 @@ class BookmarkItem extends HTMLElement {
         };
     }
 
-    isCompact() {
-        return document.body.classList.contains('compact');
+    formatTimestamp(ts) {
+        if (!ts) return '';
+        const date = new Date(parseInt(ts) * 1000);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        
+        if (diffDays === 0) return 'Today';
+        if (diffDays === 1) return 'Yesterday';
+        if (diffDays < 7) return `${diffDays} days ago`;
+        if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+        return date.toLocaleDateString();
     }
 
     render() {
@@ -36,26 +46,28 @@ class BookmarkItem extends HTMLElement {
         const title = this.getAttribute('title') || '';
         const category = this.getAttribute('category') || 'Uncategorized';
         const favicon = this.getAttribute('favicon') || '';
+        const timestamp = this.getAttribute('timestamp') || '';
+        const timeAgo = this.formatTimestamp(timestamp);
 
-        if (this.isCompact()) {
-            this.className = 'block p-1 hover:bg-gray-700';
-            this.innerHTML = `
-                <a href="${url}" target="_blank" class="flex justify-center" title="${this.escapeHtml(title)}">
-                    <img src="${favicon}" class="w-5 h-5" alt="icon">
-                </a>
-            `;
-            return;
+        let hostname = '';
+        try {
+            hostname = new URL(url).hostname;
+        } catch (e) {
+            hostname = url;
         }
 
-        this.className = 'group list-row p-2 flex hover:bg-gray-700 relative items-center';
+        this.className = 'bookmark-item';
         this.innerHTML = `
-            <input type="hidden" name="id" value="${id}">
-            <img src="${favicon}" class="size-5 flex-none" alt="icon">
-            <a href="${url}" target="_blank" class="flex-grow text-sm block truncate after:absolute after:inset-0 group-hover:after:right-16">${title}</a>
-            <span class="badge bg-gray-600 badge-xs mt-1 flex-none">${category}</span>
-            <div class="hidden group-hover:flex items-center relative z-10 ml-2">
-                <button class="btn btn-ghost btn-xs btn-square text-info edit-btn">✎</button>
-                <button class="btn btn-ghost btn-xs btn-square text-error delete-btn">🗑</button>
+            <a href="${url}" target="_blank" class="bookmark-link">
+                <img src="${favicon}" class="bookmark-favicon" alt="">
+                <span class="bookmark-title">${this.escapeHtml(title)}</span>
+                <span class="bookmark-url">${hostname}</span>
+                <span class="bookmark-timestamp">${timeAgo}</span>
+                <span class="bookmark-category badge badge-sm">${category}</span>
+            </a>
+            <div class="bookmark-actions">
+                <button class="btn btn-ghost btn-xs btn-square edit-btn">✎</button>
+                <button class="btn btn-ghost btn-xs btn-square delete-btn">🗑</button>
             </div>
         `;
 
@@ -79,13 +91,12 @@ class BookmarkItem extends HTMLElement {
         const favicon = this.getAttribute('favicon') || '';
         const category = this.getAttribute('category') || 'Uncategorized';
 
-        this.className = 'list-row p-2 flex relative items-center bg-base-200';
+        this.className = 'bookmark-item editing';
         this.innerHTML = `
-            <input type="hidden" name="id" value="${id}">
-            <img src="${favicon}" class="size-5 flex-none" alt="icon">
-            <input type="text" class="input input-sm input-bordered flex-grow text-sm mx-2 title-input" value="${this.escapeHtml(title)}">
-            <span class="badge bg-gray-600 badge-xs flex-none">${category}</span>
-            <div class="flex items-center relative z-10 ml-2">
+            <img src="${favicon}" class="bookmark-favicon" alt="">
+            <input type="text" class="input input-sm input-bordered flex-grow title-input" value="${this.escapeHtml(title)}">
+            <span class="bookmark-category badge badge-sm">${category}</span>
+            <div class="bookmark-actions editing">
                 <button class="btn btn-ghost btn-xs btn-square text-success save-btn">✓</button>
                 <button class="btn btn-ghost btn-xs btn-square text-warning cancel-btn">✕</button>
             </div>
@@ -198,9 +209,26 @@ class BookmarkList extends HTMLElement {
         this.render();
     }
 
+    filterBookmarks(query) {
+        const items = this.querySelectorAll('bookmark-item');
+        const lowerQuery = query.toLowerCase();
+        
+        items.forEach(item => {
+            const title = (item.getAttribute('title') || '').toLowerCase();
+            const url = (item.getAttribute('url') || '').toLowerCase();
+            const category = (item.getAttribute('category') || '').toLowerCase();
+            
+            const matches = title.includes(lowerQuery) || 
+                           url.includes(lowerQuery) || 
+                           category.includes(lowerQuery);
+            
+            item.style.display = matches ? '' : 'none';
+        });
+    }
+
     render() {
         if (this._bookmarks.length === 0) {
-            this.innerHTML = '<li class="p-2 text-center text-base-content/50 text-sm">No bookmarks yet</li>';
+            this.innerHTML = '<div class="bookmark-empty">No bookmarks yet</div>';
             return;
         }
 
@@ -212,6 +240,7 @@ class BookmarkList extends HTMLElement {
             item.setAttribute('title', bm.title);
             item.setAttribute('category', bm.category);
             item.setAttribute('favicon', bm.favicon);
+            item.setAttribute('timestamp', bm.timestamp || '');
             this.appendChild(item);
         }
     }

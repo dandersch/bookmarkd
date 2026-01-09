@@ -17,6 +17,11 @@ notes:
 - minimum-width for both chrome & firefox is too wide by default
 - can only be achieved with custom userChrome.css
 ** TODO better colorscheme
+* TODO dashboard: better dashboard ui
+** DONE card view
+CLOSED: [2026-01-09 Fri 20:50]
+** TODO category divider
+* TODO options page accessible both dashboard and sidebar
 * TODO extension: improve "add-bookmark" js bookmarklet
 ** TODO fix CORS problem that occurs on some sites (if possible)
 Current understanding of the problem:
@@ -32,7 +37,10 @@ Current understanding of the problem:
 * TODO extension: indicate if current page is already bookmarked
 - might require more permissions and a background worker
 - indicate by changing the icon of the extension
-* TODO feat: search option
+* TODO feat: search option [1/2]
+** DONE add to dashboard
+CLOSED: [2026-01-09 Fri 20:50]
+** TODO add to sidebar
 * TODO import existing bookmarks
 - directly from browser using an api/permission if that is possible
 - via a bookmarks.html / bookmarks.json file

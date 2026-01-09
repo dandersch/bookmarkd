@@ -4,29 +4,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     // State
     let currentValidTab = null;
 
-    // Compact mode detection
-    const bookmarkList = document.getElementById('bookmark-list');
+    // Compact mode detection (CSS-only, just toggle class)
     const resizeObserver = new ResizeObserver((entries) => {
         for (const entry of entries) {
             const width = entry.contentRect.width;
-            const wasCompact = document.body.classList.contains('compact');
-            const isCompact = width <= COMPACT_THRESHOLD;
-            
-            if (isCompact && !wasCompact) {
+            if (width <= COMPACT_THRESHOLD) {
                 document.body.classList.add('compact');
-                rerenderBookmarks();
-            } else if (!isCompact && wasCompact) {
+            } else {
                 document.body.classList.remove('compact');
-                rerenderBookmarks();
             }
         }
     });
     resizeObserver.observe(document.body);
-
-    function rerenderBookmarks() {
-        const items = bookmarkList.querySelectorAll('bookmark-item');
-        items.forEach(item => item.render());
-    }
 
     // 1. Load Settings
     const config = await getSettings();
