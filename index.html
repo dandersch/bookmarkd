@@ -14,27 +14,21 @@
             <p class="text-primary-content/70 text-sm">Your private collection</p>
         </div>
 
-        <ul class="divide-y divide-base-300">
-            {{range .}}
-            <li class="p-4 hover:bg-base-200 flex items-center transition">
-                <input type="hidden" name="id" value="{{.ID}}">
-                <img src="{{.Favicon}}" class="w-8 h-8 rounded-md mr-4" alt="icon">
-                <div class="flex-1 min-w-0">
-                    <a href="{{.URL}}" target="_blank" class="link link-primary text-lg font-medium truncate block">
-                        {{.Title}}
-                    </a>
-                    <div class="flex items-center mt-1 space-x-2">
-                        <span class="badge badge-neutral badge-sm">
-                            {{.Category}}
-                        </span>
-                        <span class="text-xs text-base-content/50">
-                            {{.URL}}
-                        </span>
-                    </div>
-                </div>
-            </li>
-            {{end}}
-        </ul>
+        <bookmark-list id="bookmark-list" class="divide-y divide-base-300 block">
+        </bookmark-list>
     </div>
+
+    <script src="/components.js"></script>
+    <script>
+        fetch('/api/bookmarks')
+            .then(res => res.json())
+            .then(bookmarks => {
+                document.getElementById('bookmark-list').setBookmarks(bookmarks);
+            })
+            .catch(err => {
+                document.getElementById('bookmark-list').innerHTML = 
+                    '<p class="p-4 text-center text-error">Failed to load bookmarks</p>';
+            });
+    </script>
 </body>
 </html>

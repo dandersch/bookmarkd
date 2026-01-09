@@ -146,8 +146,8 @@ async function fetchBookmarks(baseUrl, authHeader) {
         const res = await fetch(`${baseUrl}/api/bookmarks`, { headers });
         if (!res.ok) throw new Error("Failed to load");
         
-        const html = await res.text();
-        listEl.innerHTML = html;
+        const bookmarks = await res.json();
+        listEl.setBookmarks(bookmarks);
     } catch (err) {
         listEl.innerHTML = `<li class="p-4 text-center text-error text-xs">Cannot connect to server.<br>Check Options.</li>`;
     }

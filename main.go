@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"log"
 	"net/http"
 	"net/url"
@@ -12,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/joho/godotenv" // loading envars from .env
+	"github.com/joho/godotenv"
 	"github.com/google/uuid"
 )
 
@@ -76,7 +75,8 @@ func main() {
 
 	// Routes
 	http.HandleFunc("/", handleIndex)                // The main dashboard
-	http.HandleFunc("/api/bookmarks", handleAPI)     // GET (list fragments) & POST (add)
+	http.HandleFunc("/api/bookmarks", handleAPI)     // GET (list JSON) & POST (add)
+	http.HandleFunc("/components.js", handleComponents) // Serve shared web components
 
 	port := os.Getenv("BOOKMARKD_PORT");
 	host := os.Getenv("BOOKMARKD_HOST");
@@ -91,19 +91,11 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
+	http.ServeFile(w, r, "index.html")
+}
 
-	mu.RLock()
-	sortedBookmarks := bookmarksToSortedSlice()
-	mu.RUnlock()
-
-	tmpl, err := template.ParseFiles("index.html")
-	if err != nil {
-		http.Error(w, "Could not load template", http.StatusInternalServerError)
-		return
-	}
-
-	// Pass the sorted slice to the template
-	tmpl.Execute(w, sortedBookmarks)
+func handleComponents(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "extension/components.js")
 }
 
 func handleAPI(w http.ResponseWriter, r *http.Request) {
@@ -118,7 +110,7 @@ func handleAPI(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == "GET" {
-		renderBookmarksFragment(w)
+		getBookmarksJSON(w)
 		return
 	}
 
@@ -174,25 +166,14 @@ func createBookmark(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-// renderBookmarksFragment returns purely HTML <li> items for the extension
-func renderBookmarksFragment(w http.ResponseWriter) {
+// getBookmarksJSON returns bookmarks as JSON for web components
+func getBookmarksJSON(w http.ResponseWriter) {
 	mu.RLock()
 	sortedBookmarks := bookmarksToSortedSlice()
 	mu.RUnlock()
 
-	// Simple HTML template inline for the fragment
-	const tpl = `
-	{{range .}}
-    <li class="list-row p-2 flex hover:bg-blue-500 relative">
-      <input type="hidden" name="id" value="{{.ID}}">
-      <img src="{{.Favicon}}" class="size-5 flex-none" alt="icon">
-      <a href="{{.URL}}" target="_blank" class="flex-grow text-sm block truncate after:absolute after:inset-0">{{.Title}}</a>
-      <span class="badge bg-gray-600 badge-xs mt-1 flex-none">{{.Category}}</span>
-	</li>
-	{{end}}`
-
-	t, _ := template.New("fragment").Parse(tpl)
-	t.Execute(w, sortedBookmarks)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(sortedBookmarks)
 }
 
 // --- Persistence ---
