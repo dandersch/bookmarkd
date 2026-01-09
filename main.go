@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -74,9 +75,10 @@ func main() {
 	}
 
 	// Routes
-	http.HandleFunc("/", handleIndex)                // The main dashboard
-	http.HandleFunc("/api/bookmarks", handleAPI)     // GET (list JSON) & POST (add)
-	http.HandleFunc("/components.js", handleComponents) // Serve shared web components
+	http.HandleFunc("/", handleIndex)                    // The main dashboard
+	http.HandleFunc("/api/bookmarks", handleAPI)         // GET (list JSON) & POST (add)
+	http.HandleFunc("/api/bookmarks/", handleBookmarkAPI) // DELETE & PATCH /api/bookmarks/:id
+	http.HandleFunc("/components.js", handleComponents)  // Serve shared web components
 
 	port := os.Getenv("BOOKMARKD_PORT");
 	host := os.Getenv("BOOKMARKD_HOST");
@@ -99,10 +101,7 @@ func handleComponents(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleAPI(w http.ResponseWriter, r *http.Request) {
-	// CORS Headers (Essential for Extension access)
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+	setCORSHeaders(w)
 
 	if r.Method == "OPTIONS" {
 		w.WriteHeader(http.StatusOK)
@@ -118,6 +117,40 @@ func handleAPI(w http.ResponseWriter, r *http.Request) {
 		createBookmark(w, r)
 		return
 	}
+}
+
+func handleBookmarkAPI(w http.ResponseWriter, r *http.Request) {
+	setCORSHeaders(w)
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	// Extract ID from URL: /api/bookmarks/:id
+	id := strings.TrimPrefix(r.URL.Path, "/api/bookmarks/")
+	if id == "" {
+		http.Error(w, "Missing bookmark ID", http.StatusBadRequest)
+		return
+	}
+
+	if r.Method == "DELETE" {
+		deleteBookmark(w, id)
+		return
+	}
+
+	if r.Method == "PATCH" {
+		updateBookmark(w, r, id)
+		return
+	}
+
+	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+}
+
+func setCORSHeaders(w http.ResponseWriter) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 }
 
 // --- Logic ---
@@ -174,6 +207,46 @@ func getBookmarksJSON(w http.ResponseWriter) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(sortedBookmarks)
+}
+
+func deleteBookmark(w http.ResponseWriter, id string) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	if _, exists := bookmarks[id]; !exists {
+		http.Error(w, "Bookmark not found", http.StatusNotFound)
+		return
+	}
+
+	delete(bookmarks, id)
+	saveBookmarks()
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func updateBookmark(w http.ResponseWriter, r *http.Request, id string) {
+	var payload struct {
+		Title string `json:"title"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	bm, exists := bookmarks[id]
+	if !exists {
+		http.Error(w, "Bookmark not found", http.StatusNotFound)
+		return
+	}
+
+	bm.Title = payload.Title
+	bookmarks[id] = bm
+	saveBookmarks()
+
+	w.WriteHeader(http.StatusOK)
 }
 
 // --- Persistence ---

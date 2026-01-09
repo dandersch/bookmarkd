@@ -90,109 +90,6 @@ Current understanding of the problem:
 * TODO dark/light mode
 ** TODO dark/light mode switch on dashboard (default to system default)
 ** TODO use system default on extension popup, switch in options.html
-* TODO customizable settings for every bookmark
-** TODO switch to url-namespaced UUIDv5 and map
-example of how firefox exports a bookmark to json:
-#+begin_src json
-{
-  "guid": "VNQYuxxt4jYL",
-  "title": "namecheap",
-  "index": 6,
-  "dateAdded": 1651705172249000,
-  "lastModified": 1756168838000000,
-  "id": 20,
-  "typeCode": 1,
-  "iconUri": "https://www.namecheap.com/assets/img/nc-icon/favicon.ico",
-  "type": "text/x-moz-place",
-  "uri": "https://www.namecheap.com/myaccount/login/"
-}
-#+end_src
-
-go code (uuid library was already included):
-#+begin_src go
-u := uuid.NewSHA1(uuid.NameSpaceURL, []byte(payload.URL))
-#+end_src
-
-also switch to using a map from uuid -> bookmark
-#+begin_src go
-// old
-bookmarks []Bookmark
-
-// new
-bookmarks map[string]Bookmark
-#+end_src
-
-use following js code for generating uuids on the frontend if needed:
-#+begin_src javascript
-async function generateUUIDv5(url) {
-    // Standard URL Namespace UUID: 6ba7b811-9dad-11d1-80b4-00c04fd430c8
-    const NAMESPACE_URL = [
-        0x6b, 0xa7, 0xb8, 0x11, 0x9d, 0xad, 0x11, 0xd1,
-        0x80, 0xb4, 0x00, 0xc0, 0x4f, 0xd4, 0x30, 0xc8
-    ];
-
-    // 1. Convert URL to UTF-8 bytes
-    const urlBytes = new TextEncoder().encode(url);
-
-    // 2. Combine Namespace + URL bytes
-    const combined = new Uint8Array(NAMESPACE_URL.length + urlBytes.length);
-    combined.set(NAMESPACE_URL);
-    combined.set(urlBytes, NAMESPACE_URL.length);
-
-    // 3. SHA-1 Hash
-    const hashBuffer = await crypto.subtle.digest('SHA-1', combined);
-    const hashBytes = new Uint8Array(hashBuffer);
-
-    // 4. Set Version (5) and Variant (RFC4122) bits
-    hashBytes[6] = (hashBytes[6] & 0x0f) | 0x50; // Version 5
-    hashBytes[8] = (hashBytes[8] & 0x3f) | 0x80; // Variant 10xxxxxx
-
-    // 5. Convert to Hex String
-    const hex = Array.from(hashBytes)
-        .map(b => b.toString(16).padStart(2, '0'))
-        .join('');
-
-    // Format as 8-4-4-4-12
-    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
-}
-#+end_src
-  
-** TODO send uuid to front-end inside html fragments
-inside hidden field:
-#+begin_src html
-<div>
-    <input type="hidden" name="id" value="{{.UUID}}">
-    <img src="{{.Favicon}}" class="..." alt="icon">
-    <a href="{{.URL}}" target="_blank" class="...">{{.Title}}</a>
-    <span class="...">{{.Category}}</span>
-</div>
-#+end_src
-
-** TODO use datastar edit-row
-pseudocode:
-- needs data-bind (?)
-- edit+delete buttons should only appear on hover
-#+begin_src html
-<div>
-    <input type="hidden" name="id" value="{{.UUID}}">
-    <img src="{{.Favicon}}" class="..." alt="icon">
-    <a href="{{.URL}}" target="_blank" class="...">{{.Title}}</a>
-    <span class="...">{{.Category}}</span>
-    <button data-on:click="@get('/api/bookmarks/edit')">🖉</button>
-    <button data-on:click="@delete('/api/bookmarks/delete)">🗑</button>
-</div>
-#+end_src
-
-return edit:
-#+begin_src html
-<div>
-    <input type="text" data-bind:title>
-    <input type="text" data-bind:url>
-    <button data-on:click="@get('...')">🗙</button>
-    <button data-on:click="@patch('/api/bookmarks/edit')">💾</button>
-</div>
-#+end_src
-
 * TODO improve category UI/UX
 ** TODO add divider between categories
 ** TODO collapsible categories
@@ -354,6 +251,99 @@ github.com/.*/.*/issues/[0-9]*   issue
 - [[https://github.com/ndom91/briefkasten][briefkasten]]: bookmark manager + extension
 - [[https://wallabag.org/][wallabag]]: archive & annotate webpages + extension
 - [[https://github.com/awesome-selfhosted/awesome-selfhosted?tab=readme-ov-file#bookmarks-and-link-sharing][awesome selfhosted: bookmarks & link sharing]]
+* DONE customizable settings for every bookmark
+CLOSED: [2026-01-09 Fri 19:37]
+** DONE switch to url-namespaced UUIDv5 and map
+CLOSED: [2026-01-09 Fri 19:34]
+example of how firefox exports a bookmark to json:
+#+begin_src json
+{
+  "guid": "VNQYuxxt4jYL",
+  "title": "namecheap",
+  "index": 6,
+  "dateAdded": 1651705172249000,
+  "lastModified": 1756168838000000,
+  "id": 20,
+  "typeCode": 1,
+  "iconUri": "https://www.namecheap.com/assets/img/nc-icon/favicon.ico",
+  "type": "text/x-moz-place",
+  "uri": "https://www.namecheap.com/myaccount/login/"
+}
+#+end_src
+
+go code (uuid library was already included):
+#+begin_src go
+u := uuid.NewSHA1(uuid.NameSpaceURL, []byte(payload.URL))
+#+end_src
+
+also switch to using a map from uuid -> bookmark
+#+begin_src go
+// old
+bookmarks []Bookmark
+
+// new
+bookmarks map[string]Bookmark
+#+end_src
+
+use following js code for generating uuids on the frontend if needed:
+#+begin_src javascript
+async function generateUUIDv5(url) {
+    // Standard URL Namespace UUID: 6ba7b811-9dad-11d1-80b4-00c04fd430c8
+    const NAMESPACE_URL = [
+        0x6b, 0xa7, 0xb8, 0x11, 0x9d, 0xad, 0x11, 0xd1,
+        0x80, 0xb4, 0x00, 0xc0, 0x4f, 0xd4, 0x30, 0xc8
+    ];
+
+    // 1. Convert URL to UTF-8 bytes
+    const urlBytes = new TextEncoder().encode(url);
+
+    // 2. Combine Namespace + URL bytes
+    const combined = new Uint8Array(NAMESPACE_URL.length + urlBytes.length);
+    combined.set(NAMESPACE_URL);
+    combined.set(urlBytes, NAMESPACE_URL.length);
+
+    // 3. SHA-1 Hash
+    const hashBuffer = await crypto.subtle.digest('SHA-1', combined);
+    const hashBytes = new Uint8Array(hashBuffer);
+
+    // 4. Set Version (5) and Variant (RFC4122) bits
+    hashBytes[6] = (hashBytes[6] & 0x0f) | 0x50; // Version 5
+    hashBytes[8] = (hashBytes[8] & 0x3f) | 0x80; // Variant 10xxxxxx
+
+    // 5. Convert to Hex String
+    const hex = Array.from(hashBytes)
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+
+    // Format as 8-4-4-4-12
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
+}
+#+end_src
+  
+** DONE send uuid to front-end inside html fragments
+CLOSED: [2026-01-09 Fri 19:34]
+inside hidden field:
+#+begin_src html
+<div>
+    <input type="hidden" name="id" value="{{.UUID}}">
+    <img src="{{.Favicon}}" class="..." alt="icon">
+    <a href="{{.URL}}" target="_blank" class="...">{{.Title}}</a>
+    <span class="...">{{.Category}}</span>
+</div>
+#+end_src
+
+** DONE add edit and delete buttons + endpoints
+CLOSED: [2026-01-09 Fri 19:37]
+Backend (main.go):                                                                                                                 
+- DELETE ~/api/bookmarks/:id~: removes bookmark, returns 204
+- PATCH ~/api/bookmarks/:id~: updates title, returns 200
+
+Frontend (components.js):
+- <bookmark-item> shows ✎ (edit) and 🗑 (delete) buttons on hover
+- Edit: inline text input with ✓ (save) and ✕ (cancel) buttons
+- Enter saves, Escape cancels
+- Gets server-url and auth-header from parent <bookmark-list>
+
 * DONE extension: bookmarking current page doesnt work after switching tabs
 CLOSED: [2026-01-07 Wed 03:41]
 see https://stackoverflow.com/questions/77276350/chrome-extension-how-to-show-the-active-tab-url-with-updates-when-it-changes

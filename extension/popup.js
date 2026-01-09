@@ -139,6 +139,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function fetchBookmarks(baseUrl, authHeader) {
     const listEl = document.getElementById('bookmark-list');
+    
+    // Set config attributes for bookmark-item components to use
+    listEl.setAttribute('server-url', baseUrl);
+    if (authHeader) listEl.setAttribute('auth-header', authHeader);
+
     try {
         const headers = {};
         if (authHeader) headers["Authorization"] = authHeader;

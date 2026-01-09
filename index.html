@@ -20,13 +20,16 @@
 
     <script src="/components.js"></script>
     <script>
+        const listEl = document.getElementById('bookmark-list');
+        listEl.setAttribute('server-url', '');
+        
         fetch('/api/bookmarks')
             .then(res => res.json())
             .then(bookmarks => {
-                document.getElementById('bookmark-list').setBookmarks(bookmarks);
+                listEl.setBookmarks(bookmarks);
             })
             .catch(err => {
-                document.getElementById('bookmark-list').innerHTML = 
+                listEl.innerHTML = 
                     '<p class="p-4 text-center text-error">Failed to load bookmarks</p>';
             });
     </script>
