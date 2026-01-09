@@ -5,7 +5,7 @@
   "description": "Bookmark Manager",
   "permissions": [
     "sidePanel",
-    "activeTab",
+    "tabs",
     "storage"
   ],
   "background": {

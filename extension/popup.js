@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const previewIcon = document.getElementById('preview-icon');
     const saveBtn = document.getElementById('btn-save');
     const status = document.getElementById('status-msg');
+    const originalBtnText = saveBtn.innerText;
 
     // Setup "Open Dashboard" link
     document.getElementById('open-web').addEventListener('click', () => {
@@ -22,48 +23,50 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 2. Initial Fetch of Bookmark List
     await fetchBookmarks(serverUrl, config.authHeader);
 
-
-    // --- CORE LOGIC: Reactive Tab Preview ---
-
-    let lastTabUrl = ""; // Track to prevent overwriting user edits on small updates
-
+    // --- CORE LOGIC: Get current tab preview ---
     async function updatePreview() {
-        const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+        try {
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-        if (tab && tab.url && (tab.url.startsWith('http'))) {
-            currentValidTab = tab;
-            previewCard.classList.remove('hidden');
-            saveBtn.disabled = false;
-
-            // ONLY update the text if the URL actually changed
-            // This prevents the title from resetting if the page is still loading
-            if (tab.url !== lastTabUrl) {
+            if (tab && tab.url && tab.url.startsWith('http')) {
+                currentValidTab = tab;
+                previewCard.classList.remove('hidden');
+                saveBtn.disabled = false;
                 previewTitle.textContent = tab.title || "No Title";
-                lastTabUrl = tab.url;
+                previewUrl.textContent = new URL(tab.url).hostname;
+                previewIcon.src = tab.favIconUrl || 'icon.png'; 
+            } else {
+                currentValidTab = null;
+                previewCard.classList.add('hidden');
+                saveBtn.disabled = true;
             }
-
-            previewUrl.textContent = new URL(tab.url).hostname;
-            previewIcon.src = tab.favIconUrl || 'icon.png'; 
-        } else {
+        } catch (err) {
+            console.error('Failed to get current tab:', err);
             currentValidTab = null;
-            lastTabUrl = "";
             previewCard.classList.add('hidden');
             saveBtn.disabled = true;
         }
     }
 
-    // Initialize Preview immediately
-    updatePreview();
+    // Initialize Preview on popup open
+    await updatePreview();
 
-    // Listen for Tab Switches
-    chrome.tabs.onActivated.addListener(() => {
-        updatePreview();
-    });
-
-    // Listen for Navigation in the current tab (e.g. clicking a link)
-    chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-        if (tab.active && changeInfo.status === 'complete') {
-            updatePreview();
+    // Listen for tab updates from background worker
+    chrome.runtime.onMessage.addListener((message) => {
+        if (message.type === 'TAB_UPDATED' && message.tab) {
+            const tab = message.tab;
+            if (tab.url && tab.url.startsWith('http')) {
+                currentValidTab = tab;
+                previewCard.classList.remove('hidden');
+                saveBtn.disabled = false;
+                previewTitle.textContent = tab.title || "No Title";
+                previewUrl.textContent = new URL(tab.url).hostname;
+                previewIcon.src = tab.favIconUrl || 'icon.png';
+            } else {
+                currentValidTab = null;
+                previewCard.classList.add('hidden');
+                saveBtn.disabled = true;
+            }
         }
     });
 
@@ -71,54 +74,52 @@ document.addEventListener('DOMContentLoaded', async () => {
     saveBtn.addEventListener('click', async () => {
         if (!currentValidTab) return;
 
-        // Grab the potentially edited title
-        const editedTitle = document.getElementById('preview-title').innerText;
+        const editedTitle = previewTitle.innerText;
 
         saveBtn.disabled = true;
         saveBtn.innerText = "Saving...";
+        status.classList.add('hidden');
 
         try {
-           const payload = {
-           url: currentValidTab.url,
-           title: editedTitle, // Use the edited version!
-           category: "Uncategorized"
+            const payload = {
+                url: currentValidTab.url,
+                title: editedTitle,
+                category: "Uncategorized"
             };
 
-           const headers = { "Content-Type": "application/json" };
-           if (config.authHeader) headers["Authorization"] = config.authHeader;
+            const headers = { "Content-Type": "application/json" };
+            if (config.authHeader) headers["Authorization"] = config.authHeader;
 
-           const res = await fetch(`${serverUrl}/api/bookmarks`, {
-           method: "POST",
-           headers: headers,
-           body: JSON.stringify(payload)
+            const res = await fetch(`${serverUrl}/api/bookmarks`, {
+                method: "POST",
+                headers: headers,
+                body: JSON.stringify(payload)
             });
 
-           if (!res.ok) throw new Error("Server error: " + res.status);
+            if (!res.ok) throw new Error("Server error: " + res.status);
 
-           // Success
-           status.innerText = "Saved!";
-           status.className = "alert alert-success text-center text-xs mt-2 block p-2 rounded";
-           
-           // Refresh list
-           await fetchBookmarks(serverUrl, config.authHeader);
+            // Success
+            status.innerText = "Saved!";
+            status.className = "alert alert-success text-center text-xs py-2 block";
+            
+            // Refresh list
+            await fetchBookmarks(serverUrl, config.authHeader);
+
+            setTimeout(() => {
+                status.classList.add('hidden');
+            }, 1500);
 
         } catch (err) {
-           status.innerText = "Error: " + err.message;
-           status.className = "alert alert-error text-center text-xs mt-2 block p-2 rounded";
+            status.innerText = "Error: " + err.message;
+            status.className = "alert alert-error text-center text-xs py-2 block";
         } finally {
-           saveBtn.innerText = originalText;
-           // Note: We don't re-enable immediately if the preview is still valid, 
-           // but usually we want to allow saving again or just wait.
-           // Let's re-enable after a short delay or keep disabled if you want "Save Once"
-           setTimeout(() => {
-           saveBtn.disabled = false;
-           status.classList.add('hidden');
-            }, 1500);
+            saveBtn.innerText = originalBtnText;
+            saveBtn.disabled = false;
         }
     });
 
     // Auto-select text on click for the editable title
-    document.getElementById('preview-title').addEventListener('focus', (e) => {
+    previewTitle.addEventListener('focus', (e) => {
         const range = document.createRange();
         range.selectNodeContents(e.target);
         const sel = window.getSelection();
@@ -126,11 +127,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         sel.addRange(range);
     });
 
-    // Prevent "Enter" key from adding new lines (optional, keeps it a single line)
-    document.getElementById('preview-title').addEventListener('keydown', (e) => {
+    // Enter to save
+    previewTitle.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
-            document.getElementById('btn-save').click(); // Enter to Save!
+            saveBtn.click();
         }
     });
 });

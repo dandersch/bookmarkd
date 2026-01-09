@@ -1,3 +1,12 @@
+* DONE extension: current bookmark preview breaks                       :bug:
+CLOSED: [2026-01-09 Fri 19:55]
+- stops working sometimes
+- doesnt work for pinned pages (?)
+- doesnt work when viewing a page opened in a new tab
+- doesn't stay up to date when switching pages
+- after saving, stays on "Saving..." button and doesnt remove "Saved!" popup
+- janky in general
+
 * TODO extension: better sidebar ui
 ** DONE smaller bookmarks list elements
 CLOSED: [2026-01-06 Tue 23:33]
