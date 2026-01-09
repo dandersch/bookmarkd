@@ -3,7 +3,6 @@
 CLOSED: [2026-01-06 Tue 23:33]
 ** DONE preview current bookmark
 CLOSED: [2026-01-07 Wed 04:03]
-** TODO better colorscheme
 ** DONE switch to icon-only view when sidebar becomes too narrow
 CLOSED: [2026-01-09 Fri 20:18]
 - should show only favicons of bookmarks in this view
@@ -17,69 +16,7 @@ CLOSED: [2026-01-09 Fri 20:18]
 notes:
 - minimum-width for both chrome & firefox is too wide by default
 - can only be achieved with custom userChrome.css
-* DONE extension: switch to sidebar/sidepanel view
-CLOSED: [2026-01-09 Fri 20:19]
-** DONE chrome support
-CLOSED: [2026-01-09 Fri 20:18]
-- uses sidePanel api. manifest.json:
-  #+begin_src json
-  "permissions": [
-    "sidePanel",
-    ...
-  ],
-  "side_panel": {
-    "default_path": "popup.html"
-  },
-  #+end_src
-
-- requires background worker:
-  #+begin_src javascript
-  chrome.action.onClicked.addListener((tab) => {
-    chrome.sidePanel.setOptions({
-      tabId: tab.id,
-      path: 'popup.html',
-      enabled: true
-    });
-    chrome.sidePanel.setPanelBehavior({
-      openPanelOnActionClick: true // toggles sidebar when clicking extension icon
-    });
-    chrome.sidePanel.open({ tabId: tab.id });
-  });
-  #+end_src
-
-** DONE firefox support
-CLOSED: [2026-01-09 Fri 20:19]
-- firefox uses sidebar_action in manifest.json:
-  #+begin_src json
-  "sidebar_action": {
-    "default_icon": "icon.png",
-    "default_title": "My sidebar",
-    "default_panel": "popup.html",
-    "open_at_install": true
-  },
-  #+end_src
-
-- requires background worker:
-  #+begin_src javascript
-  chrome.action.onClicked.addListener((tab) => {
-    browser.sidebarAction.toggle();
-  });
-  #+end_src
-
-- set sidebar.revamp to false to get (better) old ui
-
-- to be able to get smaller min/max-width sidebar:
-  + open profile directory (about:support -> Profile Directory)
-  + create folder "chrome"
-  + create "userChrome.css" inside "chrome", add:
-  #+begin_src css
-  /* remove maximum/minimum width restriction of sidebar */
-  #sidebar-box {
-    max-width: none !important;
-    min-width: 0px !important;
-  }
-  #+end_src
-
+** TODO better colorscheme
 * TODO extension: improve "add-bookmark" js bookmarklet
 ** TODO fix CORS problem that occurs on some sites (if possible)
 Current understanding of the problem:
@@ -92,8 +29,7 @@ Current understanding of the problem:
 ** TODO auto-generate bookmarklet
 - on index.html (no access auth data?)
 - OR inside options.html
-* TODO dont allow duplicate bookmarks
-** TODO extension: indicate if current page is already bookmarked
+* TODO extension: indicate if current page is already bookmarked
 - might require more permissions and a background worker
 - indicate by changing the icon of the extension
 * TODO feat: search option
@@ -263,6 +199,69 @@ github.com/.*/.*/issues/[0-9]*   issue
 - [[https://github.com/ndom91/briefkasten][briefkasten]]: bookmark manager + extension
 - [[https://wallabag.org/][wallabag]]: archive & annotate webpages + extension
 - [[https://github.com/awesome-selfhosted/awesome-selfhosted?tab=readme-ov-file#bookmarks-and-link-sharing][awesome selfhosted: bookmarks & link sharing]]
+* DONE extension: switch to sidebar/sidepanel view
+CLOSED: [2026-01-09 Fri 20:19]
+** DONE chrome support
+CLOSED: [2026-01-09 Fri 20:18]
+- uses sidePanel api. manifest.json:
+  #+begin_src json
+  "permissions": [
+    "sidePanel",
+    ...
+  ],
+  "side_panel": {
+    "default_path": "popup.html"
+  },
+  #+end_src
+
+- requires background worker:
+  #+begin_src javascript
+  chrome.action.onClicked.addListener((tab) => {
+    chrome.sidePanel.setOptions({
+      tabId: tab.id,
+      path: 'popup.html',
+      enabled: true
+    });
+    chrome.sidePanel.setPanelBehavior({
+      openPanelOnActionClick: true // toggles sidebar when clicking extension icon
+    });
+    chrome.sidePanel.open({ tabId: tab.id });
+  });
+  #+end_src
+
+** DONE firefox support
+CLOSED: [2026-01-09 Fri 20:19]
+- firefox uses sidebar_action in manifest.json:
+  #+begin_src json
+  "sidebar_action": {
+    "default_icon": "icon.png",
+    "default_title": "My sidebar",
+    "default_panel": "popup.html",
+    "open_at_install": true
+  },
+  #+end_src
+
+- requires background worker:
+  #+begin_src javascript
+  chrome.action.onClicked.addListener((tab) => {
+    browser.sidebarAction.toggle();
+  });
+  #+end_src
+
+- set sidebar.revamp to false to get (better) old ui
+
+- to be able to get smaller min/max-width sidebar:
+  + open profile directory (about:support -> Profile Directory)
+  + create folder "chrome"
+  + create "userChrome.css" inside "chrome", add:
+  #+begin_src css
+  /* remove maximum/minimum width restriction of sidebar */
+  #sidebar-box {
+    max-width: none !important;
+    min-width: 0px !important;
+  }
+  #+end_src
+
 * DONE extension: current bookmark preview breaks                       :bug:
 CLOSED: [2026-01-09 Fri 19:55]
 - stops working sometimes
