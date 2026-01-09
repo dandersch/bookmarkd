@@ -246,5 +246,164 @@ class BookmarkList extends HTMLElement {
     }
 }
 
+class SettingsImport extends HTMLElement {
+    constructor() {
+        super();
+    }
+
+    connectedCallback() {
+        this.render();
+    }
+
+    getConfig() {
+        return {
+            serverUrl: this.getAttribute('server-url') || '',
+            authHeader: this.getAttribute('auth-header') || ''
+        };
+    }
+
+    render() {
+        this.innerHTML = `
+            <div class="settings-import">
+                <label class="block mb-2 font-semibold">Import Bookmarks</label>
+                <p class="text-sm opacity-70 mb-3">Import from browser bookmark export (HTML format)</p>
+                <input type="file" accept=".html,.htm" class="file-input file-input-bordered file-input-sm w-full max-w-xs import-file">
+                <div class="import-status mt-3 text-sm"></div>
+            </div>
+        `;
+
+        this.querySelector('.import-file').addEventListener('change', (e) => {
+            this.handleFileSelect(e);
+        });
+    }
+
+    async handleFileSelect(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const statusEl = this.querySelector('.import-status');
+        statusEl.textContent = 'Reading file...';
+        statusEl.className = 'import-status mt-3 text-sm';
+
+        try {
+            const text = await file.text();
+            const bookmarks = this.parseNetscapeHTML(text);
+            
+            if (bookmarks.length === 0) {
+                statusEl.textContent = 'No bookmarks found in file';
+                statusEl.classList.add('text-warning');
+                return;
+            }
+
+            statusEl.textContent = `Found ${bookmarks.length} bookmarks. Importing...`;
+            
+            const results = await this.importBookmarks(bookmarks);
+            const successful = results.filter(r => r.success).length;
+            const failed = results.filter(r => !r.success).length;
+
+            if (failed === 0) {
+                statusEl.textContent = `Successfully imported ${successful} bookmarks`;
+                statusEl.classList.add('text-success');
+            } else {
+                statusEl.textContent = `Imported ${successful} bookmarks, ${failed} failed`;
+                statusEl.classList.add('text-warning');
+            }
+
+            this.dispatchEvent(new CustomEvent('import-complete', { 
+                detail: { successful, failed },
+                bubbles: true 
+            }));
+
+        } catch (err) {
+            console.error('Import failed:', err);
+            statusEl.textContent = 'Import failed: ' + err.message;
+            statusEl.classList.add('text-error');
+        }
+
+        e.target.value = '';
+    }
+
+    parseNetscapeHTML(html) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const bookmarks = [];
+        
+        const links = doc.querySelectorAll('a[href]');
+        let currentFolder = 'Uncategorized';
+
+        const processNode = (node, folder) => {
+            if (node.tagName === 'H3') {
+                return node.textContent.trim();
+            }
+            if (node.tagName === 'A' && node.href) {
+                const url = node.getAttribute('href');
+                if (url && url.startsWith('http')) {
+                    bookmarks.push({
+                        url: url,
+                        title: node.textContent.trim() || url,
+                        category: folder,
+                        timestamp: node.getAttribute('add_date') || ''
+                    });
+                }
+            }
+            return folder;
+        };
+
+        const walk = (element, folder) => {
+            for (const child of element.children) {
+                if (child.tagName === 'DT') {
+                    for (const dtChild of child.children) {
+                        if (dtChild.tagName === 'H3') {
+                            folder = dtChild.textContent.trim();
+                        } else if (dtChild.tagName === 'A') {
+                            processNode(dtChild, folder);
+                        } else if (dtChild.tagName === 'DL') {
+                            walk(dtChild, folder);
+                        }
+                    }
+                } else if (child.tagName === 'DL') {
+                    walk(child, folder);
+                }
+            }
+        };
+
+        const dl = doc.querySelector('dl');
+        if (dl) {
+            walk(dl, 'Uncategorized');
+        }
+
+        return bookmarks;
+    }
+
+    async importBookmarks(bookmarks) {
+        const config = this.getConfig();
+        const results = [];
+
+        for (const bm of bookmarks) {
+            try {
+                const headers = { 'Content-Type': 'application/json' };
+                if (config.authHeader) headers['Authorization'] = config.authHeader;
+
+                const res = await fetch(`${config.serverUrl}/api/bookmarks`, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({
+                        url: bm.url,
+                        title: bm.title,
+                        category: bm.category
+                    })
+                });
+
+                results.push({ success: res.ok, bookmark: bm });
+            } catch (err) {
+                results.push({ success: false, bookmark: bm, error: err });
+            }
+        }
+
+        return results;
+    }
+}
+
 customElements.define('bookmark-item', BookmarkItem);
 customElements.define('bookmark-list', BookmarkList);
+customElements.define('settings-import', SettingsImport);

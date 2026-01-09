@@ -120,8 +120,24 @@
             <div class="flex items-center gap-4">
                 <input type="text" id="search" class="search-input" placeholder="Search bookmarks...">
                 <span id="bookmark-count" class="text-primary-content/70 text-sm"></span>
+                <button id="settings-btn" class="btn btn-ghost btn-sm text-primary-content">⚙</button>
             </div>
         </header>
+
+        <!-- Settings Modal -->
+        <dialog id="settings-modal" class="modal">
+            <div class="modal-box">
+                <form method="dialog">
+                    <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+                </form>
+                <h3 class="font-bold text-lg mb-4">Settings</h3>
+                
+                <settings-import id="import-section" server-url=""></settings-import>
+            </div>
+            <form method="dialog" class="modal-backdrop">
+                <button>close</button>
+            </form>
+        </dialog>
 
         <!-- Bookmark grid -->
         <bookmark-list id="bookmark-list" class="bookmark-list-container">
@@ -150,6 +166,24 @@
         // Search functionality
         searchInput.addEventListener('input', (e) => {
             listEl.filterBookmarks(e.target.value);
+        });
+
+        // Settings modal
+        const settingsBtn = document.getElementById('settings-btn');
+        const settingsModal = document.getElementById('settings-modal');
+        
+        settingsBtn.addEventListener('click', () => {
+            settingsModal.showModal();
+        });
+
+        // Refresh bookmarks after import
+        document.getElementById('import-section').addEventListener('import-complete', () => {
+            fetch('/api/bookmarks')
+                .then(res => res.json())
+                .then(bookmarks => {
+                    listEl.setBookmarks(bookmarks);
+                    countEl.textContent = `${bookmarks.length} bookmarks`;
+                });
         });
     </script>
 </body>

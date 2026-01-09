@@ -1,14 +1,24 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Restore
+    const importSection = document.getElementById('import-section');
+
+    // Restore and configure
     chrome.storage.sync.get(['serverUrl', 'username', 'password'], (items) => {
-        document.getElementById('serverUrl').value = items.serverUrl || 'http://localhost:8080';
+        const serverUrl = items.serverUrl || 'http://localhost:8080';
+        document.getElementById('serverUrl').value = serverUrl;
         document.getElementById('username').value = items.username || '';
         document.getElementById('password').value = items.password || '';
+
+        // Configure import component
+        importSection.setAttribute('server-url', serverUrl);
+        if (items.username && items.password) {
+            const credentials = btoa(`${items.username}:${items.password}`);
+            importSection.setAttribute('auth-header', `Basic ${credentials}`);
+        }
     });
 
     // Save
     document.getElementById('save').addEventListener('click', () => {
-        const serverUrl = document.getElementById('serverUrl').value.replace(/\/$/, ""); // remove trailing slash
+        const serverUrl = document.getElementById('serverUrl').value.replace(/\/$/, "");
         const username = document.getElementById('username').value;
         const password = document.getElementById('password').value;
 
@@ -16,6 +26,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const status = document.getElementById('status');
             status.textContent = 'Options saved.';
             setTimeout(() => status.textContent = '', 2000);
+
+            // Update import component config
+            importSection.setAttribute('server-url', serverUrl);
+            if (username && password) {
+                const credentials = btoa(`${username}:${password}`);
+                importSection.setAttribute('auth-header', `Basic ${credentials}`);
+            } else {
+                importSection.removeAttribute('auth-header');
+            }
         });
     });
 });
