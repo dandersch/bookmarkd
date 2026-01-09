@@ -26,12 +26,26 @@ class BookmarkItem extends HTMLElement {
         };
     }
 
+    isCompact() {
+        return document.body.classList.contains('compact');
+    }
+
     render() {
         const id = this.getAttribute('bookmark-id') || '';
         const url = this.getAttribute('url') || '';
         const title = this.getAttribute('title') || '';
         const category = this.getAttribute('category') || 'Uncategorized';
         const favicon = this.getAttribute('favicon') || '';
+
+        if (this.isCompact()) {
+            this.className = 'block p-1 hover:bg-gray-700';
+            this.innerHTML = `
+                <a href="${url}" target="_blank" class="flex justify-center" title="${this.escapeHtml(title)}">
+                    <img src="${favicon}" class="w-5 h-5" alt="icon">
+                </a>
+            `;
+            return;
+        }
 
         this.className = 'group list-row p-2 flex hover:bg-gray-700 relative items-center';
         this.innerHTML = `

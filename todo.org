@@ -1,23 +1,26 @@
-* DONE extension: current bookmark preview breaks                       :bug:
-CLOSED: [2026-01-09 Fri 19:55]
-- stops working sometimes
-- doesnt work for pinned pages (?)
-- doesnt work when viewing a page opened in a new tab
-- doesn't stay up to date when switching pages
-- after saving, stays on "Saving..." button and doesnt remove "Saved!" popup
-- janky in general
-
 * TODO extension: better sidebar ui
 ** DONE smaller bookmarks list elements
 CLOSED: [2026-01-06 Tue 23:33]
 ** DONE preview current bookmark
 CLOSED: [2026-01-07 Wed 04:03]
 ** TODO better colorscheme
-** TODO switch to icon-only view when sidebar is small
-- minimum-width for both chrome & firefox is too small by default
+** DONE switch to icon-only view when sidebar becomes too narrow
+CLOSED: [2026-01-09 Fri 20:18]
+- should show only favicons of bookmarks in this view
+- preview current page bar not needed in this view
+- "Bookmark Page" button should become single bookmark symbol/icon (🔖/📌/+)
+- Header would need to go from left-right arranging settings/bookmark/dashboad
+  buttons to arranging them top-down
+- No more hover to show edit/delete buttons
+- ideally sidebar snaps to this minimum-width once it reaches a certain small width
+
+notes:
+- minimum-width for both chrome & firefox is too wide by default
 - can only be achieved with custom userChrome.css
-* TODO extension: switch to sidebar/sidepanel view
-** TODO chrome support
+* DONE extension: switch to sidebar/sidepanel view
+CLOSED: [2026-01-09 Fri 20:19]
+** DONE chrome support
+CLOSED: [2026-01-09 Fri 20:18]
 - uses sidePanel api. manifest.json:
   #+begin_src json
   "permissions": [
@@ -44,7 +47,8 @@ CLOSED: [2026-01-07 Wed 04:03]
   });
   #+end_src
 
-** TODO firefox support
+** DONE firefox support
+CLOSED: [2026-01-09 Fri 20:19]
 - firefox uses sidebar_action in manifest.json:
   #+begin_src json
   "sidebar_action": {
@@ -168,7 +172,6 @@ tmp_dir = "tmp"
 - needs file watcher in go backend to check for changes
 - maybe switch to NETSCAPE-Bookmark-file-1 (html)
 * TODO dev: start using tailwind compiler
-* TODO dev: use datastar (?)
 * TODO feat: pastebin
 ** TODO add button to send clipboard to bookmarkd
 ** TODO add button to copy into clipboard from bookmarkd
@@ -260,6 +263,15 @@ github.com/.*/.*/issues/[0-9]*   issue
 - [[https://github.com/ndom91/briefkasten][briefkasten]]: bookmark manager + extension
 - [[https://wallabag.org/][wallabag]]: archive & annotate webpages + extension
 - [[https://github.com/awesome-selfhosted/awesome-selfhosted?tab=readme-ov-file#bookmarks-and-link-sharing][awesome selfhosted: bookmarks & link sharing]]
+* DONE extension: current bookmark preview breaks                       :bug:
+CLOSED: [2026-01-09 Fri 19:55]
+- stops working sometimes
+- doesnt work for pinned pages (?)
+- doesnt work when viewing a page opened in a new tab
+- doesn't stay up to date when switching pages
+- after saving, stays on "Saving..." button and doesnt remove "Saved!" popup
+- janky in general
+
 * DONE customizable settings for every bookmark
 CLOSED: [2026-01-09 Fri 19:37]
 ** DONE switch to url-namespaced UUIDv5 and map

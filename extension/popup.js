@@ -1,6 +1,32 @@
+const COMPACT_THRESHOLD = 100;
+
 document.addEventListener('DOMContentLoaded', async () => {
     // State
     let currentValidTab = null;
+
+    // Compact mode detection
+    const bookmarkList = document.getElementById('bookmark-list');
+    const resizeObserver = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+            const width = entry.contentRect.width;
+            const wasCompact = document.body.classList.contains('compact');
+            const isCompact = width <= COMPACT_THRESHOLD;
+            
+            if (isCompact && !wasCompact) {
+                document.body.classList.add('compact');
+                rerenderBookmarks();
+            } else if (!isCompact && wasCompact) {
+                document.body.classList.remove('compact');
+                rerenderBookmarks();
+            }
+        }
+    });
+    resizeObserver.observe(document.body);
+
+    function rerenderBookmarks() {
+        const items = bookmarkList.querySelectorAll('bookmark-item');
+        items.forEach(item => item.render());
+    }
 
     // 1. Load Settings
     const config = await getSettings();
@@ -12,8 +38,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const previewUrl = document.getElementById('preview-url');
     const previewIcon = document.getElementById('preview-icon');
     const saveBtn = document.getElementById('btn-save');
+    const saveBtnText = saveBtn.querySelector('.btn-save-text');
     const status = document.getElementById('status-msg');
-    const originalBtnText = saveBtn.innerText;
+    const originalBtnText = saveBtnText.textContent;
 
     // Setup "Open Dashboard" link
     document.getElementById('open-web').addEventListener('click', () => {
@@ -77,7 +104,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const editedTitle = previewTitle.innerText;
 
         saveBtn.disabled = true;
-        saveBtn.innerText = "Saving...";
+        saveBtnText.textContent = "Saving...";
         status.classList.add('hidden');
 
         try {
@@ -113,7 +140,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             status.innerText = "Error: " + err.message;
             status.className = "alert alert-error text-center text-xs py-2 block";
         } finally {
-            saveBtn.innerText = originalBtnText;
+            saveBtnText.textContent = originalBtnText;
             saveBtn.disabled = false;
         }
     });

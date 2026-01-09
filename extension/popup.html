@@ -4,17 +4,50 @@
     <meta charset="UTF-8">
     <link rel="stylesheet" href="daisyui.css">
     <script src="./tailwindcss_cdn.js"></script>
+    <style>
+        /* Compact mode styles */
+        body.compact #preview-card,
+        body.compact #status-msg {
+            display: none !important;
+        }
+        body.compact .header-bar {
+            flex-direction: column;
+            padding: 0.5rem;
+            gap: 0.5rem;
+            justify-content: flex-start;
+        }
+        body.compact .header-bar > * {
+            margin-left: auto;
+            margin-right: auto;
+        }
+        body.compact .header-bar .btn-save-wrapper {
+            position: static;
+            transform: none;
+        }
+        body.compact #btn-save {
+            padding: 0.25rem 0.5rem;
+            min-height: unset;
+            height: auto;
+        }
+        body.compact .btn-save-text {
+            display: none;
+        }
+        body.compact .btn-save-icon {
+            display: inline;
+        }
+    </style>
 </head>
 <body class="w-full h-screen bg-base-100 text-base-content overflow-x-hidden flex flex-col">
 
     <!-- Header -->
     <div class="flex-none">
-        <div class="bg-primary p-3 text-primary-content relative flex items-center justify-between">
+        <div class="header-bar bg-primary p-3 text-primary-content relative flex items-center justify-between">
             <a id="open-settings" href="options.html" class="hover:opacity-80 transition-opacity">⚙</a>
 
-            <div class="absolute left-1/2 -translate-x-1/2">
+            <div class="btn-save-wrapper absolute left-1/2 -translate-x-1/2">
                 <button id="btn-save" class="btn btn-ghost btn-sm border border-primary-content/20 text-primary-content">
-                    Bookmark Page
+                    <span class="btn-save-text">Bookmark Page</span>
+                    <span class="btn-save-icon hidden">+</span>
                 </button>
             </div>
 
@@ -29,8 +62,6 @@
                     </div>
                 </div>
                 <div class="flex-1 min-w-0 overflow-hidden">
-                    <!-- <p class="text-[10px] font-bold uppercase tracking-wider text-base-content/50 mb-0.5">Ready to Bookmark</p> -->
-                    <!-- <h3 id="preview-title" class="text-sm font-bold truncate leading-tight text-base-content"></h3> -->
                     <div id="preview-title" contenteditable="true" class="text-sm font-bold leading-tight text-base-content rounded hover:bg-base-300 focus:bg-base-100 focus:outline-none focus:ring-1 focus:ring-primary truncate border border-transparent border-dashed hover:border-base-content/20 transition-all cursor-edit" spellcheck="false"></div>
                     <p id="preview-url" class="text-xs text-base-content/70 truncate mt-1"></p>
                 </div>
@@ -49,4 +80,3 @@
     <script src="popup.js"></script>
 </body>
 </html>
-
