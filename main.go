@@ -79,6 +79,8 @@ func main() {
 	http.HandleFunc("/api/bookmarks", handleAPI)         // GET (list JSON) & POST (add)
 	http.HandleFunc("/api/bookmarks/", handleBookmarkAPI) // DELETE & PATCH /api/bookmarks/:id
 	http.HandleFunc("/components.js", handleComponents)  // Serve shared web components
+	// TODO use a static folder for these
+	http.HandleFunc("/icon.svg", handleIcon)
 
 	port := os.Getenv("BOOKMARKD_PORT");
 	host := os.Getenv("BOOKMARKD_HOST");
@@ -98,6 +100,10 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 
 func handleComponents(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "extension/components.js")
+}
+
+func handleIcon(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "icon.svg")
 }
 
 func handleAPI(w http.ResponseWriter, r *http.Request) {

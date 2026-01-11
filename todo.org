@@ -197,7 +197,19 @@ github.com/.*/.*/issues/[0-9]*   issue
 - "save page now" button
 
 * TODO feat: rss-hub integration
+* TODO feat: view page inside sidebar
+- idea: mimick a split view by having a peek at page inside sidebar
+
 * TODO look at similar projects
+- [[https://chromewebstore.google.com/detail/arcthing-window-tab-manag/bnfchihnnoljghnkdbpomeheeohjpnfo][arcthing]]: extension for arc-like tabs
+- [[https://addons.mozilla.org/de/firefox/addon/sidebery/][sidebery]]: extension for tabs tree & bookmarks in sidebar
+- [[arc.net][arc]]: browser
+  + sidebar with bookmarks & tabs in one
+  + workspaces w/ own color and containers
+  + live preview widgets for certain websites
+  + easel: whiteboard with site capture function
+  + capture e.g. <div> of a page that will reload periodically
+  + capture can be turned into live view, page can be maximized
 - [[https://try.karakeep.app/dashboard/bookmarks][karakeep]]:
   + bookmark manager
   + save as pdf or offline archive
