@@ -1,3 +1,5 @@
 bookmarks.json
 .env
 tmp/
+.amo-upload-uuid
+web-ext-artifacts/
