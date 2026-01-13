@@ -342,7 +342,8 @@ class SettingsImport extends HTMLElement {
                         url: url,
                         title: node.textContent.trim() || url,
                         category: folder,
-                        timestamp: node.getAttribute('add_date') || ''
+                        timestamp: node.getAttribute('add_date') || '',
+                        favicon: node.getAttribute('icon') || node.getAttribute('icon_uri') || ''
                     });
                 }
             }
@@ -390,7 +391,8 @@ class SettingsImport extends HTMLElement {
                     body: JSON.stringify({
                         url: bm.url,
                         title: bm.title,
-                        category: bm.category
+                        category: bm.category,
+                        favicon: bm.favicon || ''
                     })
                 });
 

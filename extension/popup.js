@@ -100,7 +100,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             const payload = {
                 url: currentValidTab.url,
                 title: editedTitle,
-                category: "Uncategorized"
+                category: "Uncategorized",
+                favicon: currentValidTab.favIconUrl || ''
             };
 
             const headers = { "Content-Type": "application/json" };

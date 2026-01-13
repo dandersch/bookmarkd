@@ -166,6 +166,7 @@ func createBookmark(w http.ResponseWriter, r *http.Request) {
 		URL      string `json:"url"`
 		Title    string `json:"title"`
 		Category string `json:"category"`
+		Favicon  string `json:"favicon"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
@@ -173,13 +174,15 @@ func createBookmark(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Determine Favicon URL
-	parsedURL, _ := url.Parse(payload.URL)
-	domain := ""
-	if parsedURL != nil {
-		domain = parsedURL.Hostname()
+	faviconURL := payload.Favicon
+	if faviconURL == "" {
+		parsedURL, _ := url.Parse(payload.URL)
+		domain := ""
+		if parsedURL != nil {
+			domain = parsedURL.Hostname()
+		}
+		faviconURL = fmt.Sprintf("https://www.google.com/s2/favicons?domain=%s&sz=64", domain)
 	}
-	faviconURL := fmt.Sprintf("https://www.google.com/s2/favicons?domain=%s", domain)
 
 	// u := uuid.NewSHA1(uuid.NameSpaceURL, []byte(payload.URL))
 	// ID:        uuid.New().String(),
