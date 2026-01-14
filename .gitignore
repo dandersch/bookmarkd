@@ -3,4 +3,5 @@ bookmarks.json
 tmp/
 .amo-upload-uuid
 web-ext-artifacts/
+.web-ext-profile/
 *.xpi
