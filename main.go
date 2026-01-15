@@ -266,10 +266,6 @@ func updateBookmark(w http.ResponseWriter, r *http.Request, id string) {
 		return
 	}
 
-	// Debug logging
-	log.Printf("UPDATE bookmark %s: title=%v, category=%v, order=%v", 
-		id, payload.Title, payload.Category, payload.Order)
-
 	mu.Lock()
 	defer mu.Unlock()
 
@@ -278,8 +274,6 @@ func updateBookmark(w http.ResponseWriter, r *http.Request, id string) {
 		http.Error(w, "Bookmark not found", http.StatusNotFound)
 		return
 	}
-
-	log.Printf("BEFORE: title=%q, category=%q, order=%d", bm.Title, bm.Category, bm.Order)
 
 	// Update title only if explicitly provided
 	if payload.Title != nil {
@@ -313,8 +307,6 @@ func updateBookmark(w http.ResponseWriter, r *http.Request, id string) {
 		bm.Category = newCategory
 		bm.Order = newOrder
 	}
-
-	log.Printf("AFTER: title=%q, category=%q, order=%d", bm.Title, bm.Category, bm.Order)
 
 	bookmarks[id] = bm
 	saveBookmarks()

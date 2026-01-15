@@ -298,7 +298,7 @@ class BookmarkList extends HTMLElement {
             const isCollapsed = this._collapsedCategories[category];
             
             const section = document.createElement('div');
-            section.className = 'collapse collapse-arrow bg-base-200 mb-1';
+            section.className = 'collapse collapse-arrow';
 
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
@@ -307,7 +307,7 @@ class BookmarkList extends HTMLElement {
             section.appendChild(checkbox);
 
             const title = document.createElement('div');
-            title.className = 'collapse-title text-sm font-medium py-2 min-h-0';
+            title.className = 'collapse-title text-xs font-semibold uppercase tracking-wider opacity-60 py-2 min-h-0';
             title.textContent = category;
             section.appendChild(title);
 

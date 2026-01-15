@@ -70,14 +70,21 @@
         .collapse {
             visibility: visible !important;
             border-radius: 0;
+            background: transparent;
         }
         .collapse-title {
             min-height: unset;
+            padding-left: 0;
+            padding-right: 0;
+        }
+        .collapse-title::after {
+            opacity: 0.4;
         }
         .collapse-content {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 1rem;
+            padding: 0.5rem 0 1rem 0;
         }
 
         /* Drag and drop styles */
@@ -85,7 +92,8 @@
             opacity: 0.5;
         }
         .collapse-content.drag-over {
-            background: rgba(255,255,255,0.05);
+            background: oklch(var(--b2) / 0.5);
+            border-radius: 0.5rem;
         }
         
         .bookmark-actions {

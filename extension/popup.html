@@ -10,9 +10,8 @@
         .bookmark-item {
             display: flex;
             align-items: center;
-            padding: 0.5rem;
+            padding: 0.3rem 0.5rem 0.3rem 0.5rem;
             position: relative;
-            gap: 0.5rem;
         }
         .bookmark-item:hover {
             background: rgba(255,255,255,0.05);
@@ -66,9 +65,18 @@
         .collapse {
             visibility: visible !important;
             border-radius: 0;
+            background: transparent;
         }
         .collapse-title {
             min-height: unset;
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+        }
+        .collapse-title::after {
+            opacity: 0.4;
+        }
+        .collapse-content {
+            padding: 0;
         }
 
         /* Drag and drop styles */
@@ -76,7 +84,7 @@
             opacity: 0.5;
         }
         .collapse-content.drag-over {
-            background: rgba(255,255,255,0.05);
+            background: oklch(var(--b2) / 0.5);
         }
 
         /* Compact mode styles */
