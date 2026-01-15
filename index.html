@@ -11,9 +11,6 @@
     <style>
         /* Dashboard bookmark styles */
         .bookmark-list-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1rem;
             padding: 1.5rem;
         }
         
@@ -69,39 +66,15 @@
             opacity: 0.5;
         }
         
-        /* Category divider styles */
-        .category-section {
-            grid-column: 1 / -1;
+        /* Fix DaisyUI collapse */
+        .collapse {
+            visibility: visible !important;
+            border-radius: 0;
         }
-        .category-header {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 1rem 0;
-            cursor: pointer;
-            user-select: none;
-            opacity: 0.7;
-            transition: opacity 0.15s;
+        .collapse-title {
+            min-height: unset;
         }
-        .category-header:hover {
-            opacity: 1;
-        }
-        .category-line {
-            flex: 1;
-            height: 1px;
-            background: currentColor;
-            opacity: 0.3;
-        }
-        .category-name {
-            font-size: 0.875rem;
-            font-weight: 500;
-            text-transform: lowercase;
-        }
-        .category-toggle {
-            font-size: 0.75rem;
-            opacity: 0.6;
-        }
-        .category-content {
+        .collapse-content {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 1rem;

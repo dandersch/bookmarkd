@@ -246,10 +246,11 @@ class BookmarkList extends HTMLElement {
 
     filterBookmarks(query) {
         const lowerQuery = query.toLowerCase();
-        const sections = this.querySelectorAll('.category-section');
+        const sections = this.querySelectorAll('.collapse');
         
         sections.forEach(section => {
             const items = section.querySelectorAll('bookmark-item');
+            const checkbox = section.querySelector('input[type="checkbox"]');
             let hasVisibleItems = false;
             
             items.forEach(item => {
@@ -265,9 +266,8 @@ class BookmarkList extends HTMLElement {
                 if (matches) hasVisibleItems = true;
             });
 
-            const content = section.querySelector('.category-content');
-            if (lowerQuery && hasVisibleItems && content) {
-                content.style.display = '';
+            if (lowerQuery && hasVisibleItems && checkbox) {
+                checkbox.checked = true;
             }
             section.style.display = hasVisibleItems || !lowerQuery ? '' : 'none';
         });
@@ -286,22 +286,21 @@ class BookmarkList extends HTMLElement {
             const isCollapsed = this._collapsedCategories[category];
             
             const section = document.createElement('div');
-            section.className = 'category-section';
+            section.className = 'collapse collapse-arrow bg-base-200 mb-1';
 
-            const header = document.createElement('div');
-            header.className = 'category-header';
-            header.innerHTML = `
-                <span class="category-line"></span>
-                <span class="category-name">${this._escapeHtml(category)}</span>
-                <span class="category-line"></span>
-                <span class="category-toggle">${isCollapsed ? '▶' : '▼'}</span>
-            `;
-            header.addEventListener('click', () => this._toggleCategory(category));
-            section.appendChild(header);
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = !isCollapsed;
+            checkbox.addEventListener('change', () => this._toggleCategory(category));
+            section.appendChild(checkbox);
+
+            const title = document.createElement('div');
+            title.className = 'collapse-title text-sm font-medium py-2 min-h-0';
+            title.textContent = category;
+            section.appendChild(title);
 
             const content = document.createElement('div');
-            content.className = 'category-content';
-            content.style.display = isCollapsed ? 'none' : '';
+            content.className = 'collapse-content';
 
             for (const bm of groups[category]) {
                 const item = document.createElement('bookmark-item');

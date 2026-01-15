@@ -5,3 +5,4 @@ tmp/
 web-ext-artifacts/
 .web-ext-profile/
 *.xpi
+bookmarkd
