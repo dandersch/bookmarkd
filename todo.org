@@ -48,8 +48,10 @@ CLOSED: [2026-01-09 Fri 20:50]
 ** TODO dark/light mode switch on dashboard (default to system default)
 ** TODO use system default on extension popup, switch in options.html
 * TODO improve category UI/UX
-** TODO add divider between categories
-** TODO collapsible categories
+** DONE add divider between categories
+CLOSED: [2026-01-15 Thu 04:48]
+** DONE collapsible categories
+CLOSED: [2026-01-15 Thu 04:48]
 see [[https://daisyui.com/components/collapse/][Tailwind Collapse Component – daisyUI]] 
 * TODO dev: docker dev image
 #+begin_src yaml

@@ -62,6 +62,39 @@
             font-size: 0.875rem;
         }
 
+        /* Category divider styles */
+        .category-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            cursor: pointer;
+            user-select: none;
+            opacity: 0.7;
+            transition: opacity 0.15s;
+        }
+        .category-header:hover {
+            opacity: 1;
+        }
+        .category-line {
+            flex: 1;
+            height: 1px;
+            background: currentColor;
+            opacity: 0.3;
+        }
+        .category-name {
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: lowercase;
+        }
+        .category-toggle {
+            font-size: 0.625rem;
+            opacity: 0.6;
+        }
+        .category-content {
+            /* bookmarks inside category */
+        }
+
         /* Compact mode styles */
         body.compact #preview-card,
         body.compact #status-msg {
@@ -109,6 +142,12 @@
         body.compact .bookmark-favicon {
             width: 1.25rem;
             height: 1.25rem;
+        }
+        body.compact .category-header {
+            padding: 0.25rem 0.5rem;
+        }
+        body.compact .category-name {
+            font-size: 0.625rem;
         }
     </style>
 </head>

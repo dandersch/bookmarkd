@@ -63,7 +63,6 @@ class BookmarkItem extends HTMLElement {
                 <span class="bookmark-title">${this.escapeHtml(title)}</span>
                 <span class="bookmark-url">${hostname}</span>
                 <span class="bookmark-timestamp">${timeAgo}</span>
-                <span class="bookmark-category badge badge-sm">${category}</span>
             </a>
             <div class="bookmark-actions">
                 <button class="btn btn-ghost btn-xs btn-square edit-btn">✎</button>
@@ -95,7 +94,6 @@ class BookmarkItem extends HTMLElement {
         this.innerHTML = `
             <img src="${favicon}" class="bookmark-favicon" alt="">
             <input type="text" class="input input-sm input-bordered flex-grow title-input" value="${this.escapeHtml(title)}">
-            <span class="bookmark-category badge badge-sm">${category}</span>
             <div class="bookmark-actions editing">
                 <button class="btn btn-ghost btn-xs btn-square text-success save-btn">✓</button>
                 <button class="btn btn-ghost btn-xs btn-square text-warning cancel-btn">✕</button>
@@ -198,6 +196,7 @@ class BookmarkList extends HTMLElement {
     constructor() {
         super();
         this._bookmarks = [];
+        this._collapsedCategories = this._loadCollapsedState();
     }
 
     connectedCallback() {
@@ -209,20 +208,68 @@ class BookmarkList extends HTMLElement {
         this.render();
     }
 
+    _loadCollapsedState() {
+        try {
+            const saved = localStorage.getItem('bookmarkd-collapsed-categories');
+            return saved ? JSON.parse(saved) : {};
+        } catch {
+            return {};
+        }
+    }
+
+    _saveCollapsedState() {
+        try {
+            localStorage.setItem('bookmarkd-collapsed-categories', JSON.stringify(this._collapsedCategories));
+        } catch {}
+    }
+
+    _toggleCategory(category) {
+        this._collapsedCategories[category] = !this._collapsedCategories[category];
+        this._saveCollapsedState();
+        this.render();
+    }
+
+    _groupByCategory() {
+        const groups = {};
+        for (const bm of this._bookmarks) {
+            const cat = bm.category || 'Uncategorized';
+            if (!groups[cat]) groups[cat] = [];
+            groups[cat].push(bm);
+        }
+        const sortedKeys = Object.keys(groups).sort((a, b) => {
+            if (a === 'Uncategorized') return -1;
+            if (b === 'Uncategorized') return 1;
+            return a.localeCompare(b);
+        });
+        return { groups, sortedKeys };
+    }
+
     filterBookmarks(query) {
-        const items = this.querySelectorAll('bookmark-item');
         const lowerQuery = query.toLowerCase();
+        const sections = this.querySelectorAll('.category-section');
         
-        items.forEach(item => {
-            const title = (item.getAttribute('title') || '').toLowerCase();
-            const url = (item.getAttribute('url') || '').toLowerCase();
-            const category = (item.getAttribute('category') || '').toLowerCase();
+        sections.forEach(section => {
+            const items = section.querySelectorAll('bookmark-item');
+            let hasVisibleItems = false;
             
-            const matches = title.includes(lowerQuery) || 
-                           url.includes(lowerQuery) || 
-                           category.includes(lowerQuery);
-            
-            item.style.display = matches ? '' : 'none';
+            items.forEach(item => {
+                const title = (item.getAttribute('title') || '').toLowerCase();
+                const url = (item.getAttribute('url') || '').toLowerCase();
+                const category = (item.getAttribute('category') || '').toLowerCase();
+                
+                const matches = title.includes(lowerQuery) || 
+                               url.includes(lowerQuery) || 
+                               category.includes(lowerQuery);
+                
+                item.style.display = matches ? '' : 'none';
+                if (matches) hasVisibleItems = true;
+            });
+
+            const content = section.querySelector('.category-content');
+            if (lowerQuery && hasVisibleItems && content) {
+                content.style.display = '';
+            }
+            section.style.display = hasVisibleItems || !lowerQuery ? '' : 'none';
         });
     }
 
@@ -232,17 +279,50 @@ class BookmarkList extends HTMLElement {
             return;
         }
 
+        const { groups, sortedKeys } = this._groupByCategory();
         this.innerHTML = '';
-        for (const bm of this._bookmarks) {
-            const item = document.createElement('bookmark-item');
-            item.setAttribute('bookmark-id', bm.id);
-            item.setAttribute('url', bm.url);
-            item.setAttribute('title', bm.title);
-            item.setAttribute('category', bm.category);
-            item.setAttribute('favicon', bm.favicon);
-            item.setAttribute('timestamp', bm.timestamp || '');
-            this.appendChild(item);
+
+        for (const category of sortedKeys) {
+            const isCollapsed = this._collapsedCategories[category];
+            
+            const section = document.createElement('div');
+            section.className = 'category-section';
+
+            const header = document.createElement('div');
+            header.className = 'category-header';
+            header.innerHTML = `
+                <span class="category-line"></span>
+                <span class="category-name">${this._escapeHtml(category)}</span>
+                <span class="category-line"></span>
+                <span class="category-toggle">${isCollapsed ? '▶' : '▼'}</span>
+            `;
+            header.addEventListener('click', () => this._toggleCategory(category));
+            section.appendChild(header);
+
+            const content = document.createElement('div');
+            content.className = 'category-content';
+            content.style.display = isCollapsed ? 'none' : '';
+
+            for (const bm of groups[category]) {
+                const item = document.createElement('bookmark-item');
+                item.setAttribute('bookmark-id', bm.id);
+                item.setAttribute('url', bm.url);
+                item.setAttribute('title', bm.title);
+                item.setAttribute('category', bm.category);
+                item.setAttribute('favicon', bm.favicon);
+                item.setAttribute('timestamp', bm.timestamp || '');
+                content.appendChild(item);
+            }
+
+            section.appendChild(content);
+            this.appendChild(section);
         }
+    }
+
+    _escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 }
 
