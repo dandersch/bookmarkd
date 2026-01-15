@@ -79,6 +79,14 @@
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 1rem;
         }
+
+        /* Drag and drop styles */
+        .bookmark-item.dragging {
+            opacity: 0.5;
+        }
+        .collapse-content.drag-over {
+            background: rgba(255,255,255,0.05);
+        }
         
         .bookmark-actions {
             position: absolute;
@@ -187,6 +195,15 @@
                 .then(bookmarks => {
                     listEl.setBookmarks(bookmarks);
                     countEl.textContent = `${bookmarks.length} bookmarks`;
+                });
+        });
+
+        // Refresh bookmarks after drag-and-drop move
+        listEl.addEventListener('bookmark-moved', () => {
+            fetch('/api/bookmarks')
+                .then(res => res.json())
+                .then(bookmarks => {
+                    listEl.setBookmarks(bookmarks);
                 });
         });
     </script>

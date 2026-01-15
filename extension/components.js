@@ -57,6 +57,7 @@ class BookmarkItem extends HTMLElement {
         }
 
         this.className = 'bookmark-item';
+        this.draggable = true;
         this.innerHTML = `
             <a href="${url}" target="_blank" class="bookmark-link">
                 <img src="${favicon}" class="bookmark-favicon" alt="">
@@ -80,6 +81,17 @@ class BookmarkItem extends HTMLElement {
             e.preventDefault();
             e.stopPropagation();
             this.deleteBookmark();
+        });
+
+        // Drag and drop
+        this.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('bookmark-id', id);
+            e.dataTransfer.effectAllowed = 'move';
+            this.classList.add('dragging');
+        });
+
+        this.addEventListener('dragend', () => {
+            this.classList.remove('dragging');
         });
     }
 
@@ -301,6 +313,7 @@ class BookmarkList extends HTMLElement {
 
             const content = document.createElement('div');
             content.className = 'collapse-content';
+            content.dataset.category = category;
 
             for (const bm of groups[category]) {
                 const item = document.createElement('bookmark-item');
@@ -313,8 +326,95 @@ class BookmarkList extends HTMLElement {
                 content.appendChild(item);
             }
 
+            // Drop zone handlers
+            content.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                content.classList.add('drag-over');
+                
+                // Show drop indicator
+                const afterElement = this._getDragAfterElement(content, e.clientY);
+                const dragging = document.querySelector('.dragging');
+                if (dragging) {
+                    if (afterElement) {
+                        content.insertBefore(dragging, afterElement);
+                    } else {
+                        content.appendChild(dragging);
+                    }
+                }
+            });
+
+            content.addEventListener('dragleave', (e) => {
+                if (!content.contains(e.relatedTarget)) {
+                    content.classList.remove('drag-over');
+                }
+            });
+
+            content.addEventListener('drop', (e) => {
+                e.preventDefault();
+                content.classList.remove('drag-over');
+                
+                const bookmarkId = e.dataTransfer.getData('bookmark-id');
+                if (!bookmarkId) return;
+
+                const newCategory = content.dataset.category;
+                const newOrder = this._getDropOrder(content, bookmarkId);
+                
+                this._moveBookmark(bookmarkId, newCategory, newOrder);
+            });
+
             section.appendChild(content);
             this.appendChild(section);
+        }
+    }
+
+    _getDragAfterElement(container, y) {
+        const items = [...container.querySelectorAll('bookmark-item:not(.dragging)')];
+        
+        return items.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            if (offset < 0 && offset > closest.offset) {
+                return { offset, element: child };
+            }
+            return closest;
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    _getDropOrder(container, draggedId) {
+        const items = [...container.querySelectorAll('bookmark-item')];
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].getAttribute('bookmark-id') === draggedId) {
+                return i;
+            }
+        }
+        return items.length;
+    }
+
+    async _moveBookmark(id, category, order) {
+        const config = {
+            serverUrl: this.getAttribute('server-url') || '',
+            authHeader: this.getAttribute('auth-header') || ''
+        };
+
+        try {
+            const headers = { 'Content-Type': 'application/json' };
+            if (config.authHeader) headers['Authorization'] = config.authHeader;
+
+            const res = await fetch(`${config.serverUrl}/api/bookmarks/${id}`, {
+                method: 'PATCH',
+                headers,
+                body: JSON.stringify({ category, order })
+            });
+
+            if (!res.ok) throw new Error('Failed to move bookmark');
+
+            // Refresh bookmarks from server
+            this.dispatchEvent(new CustomEvent('bookmark-moved', { bubbles: true }));
+        } catch (err) {
+            console.error('Move failed:', err);
+            // Re-render to reset positions
+            this.render();
         }
     }
 

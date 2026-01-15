@@ -24,6 +24,7 @@ type Bookmark struct {
 	Category  string `json:"category"`
 	Timestamp int64  `json:"timestamp"`
 	Favicon   string `json:"favicon"`
+	Order     int    `json:"order"`
 }
 
 const dbFile = "bookmarks.json"
@@ -33,7 +34,7 @@ var (
 	mu        sync.RWMutex // Protects the bookmarks map during concurrent reads/writes
 )
 
-// bookmarksToSortedSlice converts the map to a slice sorted by timestamp (newest first)
+// bookmarksToSortedSlice converts the map to a slice sorted by category, then order, then timestamp
 // Must be called while holding mu.RLock()
 func bookmarksToSortedSlice() []Bookmark {
 	if len(bookmarks) == 0 {
@@ -45,8 +46,25 @@ func bookmarksToSortedSlice() []Bookmark {
 		result = append(result, bm)
 	}
 
-	// Sort by timestamp descending (newest first)
+	// Sort by: category (Uncategorized first, then alpha), order asc, timestamp desc
 	sort.Slice(result, func(i, j int) bool {
+		ci, cj := result[i].Category, result[j].Category
+		// Uncategorized comes first
+		if ci == "Uncategorized" && cj != "Uncategorized" {
+			return true
+		}
+		if cj == "Uncategorized" && ci != "Uncategorized" {
+			return false
+		}
+		// Then alphabetical by category
+		if ci != cj {
+			return ci < cj
+		}
+		// Within same category: order ascending
+		if result[i].Order != result[j].Order {
+			return result[i].Order < result[j].Order
+		}
+		// Tiebreaker: timestamp descending (newest first)
 		return result[i].Timestamp > result[j].Timestamp
 	})
 
@@ -187,19 +205,23 @@ func createBookmark(w http.ResponseWriter, r *http.Request) {
 	// u := uuid.NewSHA1(uuid.NameSpaceURL, []byte(payload.URL))
 	// ID:        uuid.New().String(),
 	// NOTE: we don't normalize the URL, maybe we should
+	category := payload.Category
+	if category == "" {
+		category = "Uncategorized"
+	}
+
 	newBM := Bookmark{
 		ID:        uuid.NewSHA1(uuid.NameSpaceURL, []byte(payload.URL)).String(),
 		URL:       payload.URL,
 		Title:     payload.Title,
-		Category:  payload.Category,
+		Category:  category,
 		Timestamp: time.Now().Unix(),
 		Favicon:   faviconURL,
 	}
-	if newBM.Category == "" {
-		newBM.Category = "Uncategorized"
-	}
 
 	mu.Lock()
+	// Assign order = max order in category + 1
+	newBM.Order = maxOrderInCategory(category) + 1
 	// Insert into map (O(1) operation, deduplicates automatically)
 	bookmarks[newBM.ID] = newBM
 	saveBookmarks()
@@ -234,13 +256,19 @@ func deleteBookmark(w http.ResponseWriter, id string) {
 
 func updateBookmark(w http.ResponseWriter, r *http.Request, id string) {
 	var payload struct {
-		Title string `json:"title"`
+		Title    *string `json:"title"`
+		Category *string `json:"category"`
+		Order    *int    `json:"order"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
+
+	// Debug logging
+	log.Printf("UPDATE bookmark %s: title=%v, category=%v, order=%v", 
+		id, payload.Title, payload.Category, payload.Order)
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -251,11 +279,113 @@ func updateBookmark(w http.ResponseWriter, r *http.Request, id string) {
 		return
 	}
 
-	bm.Title = payload.Title
+	log.Printf("BEFORE: title=%q, category=%q, order=%d", bm.Title, bm.Category, bm.Order)
+
+	// Update title only if explicitly provided
+	if payload.Title != nil {
+		bm.Title = *payload.Title
+	}
+
+	// Handle category/order change (move operation)
+	if payload.Category != nil || payload.Order != nil {
+		oldCategory := bm.Category
+		oldOrder := bm.Order
+		newCategory := oldCategory
+		if payload.Category != nil {
+			newCategory = *payload.Category
+		}
+		newOrder := oldOrder
+		if payload.Order != nil {
+			newOrder = *payload.Order
+		}
+
+		if oldCategory == newCategory {
+			// Moving within same category
+			shiftOrdersInCategory(oldCategory, oldOrder, newOrder, id)
+		} else {
+			// Moving to different category
+			// Close gap in old category
+			shiftOrdersAfter(oldCategory, oldOrder, -1, id)
+			// Make room in new category
+			shiftOrdersFrom(newCategory, newOrder, 1, id)
+		}
+
+		bm.Category = newCategory
+		bm.Order = newOrder
+	}
+
+	log.Printf("AFTER: title=%q, category=%q, order=%d", bm.Title, bm.Category, bm.Order)
+
 	bookmarks[id] = bm
 	saveBookmarks()
 
 	w.WriteHeader(http.StatusOK)
+}
+
+// maxOrderInCategory returns the maximum order value in a category
+// Must be called while holding mu.Lock()
+func maxOrderInCategory(category string) int {
+	maxOrder := -1
+	for _, bm := range bookmarks {
+		if bm.Category == category && bm.Order > maxOrder {
+			maxOrder = bm.Order
+		}
+	}
+	return maxOrder
+}
+
+// shiftOrdersInCategory handles reordering within the same category
+// Must be called while holding mu.Lock()
+func shiftOrdersInCategory(category string, oldOrder, newOrder int, excludeID string) {
+	if oldOrder == newOrder {
+		return
+	}
+	for id, bm := range bookmarks {
+		if bm.Category != category || id == excludeID {
+			continue
+		}
+		if oldOrder < newOrder {
+			// Moving down: shift items in (oldOrder, newOrder] up by -1
+			if bm.Order > oldOrder && bm.Order <= newOrder {
+				bm.Order--
+				bookmarks[id] = bm
+			}
+		} else {
+			// Moving up: shift items in [newOrder, oldOrder) down by +1
+			if bm.Order >= newOrder && bm.Order < oldOrder {
+				bm.Order++
+				bookmarks[id] = bm
+			}
+		}
+	}
+}
+
+// shiftOrdersAfter shifts orders > threshold by delta in a category
+// Must be called while holding mu.Lock()
+func shiftOrdersAfter(category string, threshold, delta int, excludeID string) {
+	for id, bm := range bookmarks {
+		if bm.Category != category || id == excludeID {
+			continue
+		}
+		if bm.Order > threshold {
+			bm.Order += delta
+			bookmarks[id] = bm
+		}
+	}
+}
+
+// shiftOrdersFrom shifts orders >= threshold by delta in a category
+// Must be called while holding mu.Lock()
+func shiftOrdersFrom(category string, threshold, delta int, excludeID string) {
+	for id, bm := range bookmarks {
+		if bm.Category != category || id == excludeID {
+			continue
+		}
+		if bm.Order >= threshold {
+			bm.Order += delta
+			bookmarks[id] = bm
+		}
+	}
 }
 
 // --- Persistence ---
@@ -275,9 +405,46 @@ func loadBookmarks() error {
 	// Convert to map for in-memory storage
 	mu.Lock()
 	bookmarks = sliceToMap(bookmarksSlice)
+	
+	// Assign initial orders if bookmarks have Order=0 (migrating old data)
+	assignInitialOrders()
 	mu.Unlock()
 
 	return nil
+}
+
+// assignInitialOrders assigns order values to bookmarks that have Order=0
+// Groups by category, sorts by timestamp desc, assigns 0,1,2...
+// Must be called while holding mu.Lock()
+func assignInitialOrders() {
+	// Check if any bookmark has non-zero order (already migrated)
+	for _, bm := range bookmarks {
+		if bm.Order != 0 {
+			return
+		}
+	}
+	
+	if len(bookmarks) == 0 {
+		return
+	}
+
+	// Group by category
+	byCategory := make(map[string][]Bookmark)
+	for _, bm := range bookmarks {
+		byCategory[bm.Category] = append(byCategory[bm.Category], bm)
+	}
+
+	// Sort each category by timestamp desc and assign orders
+	for cat, bms := range byCategory {
+		sort.Slice(bms, func(i, j int) bool {
+			return bms[i].Timestamp > bms[j].Timestamp
+		})
+		for i, bm := range bms {
+			bm.Order = i
+			bookmarks[bm.ID] = bm
+		}
+		_ = cat // unused
+	}
 }
 
 func saveBookmarks() error {

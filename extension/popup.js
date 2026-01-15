@@ -39,6 +39,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 2. Initial Fetch of Bookmark List
     await fetchBookmarks(serverUrl, config.authHeader);
 
+    // Refresh bookmarks after drag-and-drop move
+    document.getElementById('bookmark-list').addEventListener('bookmark-moved', () => {
+        fetchBookmarks(serverUrl, config.authHeader);
+    });
+
     // --- CORE LOGIC: Get current tab preview ---
     async function updatePreview() {
         try {
