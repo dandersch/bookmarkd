@@ -139,6 +139,67 @@
             padding: 0.25rem 0.5rem;
             font-size: 0.625rem;
         }
+
+        /* Category management styles */
+        .category-actions {
+            display: none;
+            gap: 0.125rem;
+            position: absolute;
+            right: 1.5rem;
+            top: 0.25rem;
+            z-index: 20;
+        }
+        .collapse:hover .category-actions {
+            display: flex;
+        }
+        .category-edit-input {
+            text-transform: uppercase;
+            font-size: 0.625rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            max-width: 100px;
+        }
+        .add-category-row {
+            padding: 0.5rem;
+            text-align: center;
+        }
+        .add-category-btn {
+            opacity: 0.6;
+            font-size: 0.75rem;
+        }
+        .add-category-btn:hover {
+            opacity: 1;
+        }
+        .add-category-input-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+            padding: 0 0.5rem;
+        }
+        .add-category-input {
+            max-width: 120px;
+            font-size: 0.75rem;
+        }
+        body.compact .add-category-row,
+        body.compact .category-actions {
+            display: none !important;
+        }
+
+        /* Empty category drop zone */
+        .empty-drop-zone {
+            padding: 1rem;
+            text-align: center;
+            opacity: 0.4;
+            font-size: 0.75rem;
+            border: 1px dashed currentColor;
+            border-radius: 0.5rem;
+            margin: 0.5rem;
+        }
+        .collapse-content.drag-over .empty-drop-zone {
+            opacity: 0.8;
+            border-color: var(--color-primary, #888);
+        }
     </style>
 </head>
 <body class="w-full h-screen bg-base-100 text-base-content overflow-x-hidden flex flex-col">

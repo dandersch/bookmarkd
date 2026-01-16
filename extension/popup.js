@@ -36,12 +36,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.open(serverUrl, '_blank');
     });
 
-    // 2. Initial Fetch of Bookmark List
-    await fetchBookmarks(serverUrl, config.authHeader);
+    // 2. Initial Fetch of Bookmark List and Categories
+    await fetchData(serverUrl, config.authHeader);
 
     // Refresh bookmarks after drag-and-drop move
     document.getElementById('bookmark-list').addEventListener('bookmark-moved', () => {
-        fetchBookmarks(serverUrl, config.authHeader);
+        fetchData(serverUrl, config.authHeader);
+    });
+
+    // Refresh after category changes
+    document.getElementById('bookmark-list').addEventListener('category-changed', () => {
+        fetchData(serverUrl, config.authHeader);
     });
 
     // --- CORE LOGIC: Get current tab preview ---
@@ -125,7 +130,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             status.className = "alert alert-success text-center text-xs py-2 block";
             
             // Refresh list
-            await fetchBookmarks(serverUrl, config.authHeader);
+            await fetchData(serverUrl, config.authHeader);
 
             setTimeout(() => {
                 status.classList.add('hidden');
@@ -160,7 +165,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // --- HELPERS ---
 
-async function fetchBookmarks(baseUrl, authHeader) {
+async function fetchData(baseUrl, authHeader) {
     const listEl = document.getElementById('bookmark-list');
     
     // Set config attributes for bookmark-item components to use
@@ -171,11 +176,16 @@ async function fetchBookmarks(baseUrl, authHeader) {
         const headers = {};
         if (authHeader) headers["Authorization"] = authHeader;
 
-        const res = await fetch(`${baseUrl}/api/bookmarks`, { headers });
-        if (!res.ok) throw new Error("Failed to load");
+        const [bookmarksRes, categoriesRes] = await Promise.all([
+            fetch(`${baseUrl}/api/bookmarks`, { headers }),
+            fetch(`${baseUrl}/api/categories`, { headers })
+        ]);
+
+        if (!bookmarksRes.ok || !categoriesRes.ok) throw new Error("Failed to load");
         
-        const bookmarks = await res.json();
-        listEl.setBookmarks(bookmarks);
+        const bookmarks = await bookmarksRes.json();
+        const categories = await categoriesRes.json();
+        listEl.setData(bookmarks, categories);
     } catch (err) {
         listEl.innerHTML = `<li class="p-4 text-center text-error text-xs">Cannot connect to server.<br>Check Options.</li>`;
     }

@@ -1,6 +1,6 @@
 class BookmarkItem extends HTMLElement {
     static get observedAttributes() {
-        return ['bookmark-id', 'url', 'title', 'category', 'favicon', 'timestamp'];
+        return ['bookmark-id', 'url', 'title', 'category', 'category-id', 'favicon', 'timestamp'];
     }
 
     constructor() {
@@ -208,6 +208,7 @@ class BookmarkList extends HTMLElement {
     constructor() {
         super();
         this._bookmarks = [];
+        this._categories = [];
         this._collapsedCategories = this._loadCollapsedState();
     }
 
@@ -217,6 +218,17 @@ class BookmarkList extends HTMLElement {
 
     setBookmarks(bookmarks) {
         this._bookmarks = bookmarks || [];
+        this.render();
+    }
+
+    setCategories(categories) {
+        this._categories = categories || [];
+        this.render();
+    }
+
+    setData(bookmarks, categories) {
+        this._bookmarks = bookmarks || [];
+        this._categories = categories || [];
         this.render();
     }
 
@@ -235,25 +247,36 @@ class BookmarkList extends HTMLElement {
         } catch {}
     }
 
-    _toggleCategory(category) {
-        this._collapsedCategories[category] = !this._collapsedCategories[category];
+    _toggleCategory(categoryId) {
+        this._collapsedCategories[categoryId] = !this._collapsedCategories[categoryId];
         this._saveCollapsedState();
         this.render();
     }
 
     _groupByCategory() {
         const groups = {};
-        for (const bm of this._bookmarks) {
-            const cat = bm.category || 'Uncategorized';
-            if (!groups[cat]) groups[cat] = [];
-            groups[cat].push(bm);
+        const categoryMap = {};
+
+        for (const cat of this._categories) {
+            categoryMap[cat.id] = cat;
+            groups[cat.id] = [];
         }
-        const sortedKeys = Object.keys(groups).sort((a, b) => {
-            if (a === 'Uncategorized') return -1;
-            if (b === 'Uncategorized') return 1;
-            return a.localeCompare(b);
+
+        for (const bm of this._bookmarks) {
+            const catId = bm.category_id || 'uncategorized';
+            if (!groups[catId]) {
+                groups[catId] = [];
+            }
+            groups[catId].push(bm);
+        }
+
+        const sortedCategories = [...this._categories].sort((a, b) => {
+            if (a.id === 'uncategorized') return -1;
+            if (b.id === 'uncategorized') return 1;
+            return a.order - b.order;
         });
-        return { groups, sortedKeys };
+
+        return { groups, sortedCategories, categoryMap };
     }
 
     filterBookmarks(query) {
@@ -286,41 +309,86 @@ class BookmarkList extends HTMLElement {
     }
 
     render() {
-        if (this._bookmarks.length === 0) {
+        const { groups, sortedCategories, categoryMap } = this._groupByCategory();
+        const hasBookmarks = this._bookmarks.length > 0;
+        const hasCategories = this._categories.length > 0;
+
+        if (!hasBookmarks && !hasCategories) {
             this.innerHTML = '<div class="bookmark-empty">No bookmarks yet</div>';
             return;
         }
 
-        const { groups, sortedKeys } = this._groupByCategory();
         this.innerHTML = '';
 
-        for (const category of sortedKeys) {
-            const isCollapsed = this._collapsedCategories[category];
-            
+        for (const category of sortedCategories) {
+            const categoryId = category.id;
+            const categoryName = category.name;
+            const isCollapsed = this._collapsedCategories[categoryId];
+            const isUncategorized = categoryId === 'uncategorized';
+            const bookmarksInCategory = groups[categoryId] || [];
+
             const section = document.createElement('div');
             section.className = 'collapse collapse-arrow';
+            section.dataset.categoryId = categoryId;
 
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.checked = !isCollapsed;
-            checkbox.addEventListener('change', () => this._toggleCategory(category));
+            checkbox.addEventListener('change', () => this._toggleCategory(categoryId));
             section.appendChild(checkbox);
 
-            const title = document.createElement('div');
-            title.className = 'collapse-title text-xs font-semibold uppercase tracking-wider opacity-60 py-2 min-h-0';
-            title.textContent = category;
-            section.appendChild(title);
+            const titleContainer = document.createElement('div');
+            titleContainer.className = 'collapse-title text-xs font-semibold uppercase tracking-wider opacity-60 py-2 min-h-0 flex items-center justify-between pr-8';
+            
+            const titleText = document.createElement('span');
+            titleText.className = 'category-name';
+            titleText.textContent = categoryName;
+            titleContainer.appendChild(titleText);
+
+            section.appendChild(titleContainer);
+
+            if (!isUncategorized) {
+                const actions = document.createElement('div');
+                actions.className = 'category-actions';
+                actions.innerHTML = `
+                    <button class="btn btn-ghost btn-xs btn-square edit-category-btn">✎</button>
+                    <button class="btn btn-ghost btn-xs btn-square delete-category-btn">🗑</button>
+                `;
+                
+                actions.querySelector('.edit-category-btn').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this._editCategory(categoryId, categoryName, section);
+                });
+                
+                actions.querySelector('.delete-category-btn').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this._deleteCategory(categoryName);
+                });
+                
+                section.appendChild(actions);
+            }
 
             const content = document.createElement('div');
             content.className = 'collapse-content';
-            content.dataset.category = category;
+            content.dataset.category = categoryName;
+            content.dataset.categoryId = categoryId;
 
-            for (const bm of groups[category]) {
+            if (bookmarksInCategory.length === 0) {
+                const emptyDropZone = document.createElement('div');
+                emptyDropZone.className = 'empty-drop-zone';
+                emptyDropZone.textContent = 'Drop bookmarks here';
+                content.appendChild(emptyDropZone);
+            }
+
+            for (const bm of bookmarksInCategory) {
                 const item = document.createElement('bookmark-item');
                 item.setAttribute('bookmark-id', bm.id);
                 item.setAttribute('url', bm.url);
                 item.setAttribute('title', bm.title);
-                item.setAttribute('category', bm.category);
+                item.setAttribute('category', bm.category || categoryName);
+                item.setAttribute('category-id', bm.category_id || categoryId);
                 item.setAttribute('favicon', bm.favicon);
                 item.setAttribute('timestamp', bm.timestamp || '');
                 content.appendChild(item);
@@ -332,7 +400,6 @@ class BookmarkList extends HTMLElement {
                 e.dataTransfer.dropEffect = 'move';
                 content.classList.add('drag-over');
                 
-                // Show drop indicator
                 const afterElement = this._getDragAfterElement(content, e.clientY);
                 const dragging = document.querySelector('.dragging');
                 if (dragging) {
@@ -357,14 +424,191 @@ class BookmarkList extends HTMLElement {
                 const bookmarkId = e.dataTransfer.getData('bookmark-id');
                 if (!bookmarkId) return;
 
-                const newCategory = content.dataset.category;
+                const newCategoryId = content.dataset.categoryId;
                 const newOrder = this._getDropOrder(content, bookmarkId);
                 
-                this._moveBookmark(bookmarkId, newCategory, newOrder);
+                this._moveBookmark(bookmarkId, newCategoryId, newOrder);
             });
 
             section.appendChild(content);
             this.appendChild(section);
+        }
+
+        // Add "Add Category" row at the bottom
+        const addCategoryRow = document.createElement('div');
+        addCategoryRow.className = 'add-category-row';
+        addCategoryRow.innerHTML = `
+            <button class="btn btn-ghost btn-sm add-category-btn">
+                <span class="add-category-icon">+</span>
+                <span class="add-category-text">Add Category</span>
+            </button>
+        `;
+        
+        addCategoryRow.querySelector('.add-category-btn').addEventListener('click', () => {
+            this._showAddCategoryInput(addCategoryRow);
+        });
+        
+        this.appendChild(addCategoryRow);
+    }
+
+    _showAddCategoryInput(container) {
+        container.innerHTML = `
+            <div class="add-category-input-wrapper">
+                <input type="text" class="input input-sm input-bordered add-category-input" placeholder="Category name...">
+                <button class="btn btn-ghost btn-xs btn-square text-success save-category-btn">✓</button>
+                <button class="btn btn-ghost btn-xs btn-square text-warning cancel-category-btn">✕</button>
+            </div>
+        `;
+
+        const input = container.querySelector('.add-category-input');
+        input.focus();
+
+        const saveCategory = async () => {
+            const name = input.value.trim();
+            if (name) {
+                await this._createCategory(name);
+            } else {
+                this.render();
+            }
+        };
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                saveCategory();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                this.render();
+            }
+        });
+
+        container.querySelector('.save-category-btn').addEventListener('click', saveCategory);
+        container.querySelector('.cancel-category-btn').addEventListener('click', () => this.render());
+    }
+
+    async _createCategory(name) {
+        const config = {
+            serverUrl: this.getAttribute('server-url') || '',
+            authHeader: this.getAttribute('auth-header') || ''
+        };
+
+        try {
+            const headers = { 'Content-Type': 'application/json' };
+            if (config.authHeader) headers['Authorization'] = config.authHeader;
+
+            const res = await fetch(`${config.serverUrl}/api/categories/${encodeURIComponent(name)}`, {
+                method: 'POST',
+                headers
+            });
+
+            if (!res.ok) {
+                const text = await res.text();
+                throw new Error(text || 'Failed to create category');
+            }
+
+            this.dispatchEvent(new CustomEvent('category-changed', { bubbles: true }));
+        } catch (err) {
+            console.error('Create category failed:', err);
+            alert('Failed to create category: ' + err.message);
+            this.render();
+        }
+    }
+
+    _editCategory(categoryId, currentName, section) {
+        const titleContainer = section.querySelector('.collapse-title');
+        const titleText = titleContainer.querySelector('.category-name');
+        const actions = section.querySelector('.category-actions');
+        
+        titleText.innerHTML = `<input type="text" class="input input-xs input-bordered category-edit-input" value="${this._escapeHtml(currentName)}">`;
+        actions.innerHTML = `
+            <button class="btn btn-ghost btn-xs btn-square text-success save-edit-btn">✓</button>
+            <button class="btn btn-ghost btn-xs btn-square text-warning cancel-edit-btn">✕</button>
+        `;
+        actions.style.display = 'flex';
+
+        const input = titleText.querySelector('.category-edit-input');
+        input.focus();
+        input.select();
+
+        const saveEdit = async () => {
+            const newName = input.value.trim();
+            if (newName && newName !== currentName) {
+                await this._renameCategory(currentName, newName);
+            } else {
+                this.render();
+            }
+        };
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                saveEdit();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                this.render();
+            }
+        });
+
+        input.addEventListener('click', (e) => e.stopPropagation());
+        
+        actions.querySelector('.save-edit-btn').addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            saveEdit();
+        });
+        
+        actions.querySelector('.cancel-edit-btn').addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.render();
+        });
+    }
+
+    async _renameCategory(oldName, newName) {
+        const config = {
+            serverUrl: this.getAttribute('server-url') || '',
+            authHeader: this.getAttribute('auth-header') || ''
+        };
+
+        try {
+            const headers = { 'Content-Type': 'application/json' };
+            if (config.authHeader) headers['Authorization'] = config.authHeader;
+
+            const res = await fetch(`${config.serverUrl}/api/categories/${encodeURIComponent(oldName)}`, {
+                method: 'PUT',
+                headers,
+                body: JSON.stringify({ name: newName })
+            });
+
+            if (!res.ok) throw new Error('Failed to rename category');
+
+            this.dispatchEvent(new CustomEvent('category-changed', { bubbles: true }));
+        } catch (err) {
+            console.error('Rename category failed:', err);
+            this.render();
+        }
+    }
+
+    async _deleteCategory(name) {
+        const config = {
+            serverUrl: this.getAttribute('server-url') || '',
+            authHeader: this.getAttribute('auth-header') || ''
+        };
+
+        try {
+            const headers = {};
+            if (config.authHeader) headers['Authorization'] = config.authHeader;
+
+            const res = await fetch(`${config.serverUrl}/api/categories/${encodeURIComponent(name)}`, {
+                method: 'DELETE',
+                headers
+            });
+
+            if (!res.ok) throw new Error('Failed to delete category');
+
+            this.dispatchEvent(new CustomEvent('category-changed', { bubbles: true }));
+        } catch (err) {
+            console.error('Delete category failed:', err);
         }
     }
 
@@ -391,7 +635,7 @@ class BookmarkList extends HTMLElement {
         return items.length;
     }
 
-    async _moveBookmark(id, category, order) {
+    async _moveBookmark(id, categoryId, order) {
         const config = {
             serverUrl: this.getAttribute('server-url') || '',
             authHeader: this.getAttribute('auth-header') || ''
@@ -404,16 +648,14 @@ class BookmarkList extends HTMLElement {
             const res = await fetch(`${config.serverUrl}/api/bookmarks/${id}`, {
                 method: 'PATCH',
                 headers,
-                body: JSON.stringify({ category, order })
+                body: JSON.stringify({ category_id: categoryId, order })
             });
 
             if (!res.ok) throw new Error('Failed to move bookmark');
 
-            // Refresh bookmarks from server
             this.dispatchEvent(new CustomEvent('bookmark-moved', { bubbles: true }));
         } catch (err) {
             console.error('Move failed:', err);
-            // Re-render to reset positions
             this.render();
         }
     }
