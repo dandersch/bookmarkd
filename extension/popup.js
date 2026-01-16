@@ -1,6 +1,12 @@
 const COMPACT_THRESHOLD = 100;
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // Load theme
+    chrome.storage.sync.get(['theme'], (items) => {
+        const theme = items.theme || 'forest';
+        document.documentElement.setAttribute('data-theme', theme);
+    });
+
     // State
     let currentValidTab = null;
 

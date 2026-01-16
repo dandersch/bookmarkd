@@ -30,6 +30,22 @@
                 </form>
                 <h3 class="font-bold text-lg mb-4">Settings</h3>
                 
+                <div class="form-control mb-4">
+                    <label class="label">
+                        <span class="label-text font-semibold">Theme</span>
+                    </label>
+                    <select id="theme-select" class="select select-bordered w-full">
+                        <option value="forest">Forest</option>
+                        <option value="dark">Dark</option>
+                        <option value="light">Light</option>
+                        <option value="dracula">Dracula</option>
+                        <option value="nord">Nord</option>
+                        <option value="sunset">Sunset</option>
+                    </select>
+                </div>
+
+                <div class="divider my-4"></div>
+                
                 <settings-import id="import-section" server-url=""></settings-import>
             </div>
             <form method="dialog" class="modal-backdrop">
@@ -76,6 +92,19 @@
         // Settings modal
         const settingsBtn = document.getElementById('settings-btn');
         const settingsModal = document.getElementById('settings-modal');
+        const themeSelect = document.getElementById('theme-select');
+        
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme') || 'forest';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        themeSelect.value = savedTheme;
+
+        // Theme change
+        themeSelect.addEventListener('change', (e) => {
+            const theme = e.target.value;
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+        });
         
         settingsBtn.addEventListener('click', () => {
             settingsModal.showModal();

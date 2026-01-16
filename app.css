@@ -1,6 +1,6 @@
 @import "tailwindcss";
 @plugin "daisyui" {
-  themes: forest;
+  themes: forest, dark, light, dracula, nord, sunset;
 }
 @source "./*.html";
 @source "./extension/*.html";
