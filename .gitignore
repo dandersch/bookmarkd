@@ -8,3 +8,4 @@ web-ext-artifacts/
 bookmarkd
 node_modules/
 tailwindcss
+output.css
