@@ -153,7 +153,7 @@ func main() {
 	http.HandleFunc("/api/categories", handleCategoriesAPI)
 	http.HandleFunc("/api/categories/", handleCategoryAPI)
 	http.HandleFunc("/components.js", handleComponents)
-	http.HandleFunc("/icon.svg", handleIcon)
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
 	port := os.Getenv("BOOKMARKD_PORT")
 	host := os.Getenv("BOOKMARKD_HOST")
@@ -187,9 +187,7 @@ func handleComponents(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "extension/components.js")
 }
 
-func handleIcon(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "icon.svg")
-}
+
 
 func handleAPI(w http.ResponseWriter, r *http.Request) {
 	setCORSHeaders(w)

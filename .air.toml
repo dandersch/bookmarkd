@@ -1,0 +1,20 @@
+# Air configuration for bookmarkd
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  # Build CSS to static/, copy to extension/, then build Go
+  cmd = "./tailwindcss -i app.css -o static/output.css && cp static/output.css extension/output.css && go build -o ./tmp/main ."
+  bin = "./tmp/main"
+  delay = 1000
+  exclude_dir = ["tmp", "node_modules", ".git", ".web-ext-profile"]
+  exclude_regex = ["_test\\.go$"]
+  include_ext = ["go", "html", "css", "js"]
+  include_file = ["app.css"]
+  kill_delay = "0s"
+
+[log]
+  time = false
+
+[misc]
+  clean_on_exit = true

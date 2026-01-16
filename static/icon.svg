@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 128 128"
+   width="128"
+   height="128"
+   version="1.1"
+   id="svg6"
+   sodipodi:docname="icon.svg"
+   inkscape:version="1.4.3 (0d15f75042, 2025-12-25)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs6" />
+  <sodipodi:namedview
+     id="namedview6"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="2.875"
+     inkscape:cx="64"
+     inkscape:cy="64"
+     inkscape:window-width="1920"
+     inkscape:window-height="1061"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg6" />
+  <!-- Left scroll handle -->
+  <rect
+     x="2.0869565"
+     y="4.521739"
+     width="17.689442"
+     height="38.95652"
+     rx="8.8447208"
+     fill="#8b7355"
+     id="rect1"
+     style="stroke-width:0.66981" />
+  <rect
+     x="6.5093169"
+     y="4.521739"
+     width="8.8447208"
+     height="38.95652"
+     rx="4.4223604"
+     fill="#a08060"
+     id="rect2"
+     style="stroke-width:0.66981" />
+  <!-- Right scroll handle -->
+  <rect
+     x="108.2236"
+     y="4.521739"
+     width="17.689442"
+     height="38.95652"
+     rx="8.8447208"
+     fill="#8b7355"
+     id="rect3"
+     style="stroke-width:0.66981" />
+  <rect
+     x="112.64597"
+     y="4.521739"
+     width="8.8447208"
+     height="38.95652"
+     rx="4.4223604"
+     fill="#a08060"
+     id="rect4"
+     style="stroke-width:0.66981" />
+  <!-- Scroll paper -->
+  <rect
+     x="15.354037"
+     y="7.768115"
+     width="97.291924"
+     height="32.463768"
+     fill="#f5e6c8"
+     id="rect5"
+     style="stroke-width:0.66981" />
+  <rect
+     x="15.354037"
+     y="7.768115"
+     width="97.291924"
+     height="32.463768"
+     fill="none"
+     stroke="#d4c4a8"
+     stroke-width="2.10294"
+     id="rect6" />
+  <!-- Bookmark symbol centered on scroll -->
+  <path
+     d="M 38.010496,8.0284157 V 119.80848 L 64,85.41462 89.989504,119.80848 V 8.0284157 Z"
+     fill="#e74c3c"
+     stroke="#c0392b"
+     stroke-width="2.92554"
+     id="path6" />
+</svg>

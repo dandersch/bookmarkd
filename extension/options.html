@@ -1,44 +1,43 @@
 <!DOCTYPE html>
-<html data-theme="dark">
+<html data-theme="forest">
 <head>
     <meta charset="UTF-8">
     <title>Bookmarkd Options</title>
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="output.css">
 </head>
-<body class="bg-base-200 text-base-content p-8">
-    <div class="card card-bordered bg-base-100 max-w-lg mx-auto shadow-lg">
+<body class="bg-base-200 text-base-content min-h-screen p-8">
+    <div class="card bg-base-100 max-w-lg mx-auto shadow-xl border border-base-300">
         <div class="card-body">
             <div class="flex items-center gap-4 mb-6">
-                <a href="popup.html" class="btn btn-ghost btn-sm">←</a>
-                <h1 class="card-title text-2xl">Settings</h1>
+                <a href="popup.html" class="btn btn-ghost btn-sm text-base-content">←</a>
+                <h1 class="card-title text-2xl text-base-content">Settings</h1>
             </div>
 
             <div class="form-control mb-4">
                 <label class="label">
-                    <span class="label-text font-semibold">Server URL</span>
+                    <span class="label-text font-semibold text-base-content">Server URL</span>
                 </label>
-                <input type="text" id="serverUrl" placeholder="http://localhost:8080" class="input input-bordered w-full">
+                <input type="text" id="serverUrl" placeholder="http://localhost:8080" class="input input-bordered bg-base-200 border-base-300 focus:border-primary w-full">
             </div>
 
             <div class="form-control mb-4">
                 <label class="label">
-                    <span class="label-text font-semibold">Username (Optional)</span>
+                    <span class="label-text font-semibold text-base-content">Username (Optional)</span>
                 </label>
-                <input type="text" id="username" class="input input-bordered w-full">
+                <input type="text" id="username" class="input input-bordered bg-base-200 border-base-300 focus:border-primary w-full">
             </div>
 
             <div class="form-control mb-4">
                 <label class="label">
-                    <span class="label-text font-semibold">Password (Optional)</span>
+                    <span class="label-text font-semibold text-base-content">Password (Optional)</span>
                 </label>
-                <input type="password" id="password" class="input input-bordered w-full">
+                <input type="password" id="password" class="input input-bordered bg-base-200 border-base-300 focus:border-primary w-full">
             </div>
 
-            <button id="save" class="btn btn-primary btn-block">Save Settings</button>
+            <button id="save" class="btn btn-primary btn-block text-primary-content">Save Settings</button>
             <div id="status" class="mt-4 text-sm text-success min-h-[20px]"></div>
 
-            <div class="divider my-6"></div>
+            <div class="divider before:bg-base-300 after:bg-base-300 my-6"></div>
 
             <settings-import id="import-section"></settings-import>
         </div>

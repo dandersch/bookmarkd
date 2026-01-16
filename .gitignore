@@ -6,3 +6,5 @@ web-ext-artifacts/
 .web-ext-profile/
 *.xpi
 bookmarkd
+node_modules/
+tailwindcss

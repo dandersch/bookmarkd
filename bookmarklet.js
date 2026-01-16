@@ -30,9 +30,10 @@ javascript:(async function(){
       const el = document.createElement('div');
       el.innerText = 'Saved to Bookmarkd!';
       Object.assign(el.style, {
-        position: 'fixed', top: '20px', right: '20px', padding: '10px 20px',
-        backgroundColor: '#4f46e5', color: 'white', borderRadius: '5px',
-        zIndex: '9999', fontFamily: 'sans-serif', boxShadow: '0 2px 10px rgba(0,0,0,0.2)'
+        position: 'fixed', top: '20px', right: '20px', padding: '12px 24px',
+        backgroundColor: '#1eb854', color: '#000', borderRadius: '8px',
+        zIndex: '9999', fontFamily: 'system-ui, sans-serif', fontWeight: '600',
+        boxShadow: '0 4px 16px rgba(0,0,0,0.25)', fontSize: '14px'
       });
       document.body.appendChild(el);
       setTimeout(() => el.remove(), 2000);
