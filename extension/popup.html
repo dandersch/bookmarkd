@@ -10,22 +10,15 @@
     <div class="flex-none">
         <div class="header-bar bg-primary p-3 text-primary-content relative flex items-center justify-between">
             <a id="open-settings" href="options.html" class="hover:opacity-80 transition-opacity">⚙</a>
-
-            <div class="btn-save-wrapper absolute left-1/2 -translate-x-1/2">
-                <button id="btn-save" class="btn btn-outline btn-sm border border-primary-content/20">
-                    <span class="btn-save-text">bookmark</span>
-                    <span class="btn-save-icon hidden">+</span>
-                </button>
-            </div>
-
             <a id="open-web" href="#" class="text-xs hover:opacity-80 transition-opacity">↗</a>
         </div>
 
         <div id="preview-card" class="hidden bg-base-200 p-3 border-b border-base-300 transition-all">
             <div class="flex items-start gap-3">
-                <div class="avatar">
-                    <div class="w-10 h-10 rounded bg-base-100 p-1 shadow-sm ring-1 ring-base-content/10">
-                        <img id="preview-icon" src="" alt="icon" class="object-contain" />
+                <div id="save-favicon" class="avatar cursor-pointer group" title="Click to bookmark">
+                    <div class="relative w-10 h-10 rounded bg-base-100 p-1 shadow-sm ring-1 ring-base-content/10 transition-all group-hover:ring-2 group-hover:ring-primary group-hover:scale-110 group-hover:shadow-md">
+                        <img id="preview-icon" src="" alt="icon" class="object-contain w-full h-full" />
+                        <div class="absolute inset-0 flex items-center justify-center bg-primary/80 text-primary-content text-lg font-bold rounded opacity-0 group-hover:opacity-100 transition-opacity">+</div>
                     </div>
                 </div>
                 <div class="flex-1 min-w-0 overflow-hidden">

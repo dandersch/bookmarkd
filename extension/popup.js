@@ -32,10 +32,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const previewTitle = document.getElementById('preview-title');
     const previewUrl = document.getElementById('preview-url');
     const previewIcon = document.getElementById('preview-icon');
-    const saveBtn = document.getElementById('btn-save');
-    const saveBtnText = saveBtn.querySelector('.btn-save-text');
+    const saveFavicon = document.getElementById('save-favicon');
     const status = document.getElementById('status-msg');
-    const originalBtnText = saveBtnText.textContent;
 
     // Setup "Open Dashboard" link
     document.getElementById('open-web').addEventListener('click', () => {
@@ -63,20 +61,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (tab && tab.url && tab.url.startsWith('http')) {
                 currentValidTab = tab;
                 previewCard.classList.remove('hidden');
-                saveBtn.disabled = false;
                 previewTitle.textContent = tab.title || "No Title";
                 previewUrl.textContent = new URL(tab.url).hostname;
                 previewIcon.src = tab.favIconUrl || 'icon.png'; 
             } else {
                 currentValidTab = null;
                 previewCard.classList.add('hidden');
-                saveBtn.disabled = true;
             }
         } catch (err) {
             console.error('Failed to get current tab:', err);
             currentValidTab = null;
             previewCard.classList.add('hidden');
-            saveBtn.disabled = true;
         }
     }
 
@@ -90,26 +85,25 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (tab.url && tab.url.startsWith('http')) {
                 currentValidTab = tab;
                 previewCard.classList.remove('hidden');
-                saveBtn.disabled = false;
                 previewTitle.textContent = tab.title || "No Title";
                 previewUrl.textContent = new URL(tab.url).hostname;
                 previewIcon.src = tab.favIconUrl || 'icon.png';
             } else {
                 currentValidTab = null;
                 previewCard.classList.add('hidden');
-                saveBtn.disabled = true;
             }
         }
     });
 
-    // --- ACTION: Save Bookmark ---
-    saveBtn.addEventListener('click', async () => {
+    // --- ACTION: Save Bookmark (via favicon click) ---
+    saveFavicon.addEventListener('click', async () => {
         if (!currentValidTab) return;
 
         const editedTitle = previewTitle.innerText;
-
-        saveBtn.disabled = true;
-        saveBtnText.textContent = "Saving...";
+        
+        // Visual feedback - disable interaction during save
+        saveFavicon.style.pointerEvents = 'none';
+        saveFavicon.style.opacity = '0.5';
         status.classList.add('hidden');
 
         try {
@@ -146,8 +140,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             status.innerText = "Error: " + err.message;
             status.className = "alert alert-error text-center text-xs py-2 block";
         } finally {
-            saveBtnText.textContent = originalBtnText;
-            saveBtn.disabled = false;
+            saveFavicon.style.pointerEvents = '';
+            saveFavicon.style.opacity = '';
         }
     });
 
@@ -164,7 +158,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     previewTitle.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
-            saveBtn.click();
+            saveFavicon.click();
         }
     });
 });

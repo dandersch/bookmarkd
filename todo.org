@@ -1,4 +1,4 @@
-* TODO extension: better sidebar ui
+* TODO [3/4] extension: better sidebar ui
 ** DONE smaller bookmarks list elements
 CLOSED: [2026-01-06 Tue 23:33]
 ** DONE preview current bookmark
@@ -16,12 +16,13 @@ CLOSED: [2026-01-09 Fri 20:18]
 notes:
 - minimum-width for both chrome & firefox is too wide by default
 - can only be achieved with custom userChrome.css
-** TODO better colorscheme
-* TODO dashboard: better dashboard ui
+** TODO better colors
+* TODO [2/3] dashboard: better dashboard ui
 ** DONE card view
 CLOSED: [2026-01-09 Fri 20:50]
-** TODO category divider
-* TODO options page accessible both dashboard and sidebar
+** DONE category divider
+CLOSED: [2026-01-16 Fri 17:49]
+** TODO better colors
 * TODO extension: improve "add-bookmark" js bookmarklet
 ** TODO fix CORS problem that occurs on some sites (if possible)
 Current understanding of the problem:
@@ -42,17 +43,9 @@ Current understanding of the problem:
 CLOSED: [2026-01-09 Fri 20:50]
 ** TODO add to sidebar
 * TODO import existing bookmarks
-- directly from browser using an api/permission if that is possible
-- via a bookmarks.html / bookmarks.json file
-* TODO dark/light mode
-** TODO dark/light mode switch on dashboard (default to system default)
-** TODO use system default on extension popup, switch in options.html
-* TODO improve category UI/UX
-** DONE add divider between categories
-CLOSED: [2026-01-15 Thu 04:48]
-** DONE collapsible categories
-CLOSED: [2026-01-15 Thu 04:48]
-see [[https://daisyui.com/components/collapse/][Tailwind Collapse Component – daisyUI]] 
+** DONE via a bookmarks.html / bookmarks.json file
+CLOSED: [2026-01-16 Fri 17:50]
+** TODO directly from browser using a api+permission
 * TODO dev: docker dev image
 #+begin_src yaml
 # --- Development Stage ---
@@ -221,6 +214,17 @@ github.com/.*/.*/issues/[0-9]*   issue
 - [[https://github.com/ndom91/briefkasten][briefkasten]]: bookmark manager + extension
 - [[https://wallabag.org/][wallabag]]: archive & annotate webpages + extension
 - [[https://github.com/awesome-selfhosted/awesome-selfhosted?tab=readme-ov-file#bookmarks-and-link-sharing][awesome selfhosted: bookmarks & link sharing]]
+* DONE options page accessible both dashboard and sidebar
+CLOSED: [2026-01-16 Fri 17:49]
+* DONE dark/light mode
+CLOSED: [2026-01-16 Fri 17:50]
+* DONE improve category UI/UX
+CLOSED: [2026-01-16 Fri 17:50]
+** DONE add divider between categories
+CLOSED: [2026-01-15 Thu 04:48]
+** DONE collapsible categories
+CLOSED: [2026-01-15 Thu 04:48]
+see [[https://daisyui.com/components/collapse/][Tailwind Collapse Component – daisyUI]] 
 * DONE extension: switch to sidebar/sidepanel view
 CLOSED: [2026-01-09 Fri 20:19]
 ** DONE chrome support
