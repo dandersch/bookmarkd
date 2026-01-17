@@ -396,7 +396,7 @@ class BookmarkList extends HTMLElement {
                 const actions = document.createElement('div');
                 actions.className = 'category-actions';
                 actions.innerHTML = `
-                    <button class="btn btn-ghost btn-xs btn-square drag-handle" title="Drag to reorder">⋮⋮</button>
+                    <button class="btn btn-ghost btn-xs btn-square drag-handle" title="Drag to reorder">⋮</button>
                     <button class="btn btn-ghost btn-xs btn-square edit-category-btn">✎</button>
                     <button class="btn btn-ghost btn-xs btn-square delete-category-btn">🗑</button>
                 `;

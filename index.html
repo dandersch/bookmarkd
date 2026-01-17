@@ -7,21 +7,21 @@
     <link rel="icon" type="image/svg+xml" href="/static/icon.svg">
     <link href="/static/output.css" rel="stylesheet">
 </head>
-<body class="bg-base-200 text-base-content min-h-screen">
-    <div class="max-w-6xl mx-auto">
-        <!-- Header -->
-        <header class="bg-primary p-6 flex items-center justify-between">
-            <div>
-                <h1 class="text-2xl font-bold text-primary-content">bookmarkd</h1>
-                <p class="text-primary-content/70 text-sm">Your private collection</p>
-            </div>
-            <div class="flex items-center gap-4">
-                <search-bar id="search" target="bookmark-list"></search-bar>
-                <span id="bookmark-count" class="text-primary-content/70 text-sm"></span>
-                <button id="settings-btn" class="btn btn-ghost btn-sm text-primary-content">⚙</button>
-            </div>
-        </header>
+<body class="max-w-6xl bg-base-100 text-base-content min-h-screen mx-auto">
+    <!-- Header -->
+    <header class="bg-primary p-6 flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-primary-content">bookmarkd</h1>
+            <p class="text-primary-content/70 text-sm">Your private collection</p>
+        </div>
+        <div class="flex items-center gap-4">
+            <search-bar id="search" target="bookmark-list"></search-bar>
+            <span id="bookmark-count" class="text-primary-content/70 text-sm"></span>
+            <button id="settings-btn" class="btn btn-ghost btn-sm text-primary-content">⚙</button>
+        </div>
+    </header>
 
+    <div class="bg-base-200 min-h-screen px-8">
         <!-- Settings Modal -->
         <dialog id="settings-modal" class="modal">
             <div class="modal-box">
@@ -55,7 +55,7 @@
         </dialog>
 
         <!-- Bookmark grid -->
-        <bookmark-list id="bookmark-list" class="bookmark-list-container">
+        <bookmark-list id="bookmark-list" class="bookmark-list-container px-8">
         </bookmark-list>
     </div>
 
