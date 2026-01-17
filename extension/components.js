@@ -827,6 +827,40 @@ class SettingsImport extends HTMLElement {
     }
 }
 
+class SearchBar extends HTMLElement {
+    static get observedAttributes() {
+        return ['target', 'compact'];
+    }
+
+    connectedCallback() {
+        this.render();
+    }
+
+    render() {
+        const isCompact = this.hasAttribute('compact');
+        const inputClass = isCompact
+            ? 'input input-xs input-bordered bg-primary-content/10 border-primary-content/20 text-primary-content placeholder:text-primary-content/50 w-full focus:outline-none focus:border-primary-content/40'
+            : 'input input-sm input-bordered bg-primary-content/10 border-primary-content/20 text-primary-content placeholder:text-primary-content/50 w-full max-w-xs focus:outline-none focus:border-primary-content/40';
+
+        this.innerHTML = `<input type="text" class="${inputClass}" placeholder="Search...">`;
+
+        const input = this.querySelector('input');
+        input.addEventListener('input', (e) => {
+            const query = e.target.value;
+            this.dispatchEvent(new CustomEvent('search', { detail: query, bubbles: true }));
+
+            const targetId = this.getAttribute('target');
+            if (targetId) {
+                const targetEl = document.getElementById(targetId);
+                if (targetEl && typeof targetEl.filterBookmarks === 'function') {
+                    targetEl.filterBookmarks(query);
+                }
+            }
+        });
+    }
+}
+
 customElements.define('bookmark-item', BookmarkItem);
 customElements.define('bookmark-list', BookmarkList);
 customElements.define('settings-import', SettingsImport);
+customElements.define('search-bar', SearchBar);

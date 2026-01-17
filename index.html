@@ -16,7 +16,7 @@
                 <p class="text-primary-content/70 text-sm">Your private collection</p>
             </div>
             <div class="flex items-center gap-4">
-                <input type="text" id="search" class="input input-sm input-bordered bg-primary-content/10 border-primary-content/20 text-primary-content placeholder:text-primary-content/50 w-full max-w-xs focus:outline-none focus:border-primary-content/40" placeholder="Search bookmarks...">
+                <search-bar id="search" target="bookmark-list"></search-bar>
                 <span id="bookmark-count" class="text-primary-content/70 text-sm"></span>
                 <button id="settings-btn" class="btn btn-ghost btn-sm text-primary-content">⚙</button>
             </div>
@@ -62,7 +62,6 @@
     <script src="/components.js"></script>
     <script>
         const listEl = document.getElementById('bookmark-list');
-        const searchInput = document.getElementById('search');
         const countEl = document.getElementById('bookmark-count');
         
         listEl.setAttribute('server-url', '');
@@ -84,11 +83,6 @@
         }
 
         loadData();
-
-        // Search functionality
-        searchInput.addEventListener('input', (e) => {
-            listEl.filterBookmarks(e.target.value);
-        });
 
         // Settings modal
         const settingsBtn = document.getElementById('settings-btn');

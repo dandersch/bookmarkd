@@ -8,9 +8,10 @@
 
     <!-- Header -->
     <div class="flex-none">
-        <div class="header-bar bg-primary p-3 text-primary-content relative flex items-center justify-between">
-            <a id="open-settings" href="options.html" class="hover:opacity-80 transition-opacity">⚙</a>
-            <a id="open-web" href="#" class="text-xs hover:opacity-80 transition-opacity">↗</a>
+        <div class="header-bar bg-primary p-3 text-primary-content relative flex items-center justify-between gap-2">
+            <a id="open-settings" href="options.html" class="hover:opacity-80 transition-opacity flex-none">⚙</a>
+            <search-bar target="bookmark-list" compact class="flex-1"></search-bar>
+            <a id="open-web" href="#" class="text-xs hover:opacity-80 transition-opacity flex-none">↗</a>
         </div>
 
         <div id="preview-card" class="hidden bg-base-200 p-3 border-b border-base-300 transition-all">
