@@ -1,0 +1,7 @@
+A minimalist self-hosted bookmark manager that can also act as a startup page.
+Comes with a companion browser extension (Firefox/Chrome) that launches in the
+sidebar.
+
+- Existing bookmarks can be imported from ~bookmarks.html~
+  (NETSCAPE-Bookmark-file-1)
+- Includes variety of DaisyUI themes
