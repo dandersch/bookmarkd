@@ -151,6 +151,7 @@ func main() {
 	http.HandleFunc("/api/bookmarks", handleAPI)
 	http.HandleFunc("/api/bookmarks/", handleBookmarkAPI)
 	http.HandleFunc("/api/categories", handleCategoriesAPI)
+	http.HandleFunc("/api/categories/reorder", handleCategoriesReorder)
 	http.HandleFunc("/api/categories/", handleCategoryAPI)
 	http.HandleFunc("/components.js", handleComponents)
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
@@ -249,6 +250,51 @@ func handleCategoriesAPI(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+}
+
+// handleCategoriesReorder handles batch reordering of categories.
+// NOTE: For high-frequency reordering or collaborative scenarios, consider
+// switching to lexical ranking (e.g., fractional-indexing) which only requires
+// updating the moved item's order string, eliminating batch updates entirely.
+func handleCategoriesReorder(w http.ResponseWriter, r *http.Request) {
+	setCORSHeaders(w)
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if r.Method != "PUT" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var payload struct {
+		Order []string `json:"order"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	if len(payload.Order) == 0 {
+		http.Error(w, "Order array is required", http.StatusBadRequest)
+		return
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	for i, id := range payload.Order {
+		if cat, exists := categories[id]; exists {
+			cat.Order = i
+			categories[id] = cat
+		}
+	}
+
+	saveDatabase()
+	w.WriteHeader(http.StatusOK)
 }
 
 func handleCategoryAPI(w http.ResponseWriter, r *http.Request) {

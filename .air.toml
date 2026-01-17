@@ -14,7 +14,7 @@ tmp_dir = "tmp"
   kill_delay = "0s"
 
 [log]
-  time = false
+  time = true
 
 [misc]
   clean_on_exit = true

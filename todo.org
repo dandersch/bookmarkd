@@ -110,7 +110,6 @@ tmp_dir = "tmp"
 * TODO syncthing-able bookmarks.json/bookmarks.html
 - needs file watcher in go backend to check for changes
 - maybe switch to NETSCAPE-Bookmark-file-1 (html)
-* TODO dev: start using tailwind compiler
 * TODO feat: pastebin
 ** TODO add button to send clipboard to bookmarkd
 ** TODO add button to copy into clipboard from bookmarkd
@@ -214,6 +213,8 @@ github.com/.*/.*/issues/[0-9]*   issue
 - [[https://github.com/ndom91/briefkasten][briefkasten]]: bookmark manager + extension
 - [[https://wallabag.org/][wallabag]]: archive & annotate webpages + extension
 - [[https://github.com/awesome-selfhosted/awesome-selfhosted?tab=readme-ov-file#bookmarks-and-link-sharing][awesome selfhosted: bookmarks & link sharing]]
+* DONE dev: start using tailwind compiler
+CLOSED: [2026-01-17 Sat 15:57]
 * DONE options page accessible both dashboard and sidebar
 CLOSED: [2026-01-16 Fri 17:49]
 * DONE dark/light mode

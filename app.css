@@ -95,6 +95,20 @@
     @apply bg-base-200/50 rounded-lg;
 }
 
+/* Category drag and drop */
+.collapse.category-dragging {
+    @apply opacity-50;
+}
+.collapse.category-drag-over {
+    @apply bg-primary/20 rounded-lg;
+}
+.drag-handle {
+    @apply cursor-grab opacity-40 hover:opacity-100;
+}
+.collapse.category-dragging .drag-handle {
+    @apply cursor-grabbing;
+}
+
 .bookmark-actions {
     @apply absolute top-2 right-2 hidden gap-1;
 }

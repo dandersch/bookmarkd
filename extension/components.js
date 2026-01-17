@@ -335,6 +335,46 @@ class BookmarkList extends HTMLElement {
             const section = document.createElement('div');
             section.className = 'collapse collapse-arrow';
             section.dataset.categoryId = categoryId;
+            section.draggable = !isUncategorized;
+
+            if (!isUncategorized) {
+                section.addEventListener('dragstart', (e) => {
+                    if (e.target.closest('bookmark-item')) return;
+                    e.dataTransfer.setData('category-id', categoryId);
+                    e.dataTransfer.effectAllowed = 'move';
+                    section.classList.add('category-dragging');
+                });
+
+                section.addEventListener('dragend', () => {
+                    section.classList.remove('category-dragging');
+                    this.querySelectorAll('.category-drag-over').forEach(el => el.classList.remove('category-drag-over'));
+                });
+
+                section.addEventListener('dragover', (e) => {
+                    const draggedCategoryId = e.dataTransfer.types.includes('category-id');
+                    if (!draggedCategoryId) return;
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    section.classList.add('category-drag-over');
+                });
+
+                section.addEventListener('dragleave', (e) => {
+                    if (!section.contains(e.relatedTarget)) {
+                        section.classList.remove('category-drag-over');
+                    }
+                });
+
+                section.addEventListener('drop', (e) => {
+                    const draggedCategoryId = e.dataTransfer.getData('category-id');
+                    if (!draggedCategoryId || draggedCategoryId === categoryId) {
+                        section.classList.remove('category-drag-over');
+                        return;
+                    }
+                    e.preventDefault();
+                    section.classList.remove('category-drag-over');
+                    this._reorderCategories(draggedCategoryId, categoryId);
+                });
+            }
 
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
@@ -356,6 +396,7 @@ class BookmarkList extends HTMLElement {
                 const actions = document.createElement('div');
                 actions.className = 'category-actions';
                 actions.innerHTML = `
+                    <button class="btn btn-ghost btn-xs btn-square drag-handle" title="Drag to reorder">⋮⋮</button>
                     <button class="btn btn-ghost btn-xs btn-square edit-category-btn">✎</button>
                     <button class="btn btn-ghost btn-xs btn-square delete-category-btn">🗑</button>
                 `;
@@ -614,6 +655,46 @@ class BookmarkList extends HTMLElement {
             this.dispatchEvent(new CustomEvent('category-changed', { bubbles: true }));
         } catch (err) {
             console.error('Delete category failed:', err);
+        }
+    }
+
+    async _reorderCategories(draggedId, targetId) {
+        const currentOrder = this._categories
+            .filter(c => c.id !== 'uncategorized')
+            .sort((a, b) => a.order - b.order)
+            .map(c => c.id);
+
+        const draggedIndex = currentOrder.indexOf(draggedId);
+        const targetIndex = currentOrder.indexOf(targetId);
+
+        if (draggedIndex === -1 || targetIndex === -1) return;
+
+        currentOrder.splice(draggedIndex, 1);
+        currentOrder.splice(targetIndex, 0, draggedId);
+
+        const newOrder = ['uncategorized', ...currentOrder];
+
+        const config = {
+            serverUrl: this.getAttribute('server-url') || '',
+            authHeader: this.getAttribute('auth-header') || ''
+        };
+
+        try {
+            const headers = { 'Content-Type': 'application/json' };
+            if (config.authHeader) headers['Authorization'] = config.authHeader;
+
+            const res = await fetch(`${config.serverUrl}/api/categories/reorder`, {
+                method: 'PUT',
+                headers,
+                body: JSON.stringify({ order: newOrder })
+            });
+
+            if (!res.ok) throw new Error('Failed to reorder categories');
+
+            this.dispatchEvent(new CustomEvent('category-changed', { bubbles: true }));
+        } catch (err) {
+            console.error('Reorder categories failed:', err);
+            this.render();
         }
     }
 
