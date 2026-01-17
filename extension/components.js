@@ -286,6 +286,7 @@ class BookmarkList extends HTMLElement {
         sections.forEach(section => {
             const items = section.querySelectorAll('bookmark-item');
             const checkbox = section.querySelector('input[type="checkbox"]');
+            const categoryId = section.dataset.categoryId;
             let hasVisibleItems = false;
             
             items.forEach(item => {
@@ -301,8 +302,12 @@ class BookmarkList extends HTMLElement {
                 if (matches) hasVisibleItems = true;
             });
 
-            if (lowerQuery && hasVisibleItems && checkbox) {
-                checkbox.checked = true;
+            if (checkbox) {
+                if (lowerQuery && hasVisibleItems) {
+                    checkbox.checked = true;
+                } else if (!lowerQuery) {
+                    checkbox.checked = !this._collapsedCategories[categoryId];
+                }
             }
             section.style.display = hasVisibleItems || !lowerQuery ? '' : 'none';
         });
