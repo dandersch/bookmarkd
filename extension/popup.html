@@ -17,9 +17,10 @@
         <div id="preview-card" class="hidden bg-base-200 p-3 border-b border-base-300 transition-all">
             <div class="flex items-start gap-3">
                 <div id="save-favicon" class="avatar cursor-pointer group" title="Click to bookmark">
-                    <div class="relative w-10 h-10 rounded bg-base-100 p-1 shadow-sm ring-1 ring-base-content/10 transition-all group-hover:ring-2 group-hover:ring-primary group-hover:scale-110 group-hover:shadow-md">
+                    <div class="favicon-wrapper relative w-10 h-10 rounded bg-base-100 p-1 shadow-sm ring-1 ring-base-content/10 transition-all group-hover:ring-2 group-hover:scale-110 group-hover:shadow-md">
                         <img id="preview-icon" src="" alt="icon" class="object-contain w-full h-full" />
-                        <div class="absolute inset-0 flex items-center justify-center bg-primary/80 text-primary-content text-lg font-bold rounded opacity-0 group-hover:opacity-100 transition-opacity">+</div>
+                        <div id="ribbon-indicator" class="absolute -top-1 -right-1 text-sm hidden">🔖</div>
+                        <div id="action-overlay" class="absolute inset-0 flex items-center justify-center text-lg font-bold rounded opacity-0 group-hover:opacity-100 transition-opacity">+</div>
                     </div>
                 </div>
                 <div class="flex-1 min-w-0 overflow-hidden">
