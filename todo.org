@@ -1,28 +1,3 @@
-* TODO [3/4] extension: better sidebar ui
-** DONE smaller bookmarks list elements
-CLOSED: [2026-01-06 Tue 23:33]
-** DONE preview current bookmark
-CLOSED: [2026-01-07 Wed 04:03]
-** DONE switch to icon-only view when sidebar becomes too narrow
-CLOSED: [2026-01-09 Fri 20:18]
-- should show only favicons of bookmarks in this view
-- preview current page bar not needed in this view
-- "Bookmark Page" button should become single bookmark symbol/icon (🔖/📌/+)
-- Header would need to go from left-right arranging settings/bookmark/dashboad
-  buttons to arranging them top-down
-- No more hover to show edit/delete buttons
-- ideally sidebar snaps to this minimum-width once it reaches a certain small width
-
-notes:
-- minimum-width for both chrome & firefox is too wide by default
-- can only be achieved with custom userChrome.css
-** TODO better colors
-* TODO [2/3] dashboard: better dashboard ui
-** DONE card view
-CLOSED: [2026-01-09 Fri 20:50]
-** DONE category divider
-CLOSED: [2026-01-16 Fri 17:49]
-** TODO better colors
 * TODO extension: improve "add-bookmark" js bookmarklet
 ** TODO fix CORS problem that occurs on some sites (if possible)
 Current understanding of the problem:
@@ -35,13 +10,6 @@ Current understanding of the problem:
 ** TODO auto-generate bookmarklet
 - on index.html (no access auth data?)
 - OR inside options.html
-* TODO extension: indicate if current page is already bookmarked
-- might require more permissions and a background worker
-- indicate by changing the icon of the extension
-* TODO feat: search option [1/2]
-** DONE add to dashboard
-CLOSED: [2026-01-09 Fri 20:50]
-** TODO add to sidebar
 * TODO import existing bookmarks
 ** DONE via a bookmarks.html / bookmarks.json file
 CLOSED: [2026-01-16 Fri 17:50]
@@ -213,6 +181,45 @@ github.com/.*/.*/issues/[0-9]*   issue
 - [[https://github.com/ndom91/briefkasten][briefkasten]]: bookmark manager + extension
 - [[https://wallabag.org/][wallabag]]: archive & annotate webpages + extension
 - [[https://github.com/awesome-selfhosted/awesome-selfhosted?tab=readme-ov-file#bookmarks-and-link-sharing][awesome selfhosted: bookmarks & link sharing]]
+* DONE [4/4] extension: better sidebar ui
+CLOSED: [2026-01-18 Sun 20:50]
+** DONE smaller bookmarks list elements
+CLOSED: [2026-01-06 Tue 23:33]
+** DONE preview current bookmark
+CLOSED: [2026-01-07 Wed 04:03]
+** DONE switch to icon-only view when sidebar becomes too narrow
+CLOSED: [2026-01-09 Fri 20:18]
+- should show only favicons of bookmarks in this view
+- preview current page bar not needed in this view
+- "Bookmark Page" button should become single bookmark symbol/icon (🔖/📌/+)
+- Header would need to go from left-right arranging settings/bookmark/dashboad
+  buttons to arranging them top-down
+- No more hover to show edit/delete buttons
+- ideally sidebar snaps to this minimum-width once it reaches a certain small width
+
+notes:
+- minimum-width for both chrome & firefox is too wide by default
+- can only be achieved with custom userChrome.css
+** DONE better colors
+CLOSED: [2026-01-18 Sun 20:50]
+* DONE [3/3] dashboard: better dashboard ui
+CLOSED: [2026-01-18 Sun 20:50]
+** DONE card view
+CLOSED: [2026-01-09 Fri 20:50]
+** DONE category divider
+CLOSED: [2026-01-16 Fri 17:49]
+** DONE better colors
+CLOSED: [2026-01-18 Sun 20:50]
+* DONE extension: indicate if current page is already bookmarked
+CLOSED: [2026-01-18 Sun 21:22]
+- +might require more permissions and a background worker+
+- +indicate by changing the icon of the extension+
+* DONE feat: search option [2/2]
+CLOSED: [2026-01-18 Sun 20:51]
+** DONE add to dashboard
+CLOSED: [2026-01-09 Fri 20:50]
+** DONE add to sidebar
+CLOSED: [2026-01-18 Sun 20:51]
 * DONE dev: start using tailwind compiler
 CLOSED: [2026-01-17 Sat 15:57]
 * DONE options page accessible both dashboard and sidebar

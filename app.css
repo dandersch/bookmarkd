@@ -249,6 +249,26 @@
     font-size: 0.75rem;
 }
 
+/* Preview card bookmarked state */
+#preview-card .favicon-wrapper {
+    @apply group-hover:ring-primary;
+}
+#preview-card #action-overlay {
+    @apply bg-primary/80 text-primary-content;
+}
+#preview-card.bookmarked .favicon-wrapper {
+    @apply ring-2 ring-success;
+}
+#preview-card.bookmarked .favicon-wrapper:hover {
+    @apply group-hover:ring-error;
+}
+#preview-card.bookmarked #ribbon-indicator {
+    @apply block;
+}
+#preview-card.bookmarked #action-overlay {
+    @apply bg-error/80 text-error-content;
+}
+
 /* Compact mode */
 body.compact #preview-card,
 body.compact #status-msg {
