@@ -139,7 +139,7 @@ func sliceToCategoryMap(slice []Category) map[string]Category {
 
 func main() {
 	if err := godotenv.Load(); err != nil {
-		log.Fatal("Error loading .env file (see env.template): ", err)
+		log.Printf("No .env file found, using environment variables")
 	}
 
 	if err := loadDatabase(); err != nil {

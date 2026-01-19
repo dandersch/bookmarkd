@@ -1,0 +1,9 @@
+services:
+  bookmarkd:
+    build: .
+    env_file: .env
+    ports:
+      - "${BOOKMARKD_PORT}:${BOOKMARKD_PORT}"
+    volumes:
+      - ./bookmarks.json:/app/bookmarks.json
+    restart: unless-stopped

@@ -1,0 +1,9 @@
+.git/
+.web-ext-profile/
+node_modules/
+tmp/
+bookmarkd
+*.xpi
+bookmarks.json
+.env
+tailwindcss
