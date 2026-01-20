@@ -24,13 +24,14 @@ type Category struct {
 }
 
 type Bookmark struct {
-	ID         string `json:"id"`
-	URL        string `json:"url"`
-	Title      string `json:"title"`
-	CategoryID string `json:"category_id"`
-	Timestamp  int64  `json:"timestamp"`
-	Favicon    string `json:"favicon"`
-	Order      int    `json:"order"`
+	ID          string `json:"id"`
+	URL         string `json:"url"`
+	Title       string `json:"title"`
+	CategoryID  string `json:"category_id"`
+	Timestamp   int64  `json:"timestamp"`
+	Favicon     string `json:"favicon"`
+	Order       int    `json:"order"`
+	LastVisited *int64 `json:"last_visited,omitempty"`
 }
 
 type Database struct {
@@ -217,11 +218,24 @@ func handleBookmarkAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id := strings.TrimPrefix(r.URL.Path, "/api/bookmarks/")
-	if id == "" {
+	path := strings.TrimPrefix(r.URL.Path, "/api/bookmarks/")
+	if path == "" {
 		http.Error(w, "Missing bookmark ID", http.StatusBadRequest)
 		return
 	}
+
+	// Handle /api/bookmarks/:id/visit
+	if strings.HasSuffix(path, "/visit") {
+		id := strings.TrimSuffix(path, "/visit")
+		if r.Method == "POST" {
+			visitBookmark(w, id)
+			return
+		}
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	id := path
 
 	if r.Method == "DELETE" {
 		deleteBookmark(w, id)
@@ -541,14 +555,15 @@ func createBookmark(w http.ResponseWriter, r *http.Request) {
 }
 
 type BookmarkResponse struct {
-	ID         string `json:"id"`
-	URL        string `json:"url"`
-	Title      string `json:"title"`
-	Category   string `json:"category"`
-	CategoryID string `json:"category_id"`
-	Timestamp  int64  `json:"timestamp"`
-	Favicon    string `json:"favicon"`
-	Order      int    `json:"order"`
+	ID          string `json:"id"`
+	URL         string `json:"url"`
+	Title       string `json:"title"`
+	Category    string `json:"category"`
+	CategoryID  string `json:"category_id"`
+	Timestamp   int64  `json:"timestamp"`
+	Favicon     string `json:"favicon"`
+	Order       int    `json:"order"`
+	LastVisited *int64 `json:"last_visited,omitempty"`
 }
 
 func getBookmarksJSON(w http.ResponseWriter) {
@@ -557,14 +572,15 @@ func getBookmarksJSON(w http.ResponseWriter) {
 	response := make([]BookmarkResponse, len(sortedBookmarks))
 	for i, bm := range sortedBookmarks {
 		response[i] = BookmarkResponse{
-			ID:         bm.ID,
-			URL:        bm.URL,
-			Title:      bm.Title,
-			Category:   getCategoryName(bm.CategoryID),
-			CategoryID: bm.CategoryID,
-			Timestamp:  bm.Timestamp,
-			Favicon:    bm.Favicon,
-			Order:      bm.Order,
+			ID:          bm.ID,
+			URL:         bm.URL,
+			Title:       bm.Title,
+			Category:    getCategoryName(bm.CategoryID),
+			CategoryID:  bm.CategoryID,
+			Timestamp:   bm.Timestamp,
+			Favicon:     bm.Favicon,
+			Order:       bm.Order,
+			LastVisited: bm.LastVisited,
 		}
 	}
 	mu.RUnlock()
@@ -583,6 +599,23 @@ func deleteBookmark(w http.ResponseWriter, id string) {
 	}
 
 	delete(bookmarks, id)
+	saveDatabase()
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func visitBookmark(w http.ResponseWriter, id string) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	bm, exists := bookmarks[id]
+	if !exists {
+		http.Error(w, "Bookmark not found", http.StatusNotFound)
+		return
+	}
+
+	now := time.Now().Unix()
+	bm.LastVisited = &now
+	bookmarks[id] = bm
 	saveDatabase()
 	w.WriteHeader(http.StatusNoContent)
 }

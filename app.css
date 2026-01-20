@@ -68,7 +68,15 @@
     @apply text-xs text-base-content/60 truncate;
 }
 
+.bookmark-timestamps {
+    @apply flex justify-between text-xs text-base-content/50;
+}
+
 .bookmark-timestamp {
+    @apply text-xs text-base-content/50;
+}
+
+.bookmark-visited {
     @apply text-xs text-base-content/50;
 }
 

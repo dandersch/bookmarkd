@@ -1,6 +1,6 @@
 class BookmarkItem extends HTMLElement {
     static get observedAttributes() {
-        return ['bookmark-id', 'url', 'title', 'category', 'category-id', 'favicon', 'timestamp'];
+        return ['bookmark-id', 'url', 'title', 'category', 'category-id', 'favicon', 'timestamp', 'last-visited'];
     }
 
     constructor() {
@@ -47,7 +47,9 @@ class BookmarkItem extends HTMLElement {
         const category = this.getAttribute('category') || 'Uncategorized';
         const favicon = this.getAttribute('favicon') || '';
         const timestamp = this.getAttribute('timestamp') || '';
-        const timeAgo = this.formatTimestamp(timestamp);
+        const lastVisited = this.getAttribute('last-visited') || '';
+        const addedTime = this.formatTimestamp(timestamp);
+        const visitedTime = this.formatTimestamp(lastVisited);
 
         let hostname = '';
         try {
@@ -63,13 +65,21 @@ class BookmarkItem extends HTMLElement {
                 <img src="${favicon}" class="bookmark-favicon" alt="">
                 <span class="bookmark-title">${this.escapeHtml(title)}</span>
                 <span class="bookmark-url">${hostname}</span>
-                <span class="bookmark-timestamp">${timeAgo}</span>
+                <div class="bookmark-timestamps">
+                    <span class="bookmark-timestamp">Added: ${addedTime}</span>
+                    <span class="bookmark-visited">${visitedTime ? 'Visited: ' + visitedTime : ''}</span>
+                </div>
             </a>
             <div class="bookmark-actions">
                 <button class="btn btn-ghost btn-xs btn-square edit-btn">✎</button>
                 <button class="btn btn-ghost btn-xs btn-square delete-btn">🗑</button>
             </div>
         `;
+
+        const link = this.querySelector('.bookmark-link');
+        link.addEventListener('click', () => {
+            this.recordVisit();
+        });
 
         this.querySelector('.edit-btn').addEventListener('click', (e) => {
             e.preventDefault();
@@ -195,6 +205,19 @@ class BookmarkItem extends HTMLElement {
         } catch (err) {
             console.error('Delete failed:', err);
         }
+    }
+
+    recordVisit() {
+        const id = this.getAttribute('bookmark-id');
+        const config = this.getConfig();
+
+        const headers = {};
+        if (config.authHeader) headers['Authorization'] = config.authHeader;
+
+        fetch(`${config.serverUrl}/api/bookmarks/${id}/visit`, {
+            method: 'POST',
+            headers
+        }).catch(err => console.error('Failed to record visit:', err));
     }
 
     escapeHtml(text) {
@@ -437,6 +460,7 @@ class BookmarkList extends HTMLElement {
                 item.setAttribute('category-id', bm.category_id || categoryId);
                 item.setAttribute('favicon', bm.favicon);
                 item.setAttribute('timestamp', bm.timestamp || '');
+                item.setAttribute('last-visited', bm.last_visited || '');
                 content.appendChild(item);
             }
 

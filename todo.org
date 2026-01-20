@@ -72,7 +72,6 @@ tmp_dir = "tmp"
   exclude_dir = ["assets", "tmp", "vendor", "extension"]
   delay = 500 # ms
 #+end_src
-
 * TODO dev: simple docker container
 - bookmarks db inside data/ folder
 * TODO syncthing-able bookmarks.json/bookmarks.html
@@ -123,9 +122,11 @@ github.com/.*/.*/issues/[0-9]*   issue
 ** TODO periodically pull html and check if it has changed
 - maybe provide a (visual) diff
 ** TODO add sort-by "last changed"
-* TODO feat: last visited
-** TODO log timestamp when user visits a bookmark in extension
-** TODO log timestamp when user visits a bookmark on dashboard
+* TODO [2/4] feat: last visited
+** DONE log timestamp when user visits a bookmark in extension
+CLOSED: [2026-01-20 Tue 10:29]
+** DONE log timestamp when user visits a bookmark on dashboard
+CLOSED: [2026-01-20 Tue 10:29]
 ** TODO add sort by: "last visited"
 ** TODO log timestamp when user visits a bookmark outside ui/webpage
 - extension background worker could be used for that
