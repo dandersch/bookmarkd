@@ -1,6 +1,6 @@
 class BookmarkItem extends HTMLElement {
     static get observedAttributes() {
-        return ['bookmark-id', 'url', 'title', 'category', 'category-id', 'favicon', 'timestamp', 'last-visited'];
+        return ['bookmark-id', 'url', 'title', 'category', 'category-id', 'favicon', 'timestamp', 'last-visited', 'notes'];
     }
 
     constructor() {
@@ -71,6 +71,7 @@ class BookmarkItem extends HTMLElement {
                 </div>
             </a>
             <div class="bookmark-actions">
+                <button class="btn btn-ghost btn-xs btn-square notes-btn" title="Notes">📝</button>
                 <button class="btn btn-ghost btn-xs btn-square edit-btn">✎</button>
                 <button class="btn btn-ghost btn-xs btn-square delete-btn">🗑</button>
             </div>
@@ -79,6 +80,12 @@ class BookmarkItem extends HTMLElement {
         const link = this.querySelector('.bookmark-link');
         link.addEventListener('click', () => {
             this.recordVisit();
+        });
+
+        this.querySelector('.notes-btn').addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.openNotesModal();
         });
 
         this.querySelector('.edit-btn').addEventListener('click', (e) => {
@@ -218,6 +225,83 @@ class BookmarkItem extends HTMLElement {
             method: 'POST',
             headers
         }).catch(err => console.error('Failed to record visit:', err));
+    }
+
+    openNotesModal() {
+        const id = this.getAttribute('bookmark-id');
+        const title = this.getAttribute('title') || '';
+        const notes = this.getAttribute('notes') || '';
+        const config = this.getConfig();
+
+        let modal = document.getElementById('notes-modal');
+        if (!modal) {
+            modal = document.createElement('dialog');
+            modal.id = 'notes-modal';
+            modal.className = 'modal';
+            modal.innerHTML = `
+                <div class="modal-box">
+                    <form method="dialog">
+                        <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+                    </form>
+                    <h3 class="font-bold text-lg mb-4 notes-modal-title"></h3>
+                    <textarea class="textarea textarea-bordered w-full h-32 notes-modal-textarea" placeholder="Add notes..." maxlength="1000"></textarea>
+                    <div class="text-right text-xs text-base-content/50 mt-1"><span class="notes-modal-count">0</span> / 1000</div>
+                </div>
+                <form method="dialog" class="modal-backdrop">
+                    <button>close</button>
+                </form>
+            `;
+            document.body.appendChild(modal);
+
+            const textarea = modal.querySelector('.notes-modal-textarea');
+            const countEl = modal.querySelector('.notes-modal-count');
+
+            textarea.addEventListener('input', () => {
+                countEl.textContent = textarea.value.length;
+            });
+
+            textarea.addEventListener('blur', async () => {
+                const currentId = modal.dataset.bookmarkId;
+                const originalNotes = modal.dataset.originalNotes || '';
+                const newNotes = textarea.value;
+                if (newNotes === originalNotes) return;
+
+                const item = document.querySelector(`bookmark-item[bookmark-id="${currentId}"]`);
+                if (!item) return;
+                const itemConfig = item.getConfig();
+
+                try {
+                    const headers = { 'Content-Type': 'application/json' };
+                    if (itemConfig.authHeader) headers['Authorization'] = itemConfig.authHeader;
+
+                    const res = await fetch(`${itemConfig.serverUrl}/api/bookmarks/${currentId}`, {
+                        method: 'PATCH',
+                        headers,
+                        body: JSON.stringify({ notes: newNotes })
+                    });
+
+                    if (!res.ok) throw new Error('Failed to save notes');
+
+                    item.setAttribute('notes', newNotes);
+                    modal.dataset.originalNotes = newNotes;
+                } catch (err) {
+                    console.error('Notes save failed:', err);
+                }
+            });
+
+            modal.addEventListener('close', () => {
+                textarea.dispatchEvent(new Event('blur'));
+            });
+        }
+
+        modal.dataset.bookmarkId = id;
+        modal.dataset.originalNotes = notes;
+        modal.querySelector('.notes-modal-title').textContent = `Notes: ${this.escapeHtml(title)}`;
+        const textarea = modal.querySelector('.notes-modal-textarea');
+        textarea.value = notes;
+        modal.querySelector('.notes-modal-count').textContent = notes.length;
+        modal.showModal();
+        textarea.focus();
     }
 
     escapeHtml(text) {
@@ -461,6 +545,7 @@ class BookmarkList extends HTMLElement {
                 item.setAttribute('favicon', bm.favicon);
                 item.setAttribute('timestamp', bm.timestamp || '');
                 item.setAttribute('last-visited', bm.last_visited || '');
+                item.setAttribute('notes', bm.notes || '');
                 content.appendChild(item);
             }
 

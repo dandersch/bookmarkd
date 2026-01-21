@@ -14,75 +14,12 @@ Current understanding of the problem:
 ** DONE via a bookmarks.html / bookmarks.json file
 CLOSED: [2026-01-16 Fri 17:50]
 ** TODO directly from browser using a api+permission
-* TODO dev: docker dev image
-#+begin_src yaml
-# --- Development Stage ---
-FROM golang:1.24-alpine AS dev
-WORKDIR /app
-
-# Install air for hot reloading
-RUN go install github.com/air-verse/air@latest
-
-# Copy go.mod and go.sum first to leverage Docker cache
-COPY go.mod go.sum ./
-RUN go mod download
-
-# We don't COPY the rest of the code here for dev,·
-# because we will bind-mount it in docker-compose.
-CMD ["air", "-c", ".air.toml"]
-
-# --- Production Stage ---
-FROM alpine:latest AS prod
-WORKDIR /root/
-# Copy the built binary from a previous build if needed,·
-# or use this as a base for your final VPS deployment.
-COPY --from=dev /app/tmp/main .
-CMD ["./main"]
-#+end_src
-
-#+begin_src yaml
-services:
-  server:
-    build:
-      context: .
-      target: dev
-    ports:
-      - "8080:8080"
-    volumes:
-      - .:/app          # Mounts your local folder to /app in container
-      - pkg_cache:/go/pkg # Caches Go modules so they don't redownload
-    environment:
-      - APP_ENV=dev
-    restart: always
-
-volumes:
-  pkg_cache:
-#+end_src
-
-Ensure your air config points to the right build paths. You can generate a
-default one with air init.
-#+begin_src toml
-root = "."
-tmp_dir = "tmp"
-
-[build]
-  cmd = "go build -o ./tmp/main ."
-  bin = "./tmp/main"
-  include_ext = ["go", "tpl", "tmpl", "html", "json"]
-  exclude_dir = ["assets", "tmp", "vendor", "extension"]
-  delay = 500 # ms
-#+end_src
-* TODO dev: simple docker container
+* DONE dev: simple docker container
+CLOSED: [2026-01-21 Wed 02:54]
 - bookmarks db inside data/ folder
 * TODO syncthing-able bookmarks.json/bookmarks.html
 - needs file watcher in go backend to check for changes
 - maybe switch to NETSCAPE-Bookmark-file-1 (html)
-* TODO feat: pastebin
-** TODO add button to send clipboard to bookmarkd
-** TODO add button to copy into clipboard from bookmarkd
-** TODO display clipboard on dashboard
-** TODO shareable pastebin
-
 * TODO feat: simple filestash
 * TODO feat: tags
 - bookmarks can have several tags
@@ -118,32 +55,19 @@ github.com/.*/.*/issues/[0-9]*   issue
 - when added
 - title of bookmark
 - url of bookmark
+- last visited
 * TODO feat: detect changes of bookmark
 ** TODO periodically pull html and check if it has changed
 - maybe provide a (visual) diff
 ** TODO add sort-by "last changed"
-* TODO [2/4] feat: last visited
-** DONE log timestamp when user visits a bookmark in extension
-CLOSED: [2026-01-20 Tue 10:29]
-** DONE log timestamp when user visits a bookmark on dashboard
-CLOSED: [2026-01-20 Tue 10:29]
-** TODO add sort by: "last visited"
-** TODO log timestamp when user visits a bookmark outside ui/webpage
-- extension background worker could be used for that
-- might require additional permissions
-- should be opt-in/opt-out
-
 * TODO feat: snapshot webpage
 ** TODO take screenshot of webpage
 ** TODO save pdf of webpage
 * TODO feat: annotate webpages
 - integrated within sidebar
-** TODO taking notes via pastebin
-- one "pastebin" ready for every bookmark
-- just a text input field in the sidebar
-- maybe auto-bookmark a site somewhere when user starts "annotating"
-- reasoning: if you want notes for a site, you probably also want to remember
-  that site, i.e. you do want it bookmarked somewhere
+** DONE taking notes via simple textfield
+CLOSED: [2026-01-21 Wed 03:27]
+- one text box ready for every bookmark
 ** TODO sync annotation scroll with page scroll
 - sidebar scroll needs to be able to sync with webpage
 - try to anchor a notes position to a position on the webpage
@@ -154,12 +78,21 @@ CLOSED: [2026-01-20 Tue 10:29]
   + see https://web.hypothes.is/blog/fuzzy-anchoring/
   + maybe integrate with "detect changes" feature somehow?
 - see [[https://www.w3.org/TR/annotation-model/][w3c web annotation standard]]
+** TODO auto-bookmark a site somewhere when user starts "annotating"
+- reasoning: if you want notes for a site, you probably also want to remember
+  that site, i.e. you do want it bookmarked somewhere
 * TODO feat: notification integration
 * TODO feat: wayback machine integration
 - button that takes you to wayback 
 - "save page now" button
 
 * TODO feat: rss-hub integration
+* TODO feat: pastebin
+** TODO add button to send clipboard to bookmarkd
+** TODO add button to copy into clipboard from bookmarkd
+** TODO display clipboard on dashboard
+** TODO shareable pastebin
+
 * TODO feat: view page inside sidebar
 - idea: mimick a split view by having a peek at page inside sidebar
 
@@ -182,6 +115,12 @@ CLOSED: [2026-01-20 Tue 10:29]
 - [[https://github.com/ndom91/briefkasten][briefkasten]]: bookmark manager + extension
 - [[https://wallabag.org/][wallabag]]: archive & annotate webpages + extension
 - [[https://github.com/awesome-selfhosted/awesome-selfhosted?tab=readme-ov-file#bookmarks-and-link-sharing][awesome selfhosted: bookmarks & link sharing]]
+* DONE [2/2] feat: last visited
+CLOSED: [2026-01-21 Wed 02:56]
+** DONE log timestamp when user visits a bookmark in extension
+CLOSED: [2026-01-20 Tue 10:29]
+** DONE log timestamp when user visits a bookmark on dashboard
+CLOSED: [2026-01-20 Tue 10:29]
 * DONE [4/4] extension: better sidebar ui
 CLOSED: [2026-01-18 Sun 20:50]
 ** DONE smaller bookmarks list elements

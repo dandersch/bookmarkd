@@ -86,3 +86,11 @@ bookmarklet.js       - Bookmark bar alternative
 - The `bookmarks` slice is kept in memory and saved on every write. For large datasets (>10k bookmarks), consider batch writes or alternative persistence.
 - Extension expects HTML fragments, not JSON. If modifying `renderBookmarksFragment()`, ensure output remains valid HTML list items.
 - Port configuration has inconsistent format in `env.template` (includes `:` prefix on port) vs actual usage. The correct format is just the port number without `:`.
+
+## API Response Pattern (Important!)
+
+The codebase uses **separate structs for storage vs API responses**:
+- `Bookmark` struct: used for persistence to `bookmarks.json`
+- `BookmarkResponse` struct: used for JSON serialization in `GET /api/bookmarks`
+
+**When adding new fields to bookmarks, you must update BOTH structs** and the transformation in `getBookmarksJSON()`. The separation exists to resolve `category_id` to a human-readable `category` name in responses.

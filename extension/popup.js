@@ -55,6 +55,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         updatePreviewState();
     }
 
+    // Notes UI elements
+    const notesSection = document.getElementById('notes-section');
+    const notesToggle = document.getElementById('notes-toggle');
+    const notesArrow = document.getElementById('notes-arrow');
+    const notesContainer = document.getElementById('notes-container');
+    const notesTextarea = document.getElementById('notes-textarea');
+    const notesCount = document.getElementById('notes-count');
+    let notesExpanded = false;
+    let originalNotes = '';
+
     // Update preview card visual state based on bookmark status
     function updatePreviewState() {
         if (existingBookmark) {
@@ -62,6 +72,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             actionOverlay.textContent = '−';
             saveFavicon.title = 'Click to remove bookmark';
             previewTitle.textContent = existingBookmark.title || currentValidTab.title || 'No Title';
+            notesSection.classList.remove('hidden');
+            notesTextarea.value = existingBookmark.notes || '';
+            originalNotes = existingBookmark.notes || '';
+            notesCount.textContent = notesTextarea.value.length;
         } else {
             previewCard.classList.remove('bookmarked');
             actionOverlay.textContent = '+';
@@ -69,8 +83,57 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (currentValidTab) {
                 previewTitle.textContent = currentValidTab.title || 'No Title';
             }
+            notesSection.classList.add('hidden');
+            notesContainer.classList.add('hidden');
+            notesExpanded = false;
+            notesArrow.textContent = '▶';
         }
     }
+
+    // Notes toggle
+    notesToggle.addEventListener('click', () => {
+        notesExpanded = !notesExpanded;
+        notesContainer.classList.toggle('hidden', !notesExpanded);
+        notesArrow.textContent = notesExpanded ? '▼' : '▶';
+        if (notesExpanded) {
+            notesTextarea.focus();
+        }
+    });
+
+    // Notes character counter
+    notesTextarea.addEventListener('input', () => {
+        notesCount.textContent = notesTextarea.value.length;
+    });
+
+    // Notes auto-save on blur
+    notesTextarea.addEventListener('blur', async () => {
+        const newNotes = notesTextarea.value;
+        if (!existingBookmark || newNotes === originalNotes) return;
+
+        try {
+            const headers = { "Content-Type": "application/json" };
+            if (config.authHeader) headers["Authorization"] = config.authHeader;
+
+            const res = await fetch(`${serverUrl}/api/bookmarks/${existingBookmark.id}`, {
+                method: "PATCH",
+                headers,
+                body: JSON.stringify({ notes: newNotes })
+            });
+
+            if (!res.ok) throw new Error("Server error: " + res.status);
+
+            existingBookmark.notes = newNotes;
+            originalNotes = newNotes;
+            status.innerText = "Notes saved!";
+            status.className = "alert alert-success text-center text-xs py-2 block";
+            setTimeout(() => status.classList.add('hidden'), 1500);
+
+            allBookmarks = await fetchData(serverUrl, config.authHeader);
+        } catch (err) {
+            status.innerText = "Error: " + err.message;
+            status.className = "alert alert-error text-center text-xs py-2 block";
+        }
+    });
 
     // 2. Initial Fetch of Bookmark List and Categories
     allBookmarks = await fetchData(serverUrl, config.authHeader);

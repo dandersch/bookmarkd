@@ -32,6 +32,7 @@ type Bookmark struct {
 	Favicon     string `json:"favicon"`
 	Order       int    `json:"order"`
 	LastVisited *int64 `json:"last_visited,omitempty"`
+	Notes       string `json:"notes,omitempty"`
 }
 
 type Database struct {
@@ -554,6 +555,11 @@ func createBookmark(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
+// NOTE: Consider removing BookmarkResponse and serializing Bookmark directly.
+// This separate struct exists only to add the resolved "category" name field.
+// The duplication is error-prone (easy to forget adding new fields to both structs).
+// A simpler approach: add a CategoryName field to Bookmark computed at read time,
+// or include the category name lookup in the JSON marshaling logic.
 type BookmarkResponse struct {
 	ID          string `json:"id"`
 	URL         string `json:"url"`
@@ -564,6 +570,7 @@ type BookmarkResponse struct {
 	Favicon     string `json:"favicon"`
 	Order       int    `json:"order"`
 	LastVisited *int64 `json:"last_visited,omitempty"`
+	Notes       string `json:"notes,omitempty"`
 }
 
 func getBookmarksJSON(w http.ResponseWriter) {
@@ -581,6 +588,7 @@ func getBookmarksJSON(w http.ResponseWriter) {
 			Favicon:     bm.Favicon,
 			Order:       bm.Order,
 			LastVisited: bm.LastVisited,
+			Notes:       bm.Notes,
 		}
 	}
 	mu.RUnlock()
@@ -626,6 +634,7 @@ func updateBookmark(w http.ResponseWriter, r *http.Request, id string) {
 		Category   *string `json:"category"`
 		CategoryID *string `json:"category_id"`
 		Order      *int    `json:"order"`
+		Notes      *string `json:"notes"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
@@ -644,6 +653,14 @@ func updateBookmark(w http.ResponseWriter, r *http.Request, id string) {
 
 	if payload.Title != nil {
 		bm.Title = *payload.Title
+	}
+
+	if payload.Notes != nil {
+		notes := *payload.Notes
+		if len(notes) > 1000 {
+			notes = notes[:1000]
+		}
+		bm.Notes = notes
 	}
 
 	newCategoryID := bm.CategoryID
