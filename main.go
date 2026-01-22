@@ -27,6 +27,7 @@ type Bookmark struct {
 	ID          string `json:"id"`
 	URL         string `json:"url"`
 	Title       string `json:"title"`
+	Category    string `json:"category"`
 	CategoryID  string `json:"category_id"`
 	Timestamp   int64  `json:"timestamp"`
 	Favicon     string `json:"favicon"`
@@ -555,46 +556,16 @@ func createBookmark(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-// NOTE: Consider removing BookmarkResponse and serializing Bookmark directly.
-// This separate struct exists only to add the resolved "category" name field.
-// The duplication is error-prone (easy to forget adding new fields to both structs).
-// A simpler approach: add a CategoryName field to Bookmark computed at read time,
-// or include the category name lookup in the JSON marshaling logic.
-type BookmarkResponse struct {
-	ID          string `json:"id"`
-	URL         string `json:"url"`
-	Title       string `json:"title"`
-	Category    string `json:"category"`
-	CategoryID  string `json:"category_id"`
-	Timestamp   int64  `json:"timestamp"`
-	Favicon     string `json:"favicon"`
-	Order       int    `json:"order"`
-	LastVisited *int64 `json:"last_visited,omitempty"`
-	Notes       string `json:"notes,omitempty"`
-}
-
 func getBookmarksJSON(w http.ResponseWriter) {
 	mu.RLock()
 	sortedBookmarks := bookmarksToSortedSlice()
-	response := make([]BookmarkResponse, len(sortedBookmarks))
-	for i, bm := range sortedBookmarks {
-		response[i] = BookmarkResponse{
-			ID:          bm.ID,
-			URL:         bm.URL,
-			Title:       bm.Title,
-			Category:    getCategoryName(bm.CategoryID),
-			CategoryID:  bm.CategoryID,
-			Timestamp:   bm.Timestamp,
-			Favicon:     bm.Favicon,
-			Order:       bm.Order,
-			LastVisited: bm.LastVisited,
-			Notes:       bm.Notes,
-		}
+	for i := range sortedBookmarks {
+		sortedBookmarks[i].Category = getCategoryName(sortedBookmarks[i].CategoryID)
 	}
 	mu.RUnlock()
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	json.NewEncoder(w).Encode(sortedBookmarks)
 }
 
 func deleteBookmark(w http.ResponseWriter, id string) {

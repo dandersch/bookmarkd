@@ -1,3 +1,7 @@
+* TODO [1/2] import existing bookmarks
+** DONE via a bookmarks.html / bookmarks.json file
+CLOSED: [2026-01-16 Fri 17:50]
+** TODO directly from browser using a api+permission
 * TODO extension: improve "add-bookmark" js bookmarklet
 ** TODO fix CORS problem that occurs on some sites (if possible)
 Current understanding of the problem:
@@ -10,13 +14,6 @@ Current understanding of the problem:
 ** TODO auto-generate bookmarklet
 - on index.html (no access auth data?)
 - OR inside options.html
-* TODO import existing bookmarks
-** DONE via a bookmarks.html / bookmarks.json file
-CLOSED: [2026-01-16 Fri 17:50]
-** TODO directly from browser using a api+permission
-* DONE dev: simple docker container
-CLOSED: [2026-01-21 Wed 02:54]
-- bookmarks db inside data/ folder
 * TODO syncthing-able bookmarks.json/bookmarks.html
 - needs file watcher in go backend to check for changes
 - maybe switch to NETSCAPE-Bookmark-file-1 (html)
@@ -115,6 +112,9 @@ CLOSED: [2026-01-21 Wed 03:27]
 - [[https://github.com/ndom91/briefkasten][briefkasten]]: bookmark manager + extension
 - [[https://wallabag.org/][wallabag]]: archive & annotate webpages + extension
 - [[https://github.com/awesome-selfhosted/awesome-selfhosted?tab=readme-ov-file#bookmarks-and-link-sharing][awesome selfhosted: bookmarks & link sharing]]
+* DONE dev: simple docker container
+CLOSED: [2026-01-21 Wed 02:54]
+- bookmarks db inside data/ folder
 * DONE [2/2] feat: last visited
 CLOSED: [2026-01-21 Wed 02:56]
 ** DONE log timestamp when user visits a bookmark in extension
