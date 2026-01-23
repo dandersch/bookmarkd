@@ -103,11 +103,11 @@
     @apply bg-base-200/50 rounded-lg;
 }
 .bookmark-drop-indicator {
-    height: 2px;
+    position: fixed;
     background: var(--color-accent);
-    border-radius: 1px;
+    border-radius: 2px;
     pointer-events: none;
-    margin: 2px 0;
+    z-index: 9999;
 }
 
 /* Category drag and drop */

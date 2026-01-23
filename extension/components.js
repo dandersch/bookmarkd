@@ -562,7 +562,7 @@ class BookmarkList extends HTMLElement {
                 e.dataTransfer.dropEffect = 'move';
                 content.classList.add('drag-over');
                 
-                const afterElement = this._getDragAfterElement(content, e.clientY);
+                const afterElement = this._getDragAfterElement(content, e.clientY, e.clientX);
                 this._showDropIndicator(content, afterElement);
                 this._autoScroll(e.clientY);
             });
@@ -585,7 +585,7 @@ class BookmarkList extends HTMLElement {
                 const draggedEl = this.querySelector(`bookmark-item[bookmark-id="${bookmarkId}"]`);
                 if (!draggedEl) return;
 
-                const afterElement = this._getDragAfterElement(content, e.clientY);
+                const afterElement = this._getDragAfterElement(content, e.clientY, e.clientX);
                 const targetCategoryId = content.dataset.categoryId;
                 const newOrder = this._computeDropOrder(content, draggedEl, afterElement, targetCategoryId);
                 
@@ -814,17 +814,43 @@ class BookmarkList extends HTMLElement {
         }
     }
 
-    _getDragAfterElement(container, y) {
+    _getDragAfterElement(container, y, x) {
         const items = [...container.querySelectorAll('bookmark-item:not(.dragging)')];
+        const isGrid = getComputedStyle(container).display === 'grid';
         
-        return items.reduce((closest, child) => {
+        if (!isGrid) {
+            // Vertical list: use Y only
+            return items.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset, element: child };
+                }
+                return closest;
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+        
+        // Grid layout: find closest item based on position
+        let closest = null;
+        let closestDist = Infinity;
+        
+        for (const child of items) {
             const box = child.getBoundingClientRect();
-            const offset = y - box.top - box.height / 2;
-            if (offset < 0 && offset > closest.offset) {
-                return { offset, element: child };
+            const centerX = box.left + box.width / 2;
+            const centerY = box.top + box.height / 2;
+            
+            // Only consider items that are after the cursor position
+            // (below current row, or same row but to the right)
+            if (y < box.bottom && (y >= box.top || x < centerX)) {
+                const dist = Math.hypot(x - centerX, y - centerY);
+                if (dist < closestDist && (x < centerX || y < centerY)) {
+                    closestDist = dist;
+                    closest = child;
+                }
             }
-            return closest;
-        }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+        
+        return closest;
     }
 
     _getOrderAttr(el) {
@@ -868,19 +894,57 @@ class BookmarkList extends HTMLElement {
         if (this._dropIndicator) return;
         const el = document.createElement('div');
         el.className = 'bookmark-drop-indicator';
+        document.body.appendChild(el);
         this._dropIndicator = el;
     }
 
     _showDropIndicator(container, beforeEl) {
         this._ensureDropIndicator();
+        const isGrid = getComputedStyle(container).display === 'grid';
+        
+        if (beforeEl) {
+            const box = beforeEl.getBoundingClientRect();
+            if (isGrid) {
+                // Vertical line on left side of target element
+                this._dropIndicator.style.width = '3px';
+                this._dropIndicator.style.height = box.height + 'px';
+                this._dropIndicator.style.left = (box.left - 4) + 'px';
+                this._dropIndicator.style.top = box.top + 'px';
+            } else {
+                // Horizontal line above target element
+                this._dropIndicator.style.width = box.width + 'px';
+                this._dropIndicator.style.height = '3px';
+                this._dropIndicator.style.left = box.left + 'px';
+                this._dropIndicator.style.top = (box.top - 4) + 'px';
+            }
+        } else {
+            // Dropping at end - show after last item
+            const items = container.querySelectorAll('bookmark-item');
+            const lastItem = items[items.length - 1];
+            if (lastItem) {
+                const box = lastItem.getBoundingClientRect();
+                if (isGrid) {
+                    this._dropIndicator.style.width = '3px';
+                    this._dropIndicator.style.height = box.height + 'px';
+                    this._dropIndicator.style.left = (box.right + 4) + 'px';
+                    this._dropIndicator.style.top = box.top + 'px';
+                } else {
+                    this._dropIndicator.style.width = box.width + 'px';
+                    this._dropIndicator.style.height = '3px';
+                    this._dropIndicator.style.left = box.left + 'px';
+                    this._dropIndicator.style.top = (box.bottom + 4) + 'px';
+                }
+            } else {
+                this._hideDropIndicator();
+                return;
+            }
+        }
         this._dropIndicator.style.display = 'block';
-        container.insertBefore(this._dropIndicator, beforeEl || null);
     }
 
     _hideDropIndicator() {
         if (!this._dropIndicator) return;
         this._dropIndicator.style.display = 'none';
-        this._dropIndicator.remove();
     }
 
     _autoScroll(clientY) {
