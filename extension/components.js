@@ -1,6 +1,6 @@
 class BookmarkItem extends HTMLElement {
     static get observedAttributes() {
-        return ['bookmark-id', 'url', 'title', 'category', 'category-id', 'favicon', 'timestamp', 'last-visited', 'notes'];
+        return ['bookmark-id', 'url', 'title', 'category', 'category-id', 'favicon', 'timestamp', 'last-visited', 'notes', 'order'];
     }
 
     constructor() {
@@ -109,6 +109,11 @@ class BookmarkItem extends HTMLElement {
 
         this.addEventListener('dragend', () => {
             this.classList.remove('dragging');
+            // Clean up drop indicator when drag ends
+            const list = this.closest('bookmark-list');
+            if (list && list._hideDropIndicator) {
+                list._hideDropIndicator();
+            }
         });
     }
 
@@ -546,43 +551,45 @@ class BookmarkList extends HTMLElement {
                 item.setAttribute('timestamp', bm.timestamp || '');
                 item.setAttribute('last-visited', bm.last_visited || '');
                 item.setAttribute('notes', bm.notes || '');
+                item.setAttribute('order', bm.order ?? 0);
                 content.appendChild(item);
             }
 
             // Drop zone handlers
             content.addEventListener('dragover', (e) => {
+                if (!e.dataTransfer.types.includes('bookmark-id')) return;
                 e.preventDefault();
                 e.dataTransfer.dropEffect = 'move';
                 content.classList.add('drag-over');
                 
                 const afterElement = this._getDragAfterElement(content, e.clientY);
-                const dragging = document.querySelector('.dragging');
-                if (dragging) {
-                    if (afterElement) {
-                        content.insertBefore(dragging, afterElement);
-                    } else {
-                        content.appendChild(dragging);
-                    }
-                }
+                this._showDropIndicator(content, afterElement);
+                this._autoScroll(e.clientY);
             });
 
             content.addEventListener('dragleave', (e) => {
                 if (!content.contains(e.relatedTarget)) {
                     content.classList.remove('drag-over');
+                    this._hideDropIndicator();
                 }
             });
 
             content.addEventListener('drop', (e) => {
                 e.preventDefault();
                 content.classList.remove('drag-over');
+                this._hideDropIndicator();
                 
                 const bookmarkId = e.dataTransfer.getData('bookmark-id');
                 if (!bookmarkId) return;
 
-                const newCategoryId = content.dataset.categoryId;
-                const newOrder = this._getDropOrder(content, bookmarkId);
+                const draggedEl = this.querySelector(`bookmark-item[bookmark-id="${bookmarkId}"]`);
+                if (!draggedEl) return;
+
+                const afterElement = this._getDragAfterElement(content, e.clientY);
+                const targetCategoryId = content.dataset.categoryId;
+                const newOrder = this._computeDropOrder(content, draggedEl, afterElement, targetCategoryId);
                 
-                this._moveBookmark(bookmarkId, newCategoryId, newOrder);
+                this._moveBookmark(bookmarkId, targetCategoryId, newOrder);
             });
 
             section.appendChild(content);
@@ -820,14 +827,65 @@ class BookmarkList extends HTMLElement {
         }, { offset: Number.NEGATIVE_INFINITY }).element;
     }
 
-    _getDropOrder(container, draggedId) {
-        const items = [...container.querySelectorAll('bookmark-item')];
-        for (let i = 0; i < items.length; i++) {
-            if (items[i].getAttribute('bookmark-id') === draggedId) {
-                return i;
-            }
+    _getOrderAttr(el) {
+        const v = el?.getAttribute('order');
+        return v == null ? null : parseInt(v, 10);
+    }
+
+    _computeDropOrder(container, draggedEl, afterElement, targetCategoryId) {
+        // If dropping before some element, use that element's order
+        if (afterElement) {
+            return this._getOrderAttr(afterElement) ?? 0;
         }
-        return items.length;
+
+        // Dropping at end
+        const sourceCategoryId = draggedEl.getAttribute('category-id');
+        const sourceOrder = this._getOrderAttr(draggedEl) ?? 0;
+
+        const others = [...container.querySelectorAll('bookmark-item:not(.dragging)')];
+        const maxOtherOrder = others.reduce((m, el) => {
+            const o = this._getOrderAttr(el);
+            return o == null ? m : Math.max(m, o);
+        }, -1);
+
+        if (targetCategoryId === sourceCategoryId) {
+            // Same category: return max order (not max+1 to avoid gaps)
+            return Math.max(sourceOrder, maxOtherOrder);
+        }
+
+        // Cross-category: append at end
+        return maxOtherOrder + 1;
+    }
+
+    _ensureDropIndicator() {
+        if (this._dropIndicator) return;
+        const el = document.createElement('div');
+        el.className = 'bookmark-drop-indicator';
+        this._dropIndicator = el;
+    }
+
+    _showDropIndicator(container, beforeEl) {
+        this._ensureDropIndicator();
+        this._dropIndicator.style.display = 'block';
+        container.insertBefore(this._dropIndicator, beforeEl || null);
+    }
+
+    _hideDropIndicator() {
+        if (!this._dropIndicator) return;
+        this._dropIndicator.style.display = 'none';
+        this._dropIndicator.remove();
+    }
+
+    _autoScroll(clientY) {
+        const margin = 80;
+        const speed = 15;
+        const scroller = document.scrollingElement || document.documentElement;
+
+        if (clientY < margin) {
+            scroller.scrollTop -= speed;
+        } else if (window.innerHeight - clientY < margin) {
+            scroller.scrollTop += speed;
+        }
     }
 
     async _moveBookmark(id, categoryId, order) {

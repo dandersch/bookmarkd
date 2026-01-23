@@ -102,6 +102,13 @@
 .collapse-content.drag-over {
     @apply bg-base-200/50 rounded-lg;
 }
+.bookmark-drop-indicator {
+    height: 2px;
+    background: oklch(var(--p));
+    border-radius: 1px;
+    pointer-events: none;
+    margin: 2px 0;
+}
 
 /* Category drag and drop */
 .collapse.category-dragging {
