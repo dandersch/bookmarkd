@@ -833,15 +833,22 @@ class BookmarkList extends HTMLElement {
     }
 
     _computeDropOrder(container, draggedEl, afterElement, targetCategoryId) {
-        // If dropping before some element, use that element's order
-        if (afterElement) {
-            return this._getOrderAttr(afterElement) ?? 0;
-        }
-
-        // Dropping at end
         const sourceCategoryId = draggedEl.getAttribute('category-id');
         const sourceOrder = this._getOrderAttr(draggedEl) ?? 0;
 
+        // If dropping before some element
+        if (afterElement) {
+            const targetOrder = this._getOrderAttr(afterElement) ?? 0;
+            
+            // When moving DOWN within same category, subtract 1
+            // because removing from above shifts target up
+            if (targetCategoryId === sourceCategoryId && targetOrder > sourceOrder) {
+                return targetOrder - 1;
+            }
+            return targetOrder;
+        }
+
+        // Dropping at end
         const others = [...container.querySelectorAll('bookmark-item:not(.dragging)')];
         const maxOtherOrder = others.reduce((m, el) => {
             const o = this._getOrderAttr(el);
