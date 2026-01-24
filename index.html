@@ -9,13 +9,15 @@
 </head>
 <body class="max-w-6xl bg-base-100 text-base-content min-h-screen mx-auto">
     <!-- Header -->
-    <header class="bg-primary p-6 flex items-center justify-between">
-        <div>
+    <header class="bg-primary p-6 flex items-center gap-4">
+        <div class="shrink-0">
             <h1 class="text-2xl font-bold text-primary-content">bookmarkd</h1>
             <p class="text-primary-content/70 text-sm">Your private collection</p>
         </div>
-        <div class="flex items-center gap-4">
-            <search-bar id="search" target="bookmark-list"></search-bar>
+        <div class="flex-1 flex justify-center px-8">
+            <search-bar id="search" target="bookmark-list" class="w-full max-w-2xl"></search-bar>
+        </div>
+        <div class="flex items-center gap-4 shrink-0">
             <span id="bookmark-count" class="text-primary-content/70 text-sm"></span>
             <button id="settings-btn" class="btn btn-ghost btn-sm text-primary-content">⚙</button>
         </div>

@@ -46,7 +46,7 @@
 }
 
 .bookmark-item {
-    @apply flex flex-col bg-base-300 rounded-xl p-4 transition-all duration-200 relative;
+    @apply flex flex-col bg-base-300 p-4 transition-all duration-200 relative;
 }
 .bookmark-item:hover {
     @apply -translate-y-1 shadow-2xl ring-2 ring-primary/30;
@@ -69,15 +69,15 @@
 }
 
 .bookmark-timestamps {
-    @apply flex justify-between text-xs text-base-content/50;
+    @apply flex justify-between text-xs text-base-content/50 min-w-0;
 }
 
 .bookmark-timestamp {
-    @apply text-xs text-base-content/50;
+    @apply text-xs text-base-content/50 truncate min-w-0 flex-1;
 }
 
 .bookmark-visited {
-    @apply text-xs text-base-content/50;
+    @apply text-xs text-base-content/50 truncate min-w-0 flex-1 text-right;
 }
 
 /* Fix DaisyUI collapse */
@@ -85,14 +85,14 @@
     @apply visible! rounded-none bg-transparent relative;
 }
 .collapse-title {
-    @apply min-h-0 pl-3 pr-0 bg-base-300 rounded;
+    @apply min-h-0 pl-3 pr-0 bg-base-300;
 }
 .collapse-title::after {
     @apply opacity-40;
 }
 .collapse-content {
-    @apply grid gap-4 py-2 px-2;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    @apply grid gap-2 pt-2 px-2 mb-4 bg-base-300/50;
+    grid-template-columns: repeat(4, 1fr);
 }
 
 /* Drag and drop styles */
@@ -100,7 +100,7 @@
     @apply opacity-50;
 }
 .collapse-content.drag-over {
-    @apply bg-base-200/50 rounded-lg;
+    @apply bg-base-200/70;
 }
 .bookmark-drop-indicator {
     position: fixed;
@@ -115,7 +115,7 @@
     @apply opacity-50;
 }
 .collapse.category-drag-over {
-    @apply bg-primary/20 rounded-lg;
+    @apply bg-primary/20;
 }
 .drag-handle {
     @apply cursor-grab opacity-40 hover:opacity-100;
@@ -156,7 +156,7 @@
 
 /* Empty category drop zone */
 .empty-drop-zone {
-    @apply p-8 text-center text-sm text-base-content/40 border border-dashed border-base-content/30 rounded-lg m-2;
+    @apply p-8 text-center text-sm text-base-content/40 border border-dashed border-base-content/30 m-2;
 }
 .collapse-content.drag-over .empty-drop-zone {
     @apply text-base-content/80 border-primary;

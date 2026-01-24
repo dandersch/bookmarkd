@@ -1,3 +1,11 @@
+* TODO categories can have customizable colors
+* TODO better styling
+dashboard:
+- no rounded corners, especially on cards
+- "collapse-content" should have distinct background color, except for at the bottom: there should be padding/margin (unsure which one) to have distance to the next category, to make it visually more part of its category divider. The visual should be like folders opening/closing for categories (un-)collapsing.
+- cards should be narrower but can be taller, 4 cards should fit in one row
+- search bar should be bigger and centered, should take up most of the center space
+
 * TODO dev: add tests
 * TODO extension: improve "add-bookmark" js bookmarklet
 ** TODO fix CORS problem that occurs on some sites (if possible)

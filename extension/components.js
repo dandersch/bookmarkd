@@ -1284,7 +1284,7 @@ class SearchBar extends HTMLElement {
         const isCompact = this.hasAttribute('compact');
         const inputClass = isCompact
             ? 'input input-xs input-bordered bg-primary-content/10 border-primary-content/20 text-primary-content placeholder:text-primary-content/50 w-full focus:outline-none focus:border-primary-content/40'
-            : 'input input-sm input-bordered bg-primary-content/10 border-primary-content/20 text-primary-content placeholder:text-primary-content/50 w-full max-w-xs focus:outline-none focus:border-primary-content/40';
+            : 'input input-lg input-bordered bg-primary-content/10 border-primary-content/20 text-primary-content placeholder:text-primary-content/50 w-full focus:outline-none focus:border-primary-content/40';
 
         this.innerHTML = `<input type="text" class="${inputClass}" placeholder="Search...">`;
 

@@ -83,6 +83,8 @@ bookmarklet.js       - Bookmark bar alternative
 
 ## Important Notes
 
+- **Do NOT run `tailwindcss` manually** - the `air` command automatically rebuilds CSS on file changes.
+
 - The `bookmarks` slice is kept in memory and saved on every write. For large datasets (>10k bookmarks), consider batch writes or alternative persistence.
 - Extension expects HTML fragments, not JSON. If modifying `renderBookmarksFragment()`, ensure output remains valid HTML list items.
 - Port configuration has inconsistent format in `env.template` (includes `:` prefix on port) vs actual usage. The correct format is just the port number without `:`.
