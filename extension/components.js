@@ -1014,11 +1014,22 @@ class SettingsImport extends HTMLElement {
                 <p class="text-sm opacity-70 mb-3">Import from browser bookmark export (HTML format)</p>
                 <input type="file" accept=".html,.htm" class="file-input file-input-bordered file-input-sm w-full max-w-xs import-file">
                 <div class="import-status mt-3 text-sm"></div>
+
+                <div class="divider before:bg-base-300 after:bg-base-300 my-4"></div>
+
+                <label class="block mb-2 font-semibold">Import from Browser</label>
+                <p class="text-sm opacity-70 mb-3">Import bookmarks directly from your browser</p>
+                <button class="btn btn-sm btn-outline browser-import-btn">Import Browser Bookmarks</button>
+                <div class="browser-import-status mt-3 text-sm"></div>
             </div>
         `;
 
         this.querySelector('.import-file').addEventListener('change', (e) => {
             this.handleFileSelect(e);
+        });
+
+        this.querySelector('.browser-import-btn').addEventListener('click', () => {
+            this.handleBrowserImport();
         });
     }
 
@@ -1121,11 +1132,16 @@ class SettingsImport extends HTMLElement {
         return bookmarks;
     }
 
-    async importBookmarks(bookmarks) {
+    async importBookmarks(bookmarks, statusEl = null) {
         const config = this.getConfig();
         const results = [];
+        const total = bookmarks.length;
 
-        for (const bm of bookmarks) {
+        for (let i = 0; i < bookmarks.length; i++) {
+            const bm = bookmarks[i];
+            if (statusEl) {
+                statusEl.textContent = `Importing ${i + 1}/${total}...`;
+            }
             try {
                 const headers = { 'Content-Type': 'application/json' };
                 if (config.authHeader) headers['Authorization'] = config.authHeader;
@@ -1148,6 +1164,110 @@ class SettingsImport extends HTMLElement {
         }
 
         return results;
+    }
+
+    async handleBrowserImport() {
+        const statusEl = this.querySelector('.browser-import-status');
+        const btn = this.querySelector('.browser-import-btn');
+        
+        statusEl.textContent = 'Reading browser bookmarks...';
+        statusEl.className = 'browser-import-status mt-3 text-sm';
+        btn.disabled = true;
+
+        try {
+            const bookmarksApi = typeof browser !== 'undefined' ? browser.bookmarks : chrome.bookmarks;
+            
+            if (!bookmarksApi) {
+                throw new Error('Bookmarks API not available');
+            }
+
+            const existingUrls = await this.fetchExistingUrls();
+            const tree = await bookmarksApi.getTree();
+            const bookmarks = this.flattenBookmarkTree(tree[0]);
+
+            if (bookmarks.length === 0) {
+                statusEl.textContent = 'No bookmarks found in browser';
+                statusEl.classList.add('text-warning');
+                btn.disabled = false;
+                return;
+            }
+
+            const newBookmarks = bookmarks.filter(bm => !existingUrls.has(bm.url));
+            const skipped = bookmarks.length - newBookmarks.length;
+
+            if (newBookmarks.length === 0) {
+                statusEl.textContent = `All ${bookmarks.length} bookmarks already exist`;
+                statusEl.classList.add('text-info');
+                btn.disabled = false;
+                return;
+            }
+
+            statusEl.textContent = `Found ${newBookmarks.length} new bookmarks (${skipped} duplicates skipped). Importing...`;
+
+            const results = await this.importBookmarks(newBookmarks, statusEl);
+            const successful = results.filter(r => r.success).length;
+            const failed = results.filter(r => !r.success).length;
+
+            if (failed === 0) {
+                statusEl.textContent = `Imported ${successful} bookmarks` + (skipped > 0 ? ` (${skipped} duplicates skipped)` : '');
+                statusEl.classList.add('text-success');
+            } else {
+                statusEl.textContent = `Imported ${successful}, ${failed} failed` + (skipped > 0 ? `, ${skipped} skipped` : '');
+                statusEl.classList.add('text-warning');
+            }
+
+            this.dispatchEvent(new CustomEvent('import-complete', {
+                detail: { successful, failed, skipped },
+                bubbles: true
+            }));
+
+        } catch (err) {
+            console.error('Browser import failed:', err);
+            statusEl.textContent = 'Import failed: ' + err.message;
+            statusEl.classList.add('text-error');
+        }
+
+        btn.disabled = false;
+    }
+
+    async fetchExistingUrls() {
+        const config = this.getConfig();
+        const headers = {};
+        if (config.authHeader) headers['Authorization'] = config.authHeader;
+
+        try {
+            const res = await fetch(`${config.serverUrl}/api/bookmarks`, { headers });
+            if (!res.ok) return new Set();
+            const bookmarks = await res.json();
+            return new Set(bookmarks.map(bm => bm.url));
+        } catch {
+            return new Set();
+        }
+    }
+
+    flattenBookmarkTree(node, parentFolder = 'Uncategorized') {
+        const bookmarks = [];
+
+        if (node.url) {
+            if (node.url.startsWith('http://') || node.url.startsWith('https://')) {
+                bookmarks.push({
+                    url: node.url,
+                    title: node.title || node.url,
+                    category: parentFolder
+                });
+            }
+        }
+
+        if (node.children) {
+            const folderName = node.title || parentFolder;
+            for (const child of node.children) {
+                const isFolder = !child.url && child.children;
+                const childFolder = isFolder ? parentFolder : folderName;
+                bookmarks.push(...this.flattenBookmarkTree(child, node.title ? folderName : parentFolder));
+            }
+        }
+
+        return bookmarks;
     }
 }
 

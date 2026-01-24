@@ -6,7 +6,8 @@
   "permissions": [
     "sidePanel",
     "tabs",
-    "storage"
+    "storage",
+    "bookmarks"
   ],
   "background": {
     "service_worker": "background.js",

@@ -1,7 +1,4 @@
-* TODO [1/2] import existing bookmarks
-** DONE via a bookmarks.html / bookmarks.json file
-CLOSED: [2026-01-16 Fri 17:50]
-** TODO directly from browser using a api+permission
+* TODO dev: add tests
 * TODO extension: improve "add-bookmark" js bookmarklet
 ** TODO fix CORS problem that occurs on some sites (if possible)
 Current understanding of the problem:
@@ -112,6 +109,12 @@ CLOSED: [2026-01-21 Wed 03:27]
 - [[https://github.com/ndom91/briefkasten][briefkasten]]: bookmark manager + extension
 - [[https://wallabag.org/][wallabag]]: archive & annotate webpages + extension
 - [[https://github.com/awesome-selfhosted/awesome-selfhosted?tab=readme-ov-file#bookmarks-and-link-sharing][awesome selfhosted: bookmarks & link sharing]]
+* DONE [2/2] import existing bookmarks
+CLOSED: [2026-01-24 Sat 14:29]
+** DONE via a bookmarks.html / bookmarks.json file
+CLOSED: [2026-01-16 Fri 17:50]
+** DONE directly from browser using a api+permission
+CLOSED: [2026-01-24 Sat 14:29]
 * DONE dev: simple docker container
 CLOSED: [2026-01-21 Wed 02:54]
 - bookmarks db inside data/ folder

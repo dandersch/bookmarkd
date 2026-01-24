@@ -2266,6 +2266,9 @@
   .text-error {
     color: var(--color-error);
   }
+  .text-info {
+    color: var(--color-info);
+  }
   .text-primary-content {
     color: var(--color-primary-content);
   }
@@ -2353,6 +2356,26 @@
     transition-property: opacity;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
     transition-duration: var(--tw-duration, var(--default-transition-duration));
+  }
+  .btn-outline {
+    @layer daisyui.l1 {
+      &:not( .btn-active, :hover, :active:focus, :focus-visible, input:checked:not(.filter .btn), :disabled, [disabled], .btn-disabled ) {
+        --btn-shadow: "";
+        --btn-bg: #0000;
+        --btn-fg: var(--btn-color);
+        --btn-border: var(--btn-color);
+        --btn-noise: none;
+      }
+      @media (hover: none) {
+        &:not(.btn-active, :active, :focus-visible, input:checked:not(.filter .btn)):hover {
+          --btn-shadow: "";
+          --btn-bg: #0000;
+          --btn-fg: var(--btn-color);
+          --btn-border: var(--btn-color);
+          --btn-noise: none;
+        }
+      }
+    }
   }
   .btn-sm {
     @layer daisyui.l1.l2 {
