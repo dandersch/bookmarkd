@@ -21,6 +21,7 @@ type Category struct {
 	ID    string `json:"id"`
 	Name  string `json:"name"`
 	Order int    `json:"order"`
+	Color string `json:"color,omitempty"`
 }
 
 type Bookmark struct {
@@ -334,7 +335,7 @@ func handleCategoryAPI(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == "POST" {
-		createCategory(w, decodedName)
+		createCategory(w, r, decodedName)
 		return
 	}
 
@@ -368,11 +369,16 @@ func getCategoriesJSON(w http.ResponseWriter) {
 	json.NewEncoder(w).Encode(sortedCategories)
 }
 
-func createCategory(w http.ResponseWriter, name string) {
+func createCategory(w http.ResponseWriter, r *http.Request, name string) {
 	if name == "" {
 		http.Error(w, "Category name is required", http.StatusBadRequest)
 		return
 	}
+
+	var payload struct {
+		Color string `json:"color"`
+	}
+	json.NewDecoder(r.Body).Decode(&payload)
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -393,6 +399,7 @@ func createCategory(w http.ResponseWriter, name string) {
 		ID:    uuid.New().String(),
 		Name:  name,
 		Order: maxOrder + 1,
+		Color: payload.Color,
 	}
 	categories[newCat.ID] = newCat
 	saveDatabase()
@@ -406,6 +413,7 @@ func updateCategory(w http.ResponseWriter, r *http.Request, oldName string) {
 	var payload struct {
 		Name  *string `json:"name"`
 		Order *int    `json:"order"`
+		Color *string `json:"color"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
@@ -443,6 +451,10 @@ func updateCategory(w http.ResponseWriter, r *http.Request, oldName string) {
 
 	if payload.Order != nil {
 		cat.Order = *payload.Order
+	}
+
+	if payload.Color != nil {
+		cat.Color = *payload.Color
 	}
 
 	categories[cat.ID] = *cat

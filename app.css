@@ -139,7 +139,13 @@
     @apply flex;
 }
 .category-edit-input {
-    @apply uppercase text-xs font-semibold tracking-wide;
+    @apply uppercase text-xs font-semibold tracking-wide relative z-10;
+}
+.category-color-input {
+    @apply w-8 h-6 cursor-pointer border-0 p-0 bg-transparent relative z-10;
+}
+.add-category-color-input {
+    @apply w-8 h-6 cursor-pointer border-0 p-0 bg-transparent;
 }
 .add-category-row {
     @apply py-4 text-center;

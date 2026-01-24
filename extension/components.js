@@ -440,6 +440,7 @@ class BookmarkList extends HTMLElement {
         for (const category of sortedCategories) {
             const categoryId = category.id;
             const categoryName = category.name;
+            const categoryColor = category.color || '';
             const isCollapsed = this._collapsedCategories[categoryId];
             const isUncategorized = categoryId === 'uncategorized';
             const bookmarksInCategory = groups[categoryId] || [];
@@ -447,6 +448,7 @@ class BookmarkList extends HTMLElement {
             const section = document.createElement('div');
             section.className = 'collapse collapse-arrow';
             section.dataset.categoryId = categoryId;
+            section.dataset.categoryColor = categoryColor;
             section.draggable = !isUncategorized;
 
             if (!isUncategorized) {
@@ -496,6 +498,10 @@ class BookmarkList extends HTMLElement {
 
             const titleContainer = document.createElement('div');
             titleContainer.className = 'collapse-title text-xs font-semibold uppercase tracking-wider opacity-60 py-2 min-h-0 flex items-center justify-between pr-8';
+            if (categoryColor) {
+                titleContainer.style.backgroundColor = categoryColor;
+                titleContainer.style.opacity = '1';
+            }
             
             const titleText = document.createElement('span');
             titleText.className = 'category-name';
@@ -532,6 +538,9 @@ class BookmarkList extends HTMLElement {
             content.className = 'collapse-content';
             content.dataset.category = categoryName;
             content.dataset.categoryId = categoryId;
+            if (categoryColor) {
+                content.style.backgroundColor = this._darkenColor(categoryColor, 0.5);
+            }
 
             if (bookmarksInCategory.length === 0) {
                 const emptyDropZone = document.createElement('div');
@@ -617,18 +626,21 @@ class BookmarkList extends HTMLElement {
         container.innerHTML = `
             <div class="add-category-input-wrapper">
                 <input type="text" class="input input-sm input-bordered add-category-input" placeholder="Category name...">
+                <input type="color" class="add-category-color-input" value="#808080" title="Category color">
                 <button class="btn btn-ghost btn-xs btn-square text-success save-category-btn">✓</button>
                 <button class="btn btn-ghost btn-xs btn-square text-warning cancel-category-btn">✕</button>
             </div>
         `;
 
         const input = container.querySelector('.add-category-input');
+        const colorInput = container.querySelector('.add-category-color-input');
         input.focus();
 
         const saveCategory = async () => {
             const name = input.value.trim();
+            const color = colorInput.value;
             if (name) {
-                await this._createCategory(name);
+                await this._createCategory(name, color);
             } else {
                 this.render();
             }
@@ -648,7 +660,7 @@ class BookmarkList extends HTMLElement {
         container.querySelector('.cancel-category-btn').addEventListener('click', () => this.render());
     }
 
-    async _createCategory(name) {
+    async _createCategory(name, color) {
         const config = {
             serverUrl: this.getAttribute('server-url') || '',
             authHeader: this.getAttribute('auth-header') || ''
@@ -660,7 +672,8 @@ class BookmarkList extends HTMLElement {
 
             const res = await fetch(`${config.serverUrl}/api/categories/${encodeURIComponent(name)}`, {
                 method: 'POST',
-                headers
+                headers,
+                body: JSON.stringify({ color })
             });
 
             if (!res.ok) {
@@ -680,8 +693,17 @@ class BookmarkList extends HTMLElement {
         const titleContainer = section.querySelector('.collapse-title');
         const titleText = titleContainer.querySelector('.category-name');
         const actions = section.querySelector('.category-actions');
+        const checkbox = section.querySelector('input[type="checkbox"]');
+        const currentColor = section.dataset.categoryColor || '#808080';
         
-        titleText.innerHTML = `<input type="text" class="input input-xs input-bordered category-edit-input" value="${this._escapeHtml(currentName)}">`;
+        // Disable checkbox to allow clicking on inputs
+        if (checkbox) checkbox.style.display = 'none';
+        
+        titleText.innerHTML = `
+            <input type="text" class="input input-xs input-bordered category-edit-input" value="${this._escapeHtml(currentName)}">
+            <input type="color" class="category-color-input" value="${currentColor}" title="Category color">
+        `;
+        
         actions.innerHTML = `
             <button class="btn btn-ghost btn-xs btn-square text-success save-edit-btn">✓</button>
             <button class="btn btn-ghost btn-xs btn-square text-warning cancel-edit-btn">✕</button>
@@ -689,13 +711,15 @@ class BookmarkList extends HTMLElement {
         actions.style.display = 'flex';
 
         const input = titleText.querySelector('.category-edit-input');
+        const colorInput = titleText.querySelector('.category-color-input');
         input.focus();
         input.select();
 
         const saveEdit = async () => {
             const newName = input.value.trim();
-            if (newName && newName !== currentName) {
-                await this._renameCategory(currentName, newName);
+            const newColor = colorInput.value;
+            if (newName) {
+                await this._updateCategory(currentName, newName, newColor);
             } else {
                 this.render();
             }
@@ -712,6 +736,7 @@ class BookmarkList extends HTMLElement {
         });
 
         input.addEventListener('click', (e) => e.stopPropagation());
+        colorInput.addEventListener('click', (e) => e.stopPropagation());
         
         actions.querySelector('.save-edit-btn').addEventListener('click', (e) => {
             e.preventDefault();
@@ -726,7 +751,7 @@ class BookmarkList extends HTMLElement {
         });
     }
 
-    async _renameCategory(oldName, newName) {
+    async _updateCategory(oldName, newName, color) {
         const config = {
             serverUrl: this.getAttribute('server-url') || '',
             authHeader: this.getAttribute('auth-header') || ''
@@ -736,19 +761,31 @@ class BookmarkList extends HTMLElement {
             const headers = { 'Content-Type': 'application/json' };
             if (config.authHeader) headers['Authorization'] = config.authHeader;
 
+            const payload = {};
+            if (newName !== oldName) payload.name = newName;
+            if (color) payload.color = color;
+
             const res = await fetch(`${config.serverUrl}/api/categories/${encodeURIComponent(oldName)}`, {
                 method: 'PUT',
                 headers,
-                body: JSON.stringify({ name: newName })
+                body: JSON.stringify(payload)
             });
 
-            if (!res.ok) throw new Error('Failed to rename category');
+            if (!res.ok) throw new Error('Failed to update category');
 
             this.dispatchEvent(new CustomEvent('category-changed', { bubbles: true }));
         } catch (err) {
-            console.error('Rename category failed:', err);
+            console.error('Update category failed:', err);
             this.render();
         }
+    }
+
+    _darkenColor(hex, factor) {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        const darken = (c) => Math.round(c * (1 - factor));
+        return `rgb(${darken(r)}, ${darken(g)}, ${darken(b)})`;
     }
 
     async _deleteCategory(name) {
