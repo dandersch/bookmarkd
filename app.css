@@ -47,6 +47,7 @@
 
 .bookmark-item {
     @apply flex flex-col bg-base-300 p-4 transition-all duration-200 relative;
+    border-radius: var(--radius-box);
 }
 .bookmark-item:hover {
     @apply -translate-y-1 shadow-2xl ring-2 ring-primary/30;
@@ -82,7 +83,7 @@
 
 /* Fix DaisyUI collapse */
 .collapse {
-    @apply visible! rounded-none bg-transparent relative;
+    @apply visible! bg-transparent relative;
 }
 .collapse-title {
     @apply min-h-0 pl-3 pr-0 bg-base-300;
@@ -179,7 +180,7 @@
     align-items: stretch;
     padding: 0 0.5rem;
     background: transparent;
-    border-radius: 0;
+    border-radius: var(--radius-box);
     box-shadow: none;
 }
 .popup .bookmark-item:hover {
@@ -225,7 +226,8 @@
     text-overflow: ellipsis;
 }
 .popup .bookmark-category {
-    @apply shrink-0 text-[0.625rem] bg-neutral text-neutral-content rounded px-1;
+    @apply shrink-0 text-[0.625rem] bg-neutral text-neutral-content px-1;
+    border-radius: var(--radius-selector);
 }
 .popup .bookmark-actions {
     display: flex;

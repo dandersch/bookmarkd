@@ -2549,6 +2549,7 @@
   transition-duration: var(--tw-duration, var(--default-transition-duration));
   --tw-duration: 200ms;
   transition-duration: 200ms;
+  border-radius: var(--radius-box);
 }
 .bookmark-item:hover {
   --tw-translate-y: calc(var(--spacing) * -1);
@@ -2634,7 +2635,6 @@
 .collapse {
   visibility: visible !important;
   position: relative;
-  border-radius: 0;
   background-color: transparent;
 }
 .collapse-title {
@@ -2810,7 +2810,7 @@
   align-items: stretch;
   padding: 0 0.5rem;
   background: transparent;
-  border-radius: 0;
+  border-radius: var(--radius-box);
   box-shadow: none;
 }
 .popup .bookmark-item:hover {
@@ -2856,11 +2856,11 @@
 }
 .popup .bookmark-category {
   flex-shrink: 0;
-  border-radius: 0.25rem;
   background-color: var(--color-neutral);
   padding-inline: calc(var(--spacing) * 1);
   font-size: 0.625rem;
   color: var(--color-neutral-content);
+  border-radius: var(--radius-selector);
 }
 .popup .bookmark-actions {
   display: flex;
