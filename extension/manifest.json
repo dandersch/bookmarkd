@@ -43,6 +43,15 @@
     "page": "options.html",
     "open_in_tab": true
   },
+  "commands": {
+    "_execute_sidebar_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+B",
+        "mac": "Command+Shift+B"
+      },
+      "description": "Toggle bookmarkd sidebar"
+    }
+  },
   "browser_specific_settings": {
     "gecko": {
       "id": "bookmarkd@yourdomain.com",
