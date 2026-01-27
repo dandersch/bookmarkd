@@ -700,8 +700,10 @@ class BookmarkList extends HTMLElement {
         if (checkbox) checkbox.style.display = 'none';
         
         titleText.innerHTML = `
-            <input type="text" class="input input-xs input-bordered category-edit-input" value="${this._escapeHtml(currentName)}">
-            <input type="color" class="category-color-input" value="${currentColor}" title="Category color">
+            <span style="display: flex; align-items: center; gap: 0.5rem;">
+                <input type="text" class="input input-xs input-bordered category-edit-input" value="${this._escapeHtml(currentName)}">
+                <input type="color" class="category-color-input" value="${currentColor}" title="Category color">
+            </span>
         `;
         
         actions.innerHTML = `
