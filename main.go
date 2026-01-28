@@ -3,10 +3,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"sync"
@@ -42,13 +45,20 @@ type Database struct {
 	Bookmarks  []Bookmark `json:"bookmarks"`
 }
 
+type CustomTheme struct {
+	Name string
+	CSS  string
+}
+
 const dbFile = "bookmarks.json"
 const uncategorizedID = "uncategorized"
 
 var (
-	categories map[string]Category
-	bookmarks  map[string]Bookmark
-	mu         sync.RWMutex
+	categories   map[string]Category
+	bookmarks    map[string]Bookmark
+	customThemes []CustomTheme
+	mu           sync.RWMutex
+	themeMu      sync.RWMutex
 )
 
 func getCategoryName(categoryID string) string {
@@ -151,12 +161,15 @@ func main() {
 		initializeDefaults()
 	}
 
+	loadThemes()
+
 	http.HandleFunc("/", handleIndex)
 	http.HandleFunc("/api/bookmarks", handleAPI)
 	http.HandleFunc("/api/bookmarks/", handleBookmarkAPI)
 	http.HandleFunc("/api/categories", handleCategoriesAPI)
 	http.HandleFunc("/api/categories/reorder", handleCategoriesReorder)
 	http.HandleFunc("/api/categories/", handleCategoryAPI)
+	http.HandleFunc("/api/themes", handleThemesAPI)
 	http.HandleFunc("/components.js", handleComponents)
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
@@ -185,7 +198,36 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	http.ServeFile(w, r, "index.html")
+
+	tmpl, err := template.ParseFiles("index.html")
+	if err != nil {
+		http.Error(w, "Template error", http.StatusInternalServerError)
+		log.Printf("Template parse error: %v", err)
+		return
+	}
+
+	themeMu.RLock()
+	themes := customThemes
+	themeMu.RUnlock()
+
+	var themeCSS strings.Builder
+	for _, t := range themes {
+		themeCSS.WriteString(t.CSS)
+		themeCSS.WriteString("\n")
+	}
+
+	data := struct {
+		CustomThemes    []CustomTheme
+		CustomThemeCSS  template.CSS
+	}{
+		CustomThemes:   themes,
+		CustomThemeCSS: template.CSS(themeCSS.String()),
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if err := tmpl.Execute(w, data); err != nil {
+		log.Printf("Template execute error: %v", err)
+	}
 }
 
 func handleComponents(w http.ResponseWriter, r *http.Request) {
@@ -855,4 +897,134 @@ func saveDatabase() error {
 		return err
 	}
 	return os.WriteFile(dbFile, data, 0644)
+}
+
+// --- Theme Management ---
+
+func getThemesDir() string {
+	dir := os.Getenv("BOOKMARKD_THEMES")
+	if dir == "" {
+		dir = "themes"
+	}
+	return dir
+}
+
+func loadThemes() {
+	themeMu.Lock()
+	defer themeMu.Unlock()
+
+	customThemes = nil
+	themesDir := getThemesDir()
+
+	files, err := os.ReadDir(themesDir)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			log.Printf("Warning: Could not read themes directory: %v", err)
+		}
+		return
+	}
+
+	for _, file := range files {
+		if file.IsDir() || !strings.HasSuffix(file.Name(), ".css") {
+			continue
+		}
+
+		content, err := os.ReadFile(filepath.Join(themesDir, file.Name()))
+		if err != nil {
+			log.Printf("Warning: Could not read theme file %s: %v", file.Name(), err)
+			continue
+		}
+
+		theme := parseThemeCSS(string(content))
+		if theme != nil {
+			customThemes = append(customThemes, *theme)
+			log.Printf("Loaded custom theme: %s", theme.Name)
+		}
+	}
+}
+
+func parseThemeCSS(cssText string) *CustomTheme {
+	nameRe := regexp.MustCompile(`name:\s*["']([^"']+)["']`)
+	nameMatch := nameRe.FindStringSubmatch(cssText)
+	if nameMatch == nil {
+		return nil
+	}
+	themeName := nameMatch[1]
+
+	var varLines []string
+
+	colorSchemeRe := regexp.MustCompile(`color-scheme:\s*["']([^"']+)["']`)
+	if match := colorSchemeRe.FindStringSubmatch(cssText); match != nil {
+		varLines = append(varLines, fmt.Sprintf("color-scheme: %s;", match[1]))
+	}
+
+	varRe := regexp.MustCompile(`(--[\w-]+):\s*([^;]+);`)
+	for _, match := range varRe.FindAllStringSubmatch(cssText, -1) {
+		varLines = append(varLines, fmt.Sprintf("%s: %s;", match[1], match[2]))
+	}
+
+	if len(varLines) == 0 {
+		return nil
+	}
+
+	css := fmt.Sprintf("[data-theme=\"%s\"] {\n  %s\n}", themeName, strings.Join(varLines, "\n  "))
+	return &CustomTheme{Name: themeName, CSS: css}
+}
+
+func handleThemesAPI(w http.ResponseWriter, r *http.Request) {
+	setCORSHeaders(w)
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if r.Method == "GET" {
+		themeMu.RLock()
+		themes := make([]map[string]string, len(customThemes))
+		for i, t := range customThemes {
+			themes[i] = map[string]string{"name": t.Name}
+		}
+		themeMu.RUnlock()
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(themes)
+		return
+	}
+
+	if r.Method == "POST" {
+		var payload struct {
+			CSS string `json:"css"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			http.Error(w, "Invalid JSON", http.StatusBadRequest)
+			return
+		}
+
+		theme := parseThemeCSS(payload.CSS)
+		if theme == nil {
+			http.Error(w, "Invalid theme CSS: could not parse name or variables", http.StatusBadRequest)
+			return
+		}
+
+		themesDir := getThemesDir()
+		if err := os.MkdirAll(themesDir, 0755); err != nil {
+			http.Error(w, "Could not create themes directory", http.StatusInternalServerError)
+			return
+		}
+
+		filename := filepath.Join(themesDir, theme.Name+".css")
+		if err := os.WriteFile(filename, []byte(payload.CSS), 0644); err != nil {
+			http.Error(w, "Could not save theme file", http.StatusInternalServerError)
+			return
+		}
+
+		loadThemes()
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"name": theme.Name})
+		return
+	}
+
+	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 }

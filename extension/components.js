@@ -1347,3 +1347,31 @@ customElements.define('bookmark-item', BookmarkItem);
 customElements.define('bookmark-list', BookmarkList);
 customElements.define('settings-import', SettingsImport);
 customElements.define('search-bar', SearchBar);
+
+// Theme parsing utility - converts @plugin format to runtime CSS
+function parseThemePlugin(cssText) {
+    const nameMatch = cssText.match(/name:\s*["']([^"']+)["']/);
+    if (!nameMatch) return null;
+
+    const themeName = nameMatch[1];
+    const varLines = [];
+
+    const colorSchemeMatch = cssText.match(/color-scheme:\s*["']([^"']+)["']/);
+    if (colorSchemeMatch) {
+        varLines.push(`color-scheme: ${colorSchemeMatch[1]};`);
+    }
+
+    const varMatches = cssText.matchAll(/(--[\w-]+):\s*([^;]+);/g);
+    for (const match of varMatches) {
+        varLines.push(`${match[1]}: ${match[2]};`);
+    }
+
+    if (varLines.length === 0) return null;
+
+    return {
+        name: themeName,
+        css: `[data-theme="${themeName}"] {\n  ${varLines.join('\n  ')}\n}`
+    };
+}
+
+window.parseThemePlugin = parseThemePlugin;

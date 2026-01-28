@@ -56,6 +56,19 @@
 
             <div class="divider before:bg-base-300 after:bg-base-300 my-6"></div>
 
+            <div class="form-control mb-4">
+                <label class="label">
+                    <span class="label-text font-semibold text-base-content">Add Custom Theme</span>
+                </label>
+                <textarea id="theme-css-input" class="textarea textarea-bordered bg-base-200 border-base-300 w-full h-32 font-mono text-xs" placeholder="Paste @plugin CSS from daisyui.com/theme-generator"></textarea>
+                <button id="add-theme-btn" class="btn btn-secondary btn-sm mt-2">Add Theme</button>
+                <div id="theme-status" class="text-sm mt-2 hidden"></div>
+            </div>
+
+            <div id="custom-themes-list" class="mb-4"></div>
+
+            <div class="divider before:bg-base-300 after:bg-base-300 my-6"></div>
+
             <settings-import id="import-section"></settings-import>
         </div>
     </div>

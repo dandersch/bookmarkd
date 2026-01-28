@@ -6,6 +6,7 @@
     <title>Bookmarkd</title>
     <link rel="icon" type="image/svg+xml" href="/static/icon.svg">
     <link href="/static/output.css" rel="stylesheet">
+    {{if .CustomThemeCSS}}<style id="custom-themes">{{.CustomThemeCSS}}</style>{{end}}
 </head>
 <body class="max-w-6xl bg-base-100 text-base-content min-h-screen mx-auto">
     <!-- Header -->
@@ -44,7 +45,19 @@
                         <option value="nord">Nord</option>
                         <option value="sunset">Sunset</option>
                         <option value="schwarzwald">Schwarzwald</option>
+                        {{range .CustomThemes}}<option value="{{.Name}}">{{.Name}}</option>{{end}}
                     </select>
+                </div>
+
+                <div class="divider my-4"></div>
+
+                <div class="form-control mb-4">
+                    <label class="label">
+                        <span class="label-text font-semibold">Add Custom Theme</span>
+                    </label>
+                    <textarea id="theme-css-input" class="textarea textarea-bordered w-full h-32 font-mono text-xs" placeholder="Paste @plugin CSS from daisyui.com/theme-generator"></textarea>
+                    <button id="add-theme-btn" class="btn btn-secondary btn-sm mt-2">Add Theme</button>
+                    <div id="theme-status" class="text-sm mt-2 hidden"></div>
                 </div>
 
                 <div class="divider my-4"></div>
@@ -120,6 +133,62 @@
         // Refresh after category changes
         listEl.addEventListener('category-changed', () => {
             loadData();
+        });
+
+        // Add custom theme
+        const themeCssInput = document.getElementById('theme-css-input');
+        const addThemeBtn = document.getElementById('add-theme-btn');
+        const themeStatus = document.getElementById('theme-status');
+
+        addThemeBtn.addEventListener('click', async () => {
+            const css = themeCssInput.value.trim();
+            if (!css) return;
+
+            const parsed = parseThemePlugin(css);
+            if (!parsed) {
+                themeStatus.textContent = 'Invalid theme CSS: could not parse name or variables';
+                themeStatus.className = 'text-sm mt-2 text-error';
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/themes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ css })
+                });
+
+                if (!res.ok) {
+                    const text = await res.text();
+                    throw new Error(text);
+                }
+
+                const result = await res.json();
+                themeStatus.textContent = `Theme "${result.name}" added! Reload to use.`;
+                themeStatus.className = 'text-sm mt-2 text-success';
+                themeCssInput.value = '';
+
+                // Add to dropdown if not exists
+                if (!themeSelect.querySelector(`option[value="${result.name}"]`)) {
+                    const opt = document.createElement('option');
+                    opt.value = result.name;
+                    opt.textContent = result.name;
+                    themeSelect.appendChild(opt);
+                }
+
+                // Inject CSS immediately
+                let styleEl = document.getElementById('custom-themes');
+                if (!styleEl) {
+                    styleEl = document.createElement('style');
+                    styleEl.id = 'custom-themes';
+                    document.head.appendChild(styleEl);
+                }
+                styleEl.textContent += '\n' + parsed.css;
+
+            } catch (err) {
+                themeStatus.textContent = 'Error: ' + err.message;
+                themeStatus.className = 'text-sm mt-2 text-error';
+            }
         });
     </script>
 </body>

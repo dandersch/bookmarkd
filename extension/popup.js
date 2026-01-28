@@ -1,8 +1,17 @@
 const COMPACT_THRESHOLD = 100;
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Load theme
-    chrome.storage.sync.get(['theme'], (items) => {
+    // Load theme and custom themes
+    chrome.storage.sync.get(['theme', 'customThemes'], (items) => {
+        // Inject custom theme CSS
+        const customThemes = items.customThemes || {};
+        if (Object.keys(customThemes).length > 0) {
+            const styleEl = document.createElement('style');
+            styleEl.id = 'custom-themes-style';
+            styleEl.textContent = Object.values(customThemes).join('\n');
+            document.head.appendChild(styleEl);
+        }
+
         const theme = items.theme || 'forest';
         document.documentElement.setAttribute('data-theme', theme);
     });
