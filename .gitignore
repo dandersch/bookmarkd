@@ -9,3 +9,7 @@ bookmarkd
 node_modules/
 tailwindcss
 docker-compose.override.yaml
+test-profile/
+tests/screenshot.png
+*.png
+__pycache__
