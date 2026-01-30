@@ -1312,20 +1312,28 @@ class SettingsImport extends HTMLElement {
 
 class SearchBar extends HTMLElement {
     static get observedAttributes() {
-        return ['target', 'compact'];
+        return ['target', 'compact', 'count'];
     }
 
     connectedCallback() {
         this.render();
     }
 
+    attributeChangedCallback(name) {
+        if (name === 'count') {
+            this.render();
+        }
+    }
+
     render() {
         const isCompact = this.hasAttribute('compact');
+        const count = this.getAttribute('count');
+        const placeholder = count ? `Search ${count} bookmarks...` : 'Search...';
         const inputClass = isCompact
             ? 'input input-xs input-bordered bg-primary-content/10 border-primary-content/20 text-primary-content placeholder:text-primary-content/50 w-full focus:outline-none focus:border-primary-content/40'
             : 'input input-lg input-bordered bg-primary-content/10 border-primary-content/20 text-primary-content placeholder:text-primary-content/50 w-full focus:outline-none focus:border-primary-content/40';
 
-        this.innerHTML = `<input type="text" class="${inputClass}" placeholder="Search...">`;
+        this.innerHTML = `<input type="text" class="${inputClass}" placeholder="${placeholder}">`;
 
         const input = this.querySelector('input');
         input.addEventListener('input', (e) => {

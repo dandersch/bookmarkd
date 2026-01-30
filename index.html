@@ -19,7 +19,6 @@
             <search-bar id="search" target="bookmark-list" class="w-full max-w-2xl"></search-bar>
         </div>
         <div class="flex items-center gap-4 shrink-0">
-            <span id="bookmark-count" class="text-primary-content/70 text-sm"></span>
             <button id="settings-btn" class="btn btn-ghost btn-sm text-primary-content">⚙</button>
         </div>
     </header>
@@ -77,7 +76,7 @@
     <script src="/components.js"></script>
     <script>
         const listEl = document.getElementById('bookmark-list');
-        const countEl = document.getElementById('bookmark-count');
+        const searchEl = document.getElementById('search');
         
         listEl.setAttribute('server-url', '');
 
@@ -90,7 +89,7 @@
                 const bookmarks = await bookmarksRes.json();
                 const categories = await categoriesRes.json();
                 listEl.setData(bookmarks, categories);
-                countEl.textContent = `${bookmarks.length} bookmarks`;
+                searchEl.setAttribute('count', bookmarks.length);
             } catch (err) {
                 listEl.innerHTML = 
                     '<p class="bookmark-empty text-error">Failed to load bookmarks</p>';
