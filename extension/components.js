@@ -1047,6 +1047,9 @@ class SettingsImport extends HTMLElement {
     }
 
     render() {
+        const hasBookmarksApi = (typeof chrome !== 'undefined' && chrome.bookmarks) || 
+                                 (typeof browser !== 'undefined' && browser.bookmarks);
+
         this.innerHTML = `
             <div class="settings-import">
                 <label class="block mb-2 font-semibold">Import Bookmarks</label>
@@ -1054,12 +1057,14 @@ class SettingsImport extends HTMLElement {
                 <input type="file" accept=".html,.htm" class="file-input file-input-bordered file-input-sm w-full max-w-xs import-file">
                 <div class="import-status mt-3 text-sm"></div>
 
+                ${hasBookmarksApi ? `
                 <div class="divider before:bg-base-300 after:bg-base-300 my-4"></div>
 
                 <label class="block mb-2 font-semibold">Import from Browser</label>
                 <p class="text-sm opacity-70 mb-3">Import bookmarks directly from your browser</p>
                 <button class="btn btn-sm btn-outline browser-import-btn">Import Browser Bookmarks</button>
                 <div class="browser-import-status mt-3 text-sm"></div>
+                ` : ''}
             </div>
         `;
 
@@ -1067,9 +1072,11 @@ class SettingsImport extends HTMLElement {
             this.handleFileSelect(e);
         });
 
-        this.querySelector('.browser-import-btn').addEventListener('click', () => {
-            this.handleBrowserImport();
-        });
+        if (hasBookmarksApi) {
+            this.querySelector('.browser-import-btn').addEventListener('click', () => {
+                this.handleBrowserImport();
+            });
+        }
     }
 
     async handleFileSelect(e) {
