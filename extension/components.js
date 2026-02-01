@@ -61,7 +61,7 @@ class BookmarkItem extends HTMLElement {
         this.className = 'bookmark-item';
         this.draggable = true;
         this.innerHTML = `
-            <a href="${url}" target="_blank" class="bookmark-link">
+            <a href="${url}" target="_blank" class="bookmark-link" title="${this.escapeHtml(url)}">
                 <img src="${favicon}" class="bookmark-favicon" alt="">
                 <span class="bookmark-title">${this.escapeHtml(title)}</span>
                 <span class="bookmark-url">${hostname}</span>
