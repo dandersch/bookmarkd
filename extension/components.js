@@ -34,10 +34,12 @@ class BookmarkItem extends HTMLElement {
         const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
         
         if (diffDays === 0) return 'Today';
-        if (diffDays === 1) return 'Yesterday';
-        if (diffDays < 7) return `${diffDays} days ago`;
-        if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-        return date.toLocaleDateString();
+        if (diffDays === 1) return 'Yest';
+        if (diffDays < 7) return `${diffDays}d`;
+        if (diffDays < 30) return `${Math.floor(diffDays / 7)}w`;
+        if (diffDays < 365) return `${Math.floor(diffDays / 30)}mo`;
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return `${months[date.getMonth()]} ${date.getDate()}`;
     }
 
     render() {
@@ -68,8 +70,8 @@ class BookmarkItem extends HTMLElement {
                     <span class="bookmark-url">${hostname}</span>
                 </div>
                 <div class="bookmark-timestamps">
-                    <span class="bookmark-timestamp">Added: ${addedTime}</span>
-                    <span class="bookmark-visited">${visitedTime ? 'Visited: ' + visitedTime : ''}</span>
+                    <span class="bookmark-timestamp">➕ ${addedTime}</span>
+                    <span class="bookmark-visited">${visitedTime ? '🕐 ' + visitedTime : ''}</span>
                 </div>
             </a>
             <div class="bookmark-actions">
