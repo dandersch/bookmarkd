@@ -46,7 +46,7 @@
 }
 
 .bookmark-item {
-    @apply flex flex-col bg-base-300 p-4 transition-all duration-200 relative;
+    @apply flex flex-row items-center bg-base-300 p-3 transition-all duration-200 relative gap-3;
     border-radius: var(--radius-box);
 }
 .bookmark-item:hover {
@@ -54,11 +54,19 @@
 }
 
 .bookmark-link {
-    @apply flex flex-col gap-2 no-underline text-base-content;
+    @apply flex flex-row flex-wrap items-center gap-3 no-underline text-base-content flex-1 min-w-0;
+}
+
+.bookmark-timestamps {
+    @apply w-full flex justify-between text-xs text-base-content/50 min-w-0;
 }
 
 .bookmark-favicon {
     @apply w-8 h-8 shrink-0;
+}
+
+.bookmark-info {
+    @apply flex flex-col min-w-0 flex-1;
 }
 
 .bookmark-title {
@@ -67,10 +75,6 @@
 
 .bookmark-url {
     @apply text-xs text-base-content/60 truncate;
-}
-
-.bookmark-timestamps {
-    @apply flex justify-between text-xs text-base-content/50 min-w-0;
 }
 
 .bookmark-timestamp {
@@ -189,6 +193,7 @@
 .popup .bookmark-link {
     display: flex;
     flex-direction: row;
+    flex-wrap: nowrap;
     align-items: center;
     gap: 0.5rem;
     flex: 1;
@@ -201,6 +206,9 @@
     width: 1.25rem;
     height: 1.25rem;
     flex-shrink: 0;
+}
+.popup .bookmark-info {
+    display: contents;
 }
 .popup .bookmark-title {
     flex: 1 0 auto;
@@ -216,6 +224,7 @@
     display: none;
 }
 .popup .bookmark-timestamps {
+    width: auto;
     flex: 0 1 auto;
     min-width: 0;
     overflow: hidden;

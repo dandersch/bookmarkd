@@ -63,8 +63,10 @@ class BookmarkItem extends HTMLElement {
         this.innerHTML = `
             <a href="${url}" target="_blank" class="bookmark-link" title="${this.escapeHtml(url)}">
                 <img src="${favicon}" class="bookmark-favicon" alt="">
-                <span class="bookmark-title">${this.escapeHtml(title)}</span>
-                <span class="bookmark-url">${hostname}</span>
+                <div class="bookmark-info">
+                    <span class="bookmark-title">${this.escapeHtml(title)}</span>
+                    <span class="bookmark-url">${hostname}</span>
+                </div>
                 <div class="bookmark-timestamps">
                     <span class="bookmark-timestamp">Added: ${addedTime}</span>
                     <span class="bookmark-visited">${visitedTime ? 'Visited: ' + visitedTime : ''}</span>

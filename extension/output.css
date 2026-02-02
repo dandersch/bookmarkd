@@ -2642,9 +2642,11 @@
 .bookmark-item {
   position: relative;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
+  gap: calc(var(--spacing) * 3);
   background-color: var(--color-base-300);
-  padding: calc(var(--spacing) * 4);
+  padding: calc(var(--spacing) * 3);
   transition-property: all;
   transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
   transition-duration: var(--tw-duration, var(--default-transition-duration));
@@ -2662,15 +2664,37 @@
 }
 .bookmark-link {
   display: flex;
-  flex-direction: column;
-  gap: calc(var(--spacing) * 2);
+  min-width: calc(var(--spacing) * 0);
+  flex: 1;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: calc(var(--spacing) * 3);
   color: var(--color-base-content);
   text-decoration-line: none;
+}
+.bookmark-timestamps {
+  display: flex;
+  width: 100%;
+  min-width: calc(var(--spacing) * 0);
+  justify-content: space-between;
+  font-size: var(--text-xs);
+  line-height: var(--tw-leading, var(--text-xs--line-height));
+  color: var(--color-base-content);
+  @supports (color: color-mix(in lab, red, red)) {
+    color: color-mix(in oklab, var(--color-base-content) 50%, transparent);
+  }
 }
 .bookmark-favicon {
   height: calc(var(--spacing) * 8);
   width: calc(var(--spacing) * 8);
   flex-shrink: 0;
+}
+.bookmark-info {
+  display: flex;
+  min-width: calc(var(--spacing) * 0);
+  flex: 1;
+  flex-direction: column;
 }
 .bookmark-title {
   overflow: hidden;
@@ -2693,17 +2717,6 @@
   color: var(--color-base-content);
   @supports (color: color-mix(in lab, red, red)) {
     color: color-mix(in oklab, var(--color-base-content) 60%, transparent);
-  }
-}
-.bookmark-timestamps {
-  display: flex;
-  min-width: calc(var(--spacing) * 0);
-  justify-content: space-between;
-  font-size: var(--text-xs);
-  line-height: var(--tw-leading, var(--text-xs--line-height));
-  color: var(--color-base-content);
-  @supports (color: color-mix(in lab, red, red)) {
-    color: color-mix(in oklab, var(--color-base-content) 50%, transparent);
   }
 }
 .bookmark-timestamp {
@@ -2920,6 +2933,7 @@
 .popup .bookmark-link {
   display: flex;
   flex-direction: row;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 0.5rem;
   flex: 1;
@@ -2932,6 +2946,9 @@
   width: 1.25rem;
   height: 1.25rem;
   flex-shrink: 0;
+}
+.popup .bookmark-info {
+  display: contents;
 }
 .popup .bookmark-title {
   flex: 1 0 auto;
@@ -2946,6 +2963,7 @@
   display: none;
 }
 .popup .bookmark-timestamps {
+  width: auto;
   flex: 0 1 auto;
   min-width: 0;
   overflow: hidden;
