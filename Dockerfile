@@ -17,7 +17,7 @@ WORKDIR /app
 COPY --from=builder /build/bookmarkd .
 COPY index.html ./
 COPY static/ ./static/
-COPY extension/components.js ./extension/
+COPY extension/components.js ./static/
 
 EXPOSE 8080
 

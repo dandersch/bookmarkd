@@ -170,7 +170,7 @@ func main() {
 	http.HandleFunc("/api/categories/reorder", handleCategoriesReorder)
 	http.HandleFunc("/api/categories/", handleCategoryAPI)
 	http.HandleFunc("/api/themes", handleThemesAPI)
-	http.HandleFunc("/components.js", handleComponents)
+
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
 	port := os.Getenv("BOOKMARKD_PORT")
@@ -230,9 +230,7 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func handleComponents(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "extension/components.js")
-}
+
 
 
 
