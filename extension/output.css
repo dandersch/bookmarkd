@@ -2643,10 +2643,8 @@
   position: relative;
   display: flex;
   flex-direction: row;
-  align-items: center;
-  gap: calc(var(--spacing) * 3);
+  align-items: stretch;
   background-color: var(--color-base-300);
-  padding: calc(var(--spacing) * 3);
   transition-property: all;
   transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
   transition-duration: var(--tw-duration, var(--default-transition-duration));
@@ -2670,6 +2668,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: calc(var(--spacing) * 3);
+  padding: calc(var(--spacing) * 3);
   color: var(--color-base-content);
   text-decoration-line: none;
 }
@@ -3099,10 +3098,10 @@ body.compact .btn-save-icon {
   display: inline;
 }
 body.compact .bookmark-item {
-  padding: 0.25rem;
   justify-content: center;
 }
 body.compact .bookmark-link {
+  padding: 0.25rem;
   justify-content: center;
 }
 body.compact .bookmark-title, body.compact .bookmark-category, body.compact .bookmark-actions {

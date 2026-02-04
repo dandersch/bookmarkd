@@ -46,7 +46,7 @@
 }
 
 .bookmark-item {
-    @apply flex flex-row items-center bg-base-300 p-3 transition-all duration-200 relative gap-3;
+    @apply flex flex-row items-stretch bg-base-300 transition-all duration-200 relative;
     border-radius: var(--radius-box);
 }
 .bookmark-item:hover {
@@ -54,7 +54,7 @@
 }
 
 .bookmark-link {
-    @apply flex flex-row flex-wrap items-center gap-3 no-underline text-base-content flex-1 min-w-0;
+    @apply flex flex-row flex-wrap items-center gap-3 no-underline text-base-content flex-1 min-w-0 p-3;
 }
 
 .bookmark-timestamps {
@@ -343,10 +343,10 @@ body.compact .btn-save-icon {
     display: inline;
 }
 body.compact .bookmark-item {
-    padding: 0.25rem;
     justify-content: center;
 }
 body.compact .bookmark-link {
+    padding: 0.25rem;
     justify-content: center;
 }
 body.compact .bookmark-title,
