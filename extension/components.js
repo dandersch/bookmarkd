@@ -75,9 +75,7 @@ class BookmarkItem extends HTMLElement {
                 </div>
             </a>
             <div class="bookmark-actions">
-                <button class="btn btn-ghost btn-xs btn-square notes-btn" title="Notes">📝</button>
-                <button class="btn btn-ghost btn-xs btn-square edit-btn">✎</button>
-                <button class="btn btn-ghost btn-xs btn-square delete-btn">🗑</button>
+                <button class="btn btn-ghost btn-xs btn-square edit-btn" title="Edit">✎</button>
             </div>
         `;
 
@@ -86,22 +84,10 @@ class BookmarkItem extends HTMLElement {
             this.recordVisit();
         });
 
-        this.querySelector('.notes-btn').addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this.openNotesModal();
-        });
-
         this.querySelector('.edit-btn').addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            this.enterEditMode();
-        });
-
-        this.querySelector('.delete-btn').addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this.deleteBookmark();
+            this.openEditModal();
         });
 
         // Drag and drop
@@ -121,87 +107,6 @@ class BookmarkItem extends HTMLElement {
         });
     }
 
-    enterEditMode() {
-        this._editing = true;
-        const id = this.getAttribute('bookmark-id') || '';
-        const title = this.getAttribute('title') || '';
-        const favicon = this.getAttribute('favicon') || '';
-        const category = this.getAttribute('category') || 'Uncategorized';
-
-        this.className = 'bookmark-item editing';
-        this.innerHTML = `
-            <img src="${favicon}" class="bookmark-favicon" alt="">
-            <input type="text" class="input input-sm input-bordered flex-grow title-input" value="${this.escapeHtml(title)}">
-            <div class="bookmark-actions editing">
-                <button class="btn btn-ghost btn-xs btn-square text-success save-btn">✓</button>
-                <button class="btn btn-ghost btn-xs btn-square text-warning cancel-btn">✕</button>
-            </div>
-        `;
-
-        const input = this.querySelector('.title-input');
-        input.focus();
-        input.select();
-
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                this.saveEdit();
-            } else if (e.key === 'Escape') {
-                e.preventDefault();
-                this.cancelEdit();
-            }
-        });
-
-        this.querySelector('.save-btn').addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this.saveEdit();
-        });
-
-        this.querySelector('.cancel-btn').addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this.cancelEdit();
-        });
-    }
-
-    async saveEdit() {
-        const input = this.querySelector('.title-input');
-        const newTitle = input.value.trim();
-        if (!newTitle) {
-            this.cancelEdit();
-            return;
-        }
-
-        const id = this.getAttribute('bookmark-id');
-        const config = this.getConfig();
-
-        try {
-            const headers = { 'Content-Type': 'application/json' };
-            if (config.authHeader) headers['Authorization'] = config.authHeader;
-
-            const res = await fetch(`${config.serverUrl}/api/bookmarks/${id}`, {
-                method: 'PATCH',
-                headers,
-                body: JSON.stringify({ title: newTitle })
-            });
-
-            if (!res.ok) throw new Error('Failed to update');
-
-            this.setAttribute('title', newTitle);
-            this._editing = false;
-            this.render();
-        } catch (err) {
-            console.error('Update failed:', err);
-            this.cancelEdit();
-        }
-    }
-
-    cancelEdit() {
-        this._editing = false;
-        this.render();
-    }
-
     async deleteBookmark() {
         const id = this.getAttribute('bookmark-id');
         const config = this.getConfig();
@@ -218,8 +123,10 @@ class BookmarkItem extends HTMLElement {
             if (!res.ok) throw new Error('Failed to delete');
 
             this.remove();
+            return true;
         } catch (err) {
             console.error('Delete failed:', err);
+            return false;
         }
     }
 
@@ -236,25 +143,54 @@ class BookmarkItem extends HTMLElement {
         }).catch(err => console.error('Failed to record visit:', err));
     }
 
-    openNotesModal() {
+    openEditModal() {
         const id = this.getAttribute('bookmark-id');
         const title = this.getAttribute('title') || '';
+        const url = this.getAttribute('url') || '';
         const notes = this.getAttribute('notes') || '';
-        const config = this.getConfig();
+        const bookmarkItem = this;
 
-        let modal = document.getElementById('notes-modal');
+        let modal = document.getElementById('edit-modal');
         if (!modal) {
             modal = document.createElement('dialog');
-            modal.id = 'notes-modal';
+            modal.id = 'edit-modal';
             modal.className = 'modal';
             modal.innerHTML = `
                 <div class="modal-box">
                     <form method="dialog">
                         <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
                     </form>
-                    <h3 class="font-bold text-lg mb-4 notes-modal-title"></h3>
-                    <textarea class="textarea textarea-bordered w-full h-32 notes-modal-textarea" placeholder="Add notes..." maxlength="1000"></textarea>
-                    <div class="text-right text-xs text-base-content/50 mt-1"><span class="notes-modal-count">0</span> / 1000</div>
+                    <h3 class="font-bold text-lg mb-4">Edit Bookmark</h3>
+                    
+                    <div class="form-control mb-3">
+                        <label class="label py-1">
+                            <span class="label-text text-sm">Title</span>
+                        </label>
+                        <input type="text" class="input input-bordered input-sm edit-modal-title" />
+                    </div>
+                    
+                    <div class="form-control mb-3">
+                        <label class="label py-1">
+                            <span class="label-text text-sm">URL</span>
+                        </label>
+                        <input type="text" class="input input-bordered input-sm edit-modal-url" />
+                    </div>
+                    
+                    <div class="form-control mb-4">
+                        <label class="label py-1">
+                            <span class="label-text text-sm">Notes</span>
+                        </label>
+                        <textarea class="textarea textarea-bordered h-24 edit-modal-notes" placeholder="Add notes..." maxlength="1000"></textarea>
+                        <div class="text-right text-xs text-base-content/50 mt-1"><span class="edit-modal-notes-count">0</span> / 1000</div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center mt-4">
+                        <button class="btn btn-error btn-sm edit-modal-delete">Delete</button>
+                        <div class="flex gap-2">
+                            <button class="btn btn-ghost btn-sm edit-modal-cancel">Cancel</button>
+                            <button class="btn btn-primary btn-sm edit-modal-save">Save</button>
+                        </div>
+                    </div>
                 </div>
                 <form method="dialog" class="modal-backdrop">
                     <button>close</button>
@@ -262,55 +198,129 @@ class BookmarkItem extends HTMLElement {
             `;
             document.body.appendChild(modal);
 
-            const textarea = modal.querySelector('.notes-modal-textarea');
-            const countEl = modal.querySelector('.notes-modal-count');
+            const titleInput = modal.querySelector('.edit-modal-title');
+            const urlInput = modal.querySelector('.edit-modal-url');
+            const notesTextarea = modal.querySelector('.edit-modal-notes');
+            const notesCount = modal.querySelector('.edit-modal-notes-count');
+            const deleteBtn = modal.querySelector('.edit-modal-delete');
+            const cancelBtn = modal.querySelector('.edit-modal-cancel');
+            const saveBtn = modal.querySelector('.edit-modal-save');
 
-            textarea.addEventListener('input', () => {
-                countEl.textContent = textarea.value.length;
+            notesTextarea.addEventListener('input', () => {
+                notesCount.textContent = notesTextarea.value.length;
             });
 
-            textarea.addEventListener('blur', async () => {
+            const saveField = async (field, value) => {
                 const currentId = modal.dataset.bookmarkId;
-                const originalNotes = modal.dataset.originalNotes || '';
-                const newNotes = textarea.value;
-                if (newNotes === originalNotes) return;
-
                 const item = document.querySelector(`bookmark-item[bookmark-id="${currentId}"]`);
-                if (!item) return;
-                const itemConfig = item.getConfig();
+                if (!item) return false;
+                const config = item.getConfig();
 
                 try {
                     const headers = { 'Content-Type': 'application/json' };
-                    if (itemConfig.authHeader) headers['Authorization'] = itemConfig.authHeader;
+                    if (config.authHeader) headers['Authorization'] = config.authHeader;
 
-                    const res = await fetch(`${itemConfig.serverUrl}/api/bookmarks/${currentId}`, {
+                    const res = await fetch(`${config.serverUrl}/api/bookmarks/${currentId}`, {
                         method: 'PATCH',
                         headers,
-                        body: JSON.stringify({ notes: newNotes })
+                        body: JSON.stringify({ [field]: value })
                     });
 
-                    if (!res.ok) throw new Error('Failed to save notes');
-
-                    item.setAttribute('notes', newNotes);
-                    modal.dataset.originalNotes = newNotes;
+                    if (!res.ok) throw new Error(`Failed to save ${field}`);
+                    return true;
                 } catch (err) {
-                    console.error('Notes save failed:', err);
+                    console.error(`${field} save failed:`, err);
+                    return false;
+                }
+            };
+
+            titleInput.addEventListener('blur', async () => {
+                const newTitle = titleInput.value.trim();
+                const originalTitle = modal.dataset.originalTitle || '';
+                if (!newTitle || newTitle === originalTitle) return;
+
+                if (await saveField('title', newTitle)) {
+                    const item = document.querySelector(`bookmark-item[bookmark-id="${modal.dataset.bookmarkId}"]`);
+                    if (item) item.setAttribute('title', newTitle);
+                    modal.dataset.originalTitle = newTitle;
                 }
             });
 
+            urlInput.addEventListener('blur', async () => {
+                const newUrl = urlInput.value.trim();
+                const originalUrl = modal.dataset.originalUrl || '';
+                if (!newUrl || newUrl === originalUrl) return;
+
+                if (await saveField('url', newUrl)) {
+                    const item = document.querySelector(`bookmark-item[bookmark-id="${modal.dataset.bookmarkId}"]`);
+                    if (item) item.setAttribute('url', newUrl);
+                    modal.dataset.originalUrl = newUrl;
+                }
+            });
+
+            notesTextarea.addEventListener('blur', async () => {
+                const newNotes = notesTextarea.value;
+                const originalNotes = modal.dataset.originalNotes || '';
+                if (newNotes === originalNotes) return;
+
+                if (await saveField('notes', newNotes)) {
+                    const item = document.querySelector(`bookmark-item[bookmark-id="${modal.dataset.bookmarkId}"]`);
+                    if (item) item.setAttribute('notes', newNotes);
+                    modal.dataset.originalNotes = newNotes;
+                }
+            });
+
+            deleteBtn.addEventListener('click', async () => {
+                const currentId = modal.dataset.bookmarkId;
+                const item = document.querySelector(`bookmark-item[bookmark-id="${currentId}"]`);
+                if (item) {
+                    const deleted = await item.deleteBookmark();
+                    if (deleted) {
+                        modal.close();
+                    }
+                }
+            });
+
+            cancelBtn.addEventListener('click', () => {
+                titleInput.value = modal.dataset.originalTitle || '';
+                urlInput.value = modal.dataset.originalUrl || '';
+                notesTextarea.value = modal.dataset.originalNotes || '';
+                notesCount.textContent = notesTextarea.value.length;
+                modal.close();
+            });
+
+            saveBtn.addEventListener('click', () => {
+                titleInput.blur();
+                urlInput.blur();
+                notesTextarea.blur();
+                setTimeout(() => modal.close(), 50);
+            });
+
             modal.addEventListener('close', () => {
-                textarea.dispatchEvent(new Event('blur'));
+                titleInput.blur();
+                urlInput.blur();
+                notesTextarea.blur();
             });
         }
 
+        const titleInput = modal.querySelector('.edit-modal-title');
+        const urlInput = modal.querySelector('.edit-modal-url');
+        const notesTextarea = modal.querySelector('.edit-modal-notes');
+        const notesCount = modal.querySelector('.edit-modal-notes-count');
+
         modal.dataset.bookmarkId = id;
+        modal.dataset.originalTitle = title;
+        modal.dataset.originalUrl = url;
         modal.dataset.originalNotes = notes;
-        modal.querySelector('.notes-modal-title').textContent = `Notes: ${this.escapeHtml(title)}`;
-        const textarea = modal.querySelector('.notes-modal-textarea');
-        textarea.value = notes;
-        modal.querySelector('.notes-modal-count').textContent = notes.length;
+
+        titleInput.value = title;
+        urlInput.value = url;
+        notesTextarea.value = notes;
+        notesCount.textContent = notes.length;
+
         modal.showModal();
-        textarea.focus();
+        titleInput.focus();
+        titleInput.select();
     }
 
     escapeHtml(text) {

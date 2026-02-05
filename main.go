@@ -654,6 +654,7 @@ func visitBookmark(w http.ResponseWriter, id string) {
 func updateBookmark(w http.ResponseWriter, r *http.Request, id string) {
 	var payload struct {
 		Title      *string `json:"title"`
+		URL        *string `json:"url"`
 		Category   *string `json:"category"`
 		CategoryID *string `json:"category_id"`
 		Order      *int    `json:"order"`
@@ -676,6 +677,10 @@ func updateBookmark(w http.ResponseWriter, r *http.Request, id string) {
 
 	if payload.Title != nil {
 		bm.Title = *payload.Title
+	}
+
+	if payload.URL != nil {
+		bm.URL = *payload.URL
 	}
 
 	if payload.Notes != nil {
