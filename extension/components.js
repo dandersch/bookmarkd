@@ -171,10 +171,7 @@ class BookmarkItem extends HTMLElement {
                     
                     <div class="flex justify-between items-center mt-4">
                         <button class="btn btn-error btn-sm edit-modal-delete">Delete</button>
-                        <div class="flex gap-2">
-                            <button class="btn btn-ghost btn-sm edit-modal-cancel">Cancel</button>
-                            <button class="btn btn-primary btn-sm edit-modal-save">Save</button>
-                        </div>
+                        <button class="btn btn-ghost btn-sm edit-modal-revert hidden" title="Revert changes">↺</button>
                     </div>
                 </div>
                 <form method="dialog" class="modal-backdrop">
@@ -188,11 +185,21 @@ class BookmarkItem extends HTMLElement {
             const notesTextarea = modal.querySelector('.edit-modal-notes');
             const notesCount = modal.querySelector('.edit-modal-notes-count');
             const deleteBtn = modal.querySelector('.edit-modal-delete');
-            const cancelBtn = modal.querySelector('.edit-modal-cancel');
-            const saveBtn = modal.querySelector('.edit-modal-save');
+            const revertBtn = modal.querySelector('.edit-modal-revert');
 
+            const checkForChanges = () => {
+                const hasChanges = 
+                    titleInput.value !== modal.dataset.initialTitle ||
+                    urlInput.value !== modal.dataset.initialUrl ||
+                    notesTextarea.value !== modal.dataset.initialNotes;
+                revertBtn.classList.toggle('hidden', !hasChanges);
+            };
+
+            titleInput.addEventListener('input', checkForChanges);
+            urlInput.addEventListener('input', checkForChanges);
             notesTextarea.addEventListener('input', () => {
                 notesCount.textContent = notesTextarea.value.length;
+                checkForChanges();
             });
 
             const saveField = async (field, value) => {
@@ -266,19 +273,44 @@ class BookmarkItem extends HTMLElement {
                 }
             });
 
-            cancelBtn.addEventListener('click', () => {
-                titleInput.value = modal.dataset.originalTitle || '';
-                urlInput.value = modal.dataset.originalUrl || '';
-                notesTextarea.value = modal.dataset.originalNotes || '';
-                notesCount.textContent = notesTextarea.value.length;
-                modal.close();
-            });
+            revertBtn.addEventListener('click', async () => {
+                const initialTitle = modal.dataset.initialTitle || '';
+                const initialUrl = modal.dataset.initialUrl || '';
+                const initialNotes = modal.dataset.initialNotes || '';
+                const currentId = modal.dataset.bookmarkId;
+                const item = document.querySelector(`bookmark-item[bookmark-id="${currentId}"]`);
+                if (!item) return;
+                const config = item.getConfig();
 
-            saveBtn.addEventListener('click', () => {
-                titleInput.blur();
-                urlInput.blur();
-                notesTextarea.blur();
-                setTimeout(() => modal.close(), 50);
+                const headers = { 'Content-Type': 'application/json' };
+                if (config.authHeader) headers['Authorization'] = config.authHeader;
+
+                try {
+                    const res = await fetch(`${config.serverUrl}/api/bookmarks/${currentId}`, {
+                        method: 'PATCH',
+                        headers,
+                        body: JSON.stringify({ title: initialTitle, url: initialUrl, notes: initialNotes })
+                    });
+
+                    if (!res.ok) throw new Error('Failed to revert');
+
+                    titleInput.value = initialTitle;
+                    urlInput.value = initialUrl;
+                    notesTextarea.value = initialNotes;
+                    notesCount.textContent = initialNotes.length;
+
+                    modal.dataset.originalTitle = initialTitle;
+                    modal.dataset.originalUrl = initialUrl;
+                    modal.dataset.originalNotes = initialNotes;
+
+                    item.setAttribute('title', initialTitle);
+                    item.setAttribute('url', initialUrl);
+                    item.setAttribute('notes', initialNotes);
+
+                    revertBtn.classList.add('hidden');
+                } catch (err) {
+                    console.error('Revert failed:', err);
+                }
             });
 
             modal.addEventListener('close', () => {
@@ -293,8 +325,12 @@ class BookmarkItem extends HTMLElement {
         const urlInput = modal.querySelector('.edit-modal-url');
         const notesTextarea = modal.querySelector('.edit-modal-notes');
         const notesCount = modal.querySelector('.edit-modal-notes-count');
+        const revertBtn = modal.querySelector('.edit-modal-revert');
 
         modal.dataset.bookmarkId = id;
+        modal.dataset.initialTitle = title;
+        modal.dataset.initialUrl = url;
+        modal.dataset.initialNotes = notes;
         modal.dataset.originalTitle = title;
         modal.dataset.originalUrl = url;
         modal.dataset.originalNotes = notes;
@@ -304,6 +340,7 @@ class BookmarkItem extends HTMLElement {
         urlInput.value = url;
         notesTextarea.value = notes;
         notesCount.textContent = notes.length;
+        revertBtn.classList.add('hidden');
 
         modal.showModal();
         titleInput.focus();
