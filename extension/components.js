@@ -148,6 +148,7 @@ class BookmarkItem extends HTMLElement {
         const title = this.getAttribute('title') || '';
         const url = this.getAttribute('url') || '';
         const notes = this.getAttribute('notes') || '';
+        const favicon = this.getAttribute('favicon') || '';
         const bookmarkItem = this;
 
         let modal = document.getElementById('edit-modal');
@@ -157,32 +158,16 @@ class BookmarkItem extends HTMLElement {
             modal.className = 'modal';
             modal.innerHTML = `
                 <div class="modal-box">
-                    <form method="dialog">
-                        <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
-                    </form>
-                    <h3 class="font-bold text-lg mb-4">Edit Bookmark</h3>
-                    
-                    <div class="form-control mb-3">
-                        <label class="label py-1">
-                            <span class="label-text text-sm">Title</span>
-                        </label>
-                        <input type="text" class="input input-bordered input-sm edit-modal-title" />
+                    <div class="flex gap-3 mb-3">
+                        <img class="edit-modal-favicon w-10 h-10 rounded shrink-0" src="" alt="">
+                        <div class="flex-1 flex flex-col gap-2">
+                            <input type="text" class="input input-bordered input-sm w-full edit-modal-title" placeholder="Title" />
+                            <input type="text" class="input input-bordered input-sm w-full edit-modal-url" placeholder="URL" />
+                        </div>
                     </div>
                     
-                    <div class="form-control mb-3">
-                        <label class="label py-1">
-                            <span class="label-text text-sm">URL</span>
-                        </label>
-                        <input type="text" class="input input-bordered input-sm edit-modal-url" />
-                    </div>
-                    
-                    <div class="form-control mb-4">
-                        <label class="label py-1">
-                            <span class="label-text text-sm">Notes</span>
-                        </label>
-                        <textarea class="textarea textarea-bordered h-24 edit-modal-notes" placeholder="Add notes..." maxlength="1000"></textarea>
-                        <div class="text-right text-xs text-base-content/50 mt-1"><span class="edit-modal-notes-count">0</span> / 1000</div>
-                    </div>
+                    <textarea class="textarea textarea-bordered w-full h-24 edit-modal-notes" placeholder="Add your notes here..." maxlength="1000"></textarea>
+                    <div class="text-right text-xs text-base-content/50 mt-1"><span class="edit-modal-notes-count">0</span> / 1000</div>
                     
                     <div class="flex justify-between items-center mt-4">
                         <button class="btn btn-error btn-sm edit-modal-delete">Delete</button>
@@ -303,6 +288,7 @@ class BookmarkItem extends HTMLElement {
             });
         }
 
+        const faviconImg = modal.querySelector('.edit-modal-favicon');
         const titleInput = modal.querySelector('.edit-modal-title');
         const urlInput = modal.querySelector('.edit-modal-url');
         const notesTextarea = modal.querySelector('.edit-modal-notes');
@@ -313,6 +299,7 @@ class BookmarkItem extends HTMLElement {
         modal.dataset.originalUrl = url;
         modal.dataset.originalNotes = notes;
 
+        faviconImg.src = favicon;
         titleInput.value = title;
         urlInput.value = url;
         notesTextarea.value = notes;
