@@ -560,7 +560,7 @@ class BookmarkList extends HTMLElement {
                 const dragHint = document.createElement('span');
                 dragHint.className = 'drag-hint';
                 dragHint.textContent = '⋮';
-                titleContainer.appendChild(dragHint);
+                titleText.appendChild(dragHint);
             }
 
             section.appendChild(titleContainer);

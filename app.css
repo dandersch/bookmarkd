@@ -129,7 +129,10 @@
     @apply cursor-grabbing;
 }
 .drag-hint {
-    @apply opacity-30 text-xs ml-1 select-none;
+    @apply opacity-0 text-xs ml-1 select-none transition-opacity;
+}
+.collapse:hover .drag-hint {
+    @apply opacity-30;
 }
 
 .bookmark-actions {

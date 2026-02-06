@@ -2812,9 +2812,15 @@
   margin-left: calc(var(--spacing) * 1);
   font-size: var(--text-xs);
   line-height: var(--tw-leading, var(--text-xs--line-height));
-  opacity: 30%;
+  opacity: 0%;
+  transition-property: opacity;
+  transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
+  transition-duration: var(--tw-duration, var(--default-transition-duration));
   -webkit-user-select: none;
   user-select: none;
+}
+.collapse:hover .drag-hint {
+  opacity: 30%;
 }
 .bookmark-actions {
   position: absolute;
