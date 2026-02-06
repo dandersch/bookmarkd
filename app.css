@@ -122,11 +122,14 @@
 .collapse.category-drag-over {
     @apply bg-primary/20;
 }
-.drag-handle {
-    @apply cursor-grab opacity-40 hover:opacity-100;
+.category-draggable {
+    @apply cursor-grab;
 }
-.collapse.category-dragging .drag-handle {
+.collapse.category-dragging .category-draggable {
     @apply cursor-grabbing;
+}
+.drag-hint {
+    @apply opacity-30 text-xs ml-1 select-none;
 }
 
 .bookmark-actions {

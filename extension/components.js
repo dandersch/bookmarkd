@@ -524,27 +524,44 @@ class BookmarkList extends HTMLElement {
                     }
                     e.preventDefault();
                     section.classList.remove('category-drag-over');
-                    this._reorderCategories(draggedCategoryId, categoryId);
+                    const rect = section.getBoundingClientRect();
+                    const dropAfter = e.clientY > rect.top + rect.height / 2;
+                    this._reorderCategories(draggedCategoryId, categoryId, dropAfter);
                 });
             }
 
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.checked = !isCollapsed;
-            checkbox.addEventListener('change', () => this._toggleCategory(categoryId));
+            checkbox.style.pointerEvents = 'none';
             section.appendChild(checkbox);
 
             const titleContainer = document.createElement('div');
             titleContainer.className = 'collapse-title text-xs font-semibold uppercase tracking-wider opacity-60 py-2 min-h-0 flex items-center justify-between pr-8';
+            if (!isUncategorized) {
+                titleContainer.classList.add('category-draggable');
+            }
             if (categoryColor) {
                 titleContainer.style.backgroundColor = categoryColor;
                 titleContainer.style.opacity = '1';
             }
+
+            titleContainer.addEventListener('click', (e) => {
+                if (e.target.closest('.category-actions')) return;
+                this._toggleCategory(categoryId);
+            });
             
             const titleText = document.createElement('span');
             titleText.className = 'category-name';
             titleText.textContent = categoryName;
             titleContainer.appendChild(titleText);
+
+            if (!isUncategorized) {
+                const dragHint = document.createElement('span');
+                dragHint.className = 'drag-hint';
+                dragHint.textContent = '⋮';
+                titleContainer.appendChild(dragHint);
+            }
 
             section.appendChild(titleContainer);
 
@@ -552,7 +569,6 @@ class BookmarkList extends HTMLElement {
                 const actions = document.createElement('div');
                 actions.className = 'category-actions';
                 actions.innerHTML = `
-                    <button class="btn btn-ghost btn-xs btn-square drag-handle" title="Drag to reorder">⋮</button>
                     <button class="btn btn-ghost btn-xs btn-square edit-category-btn">✎</button>
                     <button class="btn btn-ghost btn-xs btn-square delete-category-btn">🗑</button>
                 `;
@@ -851,18 +867,20 @@ class BookmarkList extends HTMLElement {
         }
     }
 
-    async _reorderCategories(draggedId, targetId) {
+    async _reorderCategories(draggedId, targetId, dropAfter = false) {
         const currentOrder = this._categories
             .filter(c => c.id !== 'uncategorized')
             .sort((a, b) => a.order - b.order)
             .map(c => c.id);
 
         const draggedIndex = currentOrder.indexOf(draggedId);
-        const targetIndex = currentOrder.indexOf(targetId);
+        let targetIndex = currentOrder.indexOf(targetId);
 
         if (draggedIndex === -1 || targetIndex === -1) return;
 
         currentOrder.splice(draggedIndex, 1);
+        targetIndex = currentOrder.indexOf(targetId);
+        if (dropAfter) targetIndex++;
         currentOrder.splice(targetIndex, 0, draggedId);
 
         const newOrder = ['uncategorized', ...currentOrder];

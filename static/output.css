@@ -2802,17 +2802,19 @@
     background-color: color-mix(in oklab, var(--color-primary) 20%, transparent);
   }
 }
-.drag-handle {
+.category-draggable {
   cursor: grab;
-  opacity: 40%;
-  &:hover {
-    @media (hover: hover) {
-      opacity: 100%;
-    }
-  }
 }
-.collapse.category-dragging .drag-handle {
+.collapse.category-dragging .category-draggable {
   cursor: grabbing;
+}
+.drag-hint {
+  margin-left: calc(var(--spacing) * 1);
+  font-size: var(--text-xs);
+  line-height: var(--tw-leading, var(--text-xs--line-height));
+  opacity: 30%;
+  -webkit-user-select: none;
+  user-select: none;
 }
 .bookmark-actions {
   position: absolute;
