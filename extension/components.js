@@ -570,19 +570,12 @@ class BookmarkList extends HTMLElement {
                 actions.className = 'category-actions';
                 actions.innerHTML = `
                     <button class="btn btn-ghost btn-xs btn-square edit-category-btn">✎</button>
-                    <button class="btn btn-ghost btn-xs btn-square delete-category-btn">🗑</button>
                 `;
                 
                 actions.querySelector('.edit-category-btn').addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    this._editCategory(categoryId, categoryName, section);
-                });
-                
-                actions.querySelector('.delete-category-btn').addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    this._deleteCategory(categoryName);
+                    this._openCategoryEditModal(categoryId, categoryName, categoryColor);
                 });
                 
                 section.appendChild(actions);
@@ -743,68 +736,181 @@ class BookmarkList extends HTMLElement {
         }
     }
 
-    _editCategory(categoryId, currentName, section) {
-        const titleContainer = section.querySelector('.collapse-title');
-        const titleText = titleContainer.querySelector('.category-name');
-        const actions = section.querySelector('.category-actions');
-        const checkbox = section.querySelector('input[type="checkbox"]');
-        const currentColor = section.dataset.categoryColor || '#808080';
-        
-        // Disable checkbox to allow clicking on inputs
-        if (checkbox) checkbox.style.display = 'none';
-        
-        titleText.innerHTML = `
-            <span style="display: flex; align-items: center; gap: 0.5rem;">
-                <input type="text" class="input input-xs input-bordered category-edit-input" value="${this._escapeHtml(currentName)}">
-                <input type="color" class="category-color-input" value="${currentColor}" title="Category color">
-            </span>
-        `;
-        
-        actions.innerHTML = `
-            <button class="btn btn-ghost btn-xs btn-square text-success save-edit-btn">✓</button>
-            <button class="btn btn-ghost btn-xs btn-square text-warning cancel-edit-btn">✕</button>
-        `;
-        actions.style.display = 'flex';
+    _openCategoryEditModal(categoryId, categoryName, categoryColor) {
+        const list = this;
 
-        const input = titleText.querySelector('.category-edit-input');
-        const colorInput = titleText.querySelector('.category-color-input');
-        input.focus();
-        input.select();
+        let modal = document.getElementById('category-edit-modal');
+        if (!modal) {
+            modal = document.createElement('dialog');
+            modal.id = 'category-edit-modal';
+            modal.className = 'modal';
+            modal.innerHTML = `
+                <div class="modal-box">
+                    <div class="flex gap-3 mb-3 items-center">
+                        <div class="category-modal-color-wrapper shrink-0 relative">
+                            <input type="color" class="category-modal-color w-10 h-10 rounded cursor-pointer border-0 p-0" title="Category color">
+                            <button class="category-modal-clear-color btn btn-ghost btn-xs btn-circle absolute -top-1 -right-1 text-xs hidden" title="Clear color">✕</button>
+                        </div>
+                        <input type="text" class="input input-bordered input-sm w-full category-modal-title" placeholder="Category name" />
+                    </div>
 
-        const saveEdit = async () => {
-            const newName = input.value.trim();
-            const newColor = colorInput.value;
-            if (newName) {
-                await this._updateCategory(currentName, newName, newColor);
-            } else {
-                this.render();
-            }
-        };
+                    <div class="flex justify-between items-center mt-4">
+                        <button class="btn btn-error btn-sm category-modal-delete">Delete</button>
+                        <button class="btn btn-ghost btn-sm category-modal-revert hidden" title="Revert changes">↺</button>
+                    </div>
 
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
+                    <div class="category-modal-confirm hidden mt-3 p-3 bg-error/10 rounded-lg">
+                        <p class="text-sm mb-2">All bookmarks in this category will be moved to "Uncategorized".</p>
+                        <div class="flex gap-2 justify-end">
+                            <button class="btn btn-ghost btn-xs category-modal-cancel-delete">Cancel</button>
+                            <button class="btn btn-error btn-xs category-modal-confirm-delete">Delete</button>
+                        </div>
+                    </div>
+                </div>
+                <form method="dialog" class="modal-backdrop">
+                    <button>close</button>
+                </form>
+            `;
+            document.body.appendChild(modal);
+
+            const titleInput = modal.querySelector('.category-modal-title');
+            const colorInput = modal.querySelector('.category-modal-color');
+            const clearColorBtn = modal.querySelector('.category-modal-clear-color');
+            const deleteBtn = modal.querySelector('.category-modal-delete');
+            const revertBtn = modal.querySelector('.category-modal-revert');
+            const confirmBox = modal.querySelector('.category-modal-confirm');
+            const cancelDeleteBtn = modal.querySelector('.category-modal-cancel-delete');
+            const confirmDeleteBtn = modal.querySelector('.category-modal-confirm-delete');
+
+            const checkForChanges = () => {
+                const hasChanges =
+                    titleInput.value !== modal.dataset.initialName ||
+                    (modal.dataset.currentColor || '') !== (modal.dataset.initialColor || '');
+                revertBtn.classList.toggle('hidden', !hasChanges);
+            };
+
+            const updateColorDisplay = () => {
+                const color = modal.dataset.currentColor || '';
+                if (color) {
+                    colorInput.value = color;
+                    colorInput.style.opacity = '1';
+                    clearColorBtn.classList.remove('hidden');
+                } else {
+                    colorInput.value = '#808080';
+                    colorInput.style.opacity = '0.3';
+                    clearColorBtn.classList.add('hidden');
+                }
+            };
+
+            titleInput.addEventListener('input', checkForChanges);
+
+            colorInput.addEventListener('input', () => {
+                modal.dataset.currentColor = colorInput.value;
+                colorInput.style.opacity = '1';
+                clearColorBtn.classList.remove('hidden');
+                checkForChanges();
+            });
+
+            clearColorBtn.addEventListener('click', (e) => {
                 e.preventDefault();
-                saveEdit();
-            } else if (e.key === 'Escape') {
-                e.preventDefault();
-                this.render();
-            }
-        });
+                e.stopPropagation();
+                modal.dataset.currentColor = '';
+                updateColorDisplay();
+                checkForChanges();
+            });
 
-        input.addEventListener('click', (e) => e.stopPropagation());
-        colorInput.addEventListener('click', (e) => e.stopPropagation());
-        
-        actions.querySelector('.save-edit-btn').addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            saveEdit();
-        });
-        
-        actions.querySelector('.cancel-edit-btn').addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this.render();
-        });
+            const saveTitle = async () => {
+                const newName = titleInput.value.trim();
+                const originalName = modal.dataset.originalName || '';
+                if (!newName || newName === originalName) return;
+
+                await list._updateCategory(originalName, newName, undefined);
+                modal.dataset.originalName = newName;
+            };
+
+            const saveColor = async () => {
+                const newColor = modal.dataset.currentColor || '';
+                const originalColor = modal.dataset.originalColor || '';
+                if (newColor === originalColor) return;
+
+                const currentName = modal.dataset.originalName || '';
+                await list._updateCategory(currentName, currentName, newColor);
+                modal.dataset.originalColor = newColor;
+            };
+
+            titleInput.addEventListener('blur', saveTitle);
+            colorInput.addEventListener('change', saveColor);
+            clearColorBtn.addEventListener('click', async () => {
+                await saveColor();
+            });
+
+            deleteBtn.addEventListener('click', () => {
+                confirmBox.classList.remove('hidden');
+                deleteBtn.classList.add('hidden');
+            });
+
+            cancelDeleteBtn.addEventListener('click', () => {
+                confirmBox.classList.add('hidden');
+                deleteBtn.classList.remove('hidden');
+            });
+
+            confirmDeleteBtn.addEventListener('click', async () => {
+                const name = modal.dataset.originalName;
+                await list._deleteCategory(name);
+                modal.close();
+            });
+
+            revertBtn.addEventListener('click', async () => {
+                const initialName = modal.dataset.initialName || '';
+                const initialColor = modal.dataset.initialColor || '';
+                const currentName = modal.dataset.originalName || '';
+
+                await list._updateCategory(currentName, initialName, initialColor);
+
+                titleInput.value = initialName;
+                modal.dataset.originalName = initialName;
+                modal.dataset.currentColor = initialColor;
+                modal.dataset.originalColor = initialColor;
+                updateColorDisplay();
+
+                revertBtn.classList.add('hidden');
+            });
+
+            modal.addEventListener('close', () => {
+                titleInput.blur();
+                confirmBox.classList.add('hidden');
+                deleteBtn.classList.remove('hidden');
+            });
+        }
+
+        const titleInput = modal.querySelector('.category-modal-title');
+        const revertBtn = modal.querySelector('.category-modal-revert');
+
+        modal.dataset.categoryId = categoryId;
+        modal.dataset.initialName = categoryName;
+        modal.dataset.initialColor = categoryColor || '';
+        modal.dataset.originalName = categoryName;
+        modal.dataset.originalColor = categoryColor || '';
+        modal.dataset.currentColor = categoryColor || '';
+
+        titleInput.value = categoryName;
+        revertBtn.classList.add('hidden');
+
+        const colorInput = modal.querySelector('.category-modal-color');
+        const clearColorBtn = modal.querySelector('.category-modal-clear-color');
+        if (categoryColor) {
+            colorInput.value = categoryColor;
+            colorInput.style.opacity = '1';
+            clearColorBtn.classList.remove('hidden');
+        } else {
+            colorInput.value = '#808080';
+            colorInput.style.opacity = '0.3';
+            clearColorBtn.classList.add('hidden');
+        }
+
+        modal.showModal();
+        titleInput.focus();
+        titleInput.select();
     }
 
     async _updateCategory(oldName, newName, color) {
@@ -819,7 +925,7 @@ class BookmarkList extends HTMLElement {
 
             const payload = {};
             if (newName !== oldName) payload.name = newName;
-            if (color) payload.color = color;
+            if (color !== undefined) payload.color = color;
 
             const res = await fetch(`${config.serverUrl}/api/categories/${encodeURIComponent(oldName)}`, {
                 method: 'PUT',
