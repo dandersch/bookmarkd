@@ -97,7 +97,33 @@
 }
 .collapse-content {
     @apply grid gap-2 pt-2 px-2 mb-4 bg-base-300/50;
+}
+.collapse-content.view-card {
     grid-template-columns: repeat(4, 1fr);
+}
+.collapse-content.view-list {
+    grid-template-columns: 1fr;
+}
+.view-list .bookmark-item {
+    @apply shadow-none;
+}
+.view-list .bookmark-item:hover {
+    @apply translate-y-0 shadow-none ring-0 bg-base-200;
+}
+.view-list .bookmark-link {
+    @apply flex-nowrap p-2;
+}
+.view-list .bookmark-favicon {
+    @apply w-5 h-5;
+}
+.view-list .bookmark-title {
+    @apply text-sm font-normal;
+}
+.view-list .bookmark-info {
+    @apply flex-row items-center gap-2;
+}
+.view-list .bookmark-timestamps {
+    @apply w-auto;
 }
 
 /* Drag and drop styles */
@@ -267,8 +293,48 @@
     padding-right: 0.5rem;
 }
 .popup .collapse-content {
-    display: block;
     padding: 0;
+}
+.popup .collapse-content.view-list {
+    display: block;
+}
+.popup .collapse-content.view-card {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.25rem;
+    padding: 0.25rem;
+}
+.popup .view-card .bookmark-item {
+    @apply flex-col items-center bg-base-300 p-2 text-center;
+    border-radius: var(--radius-box);
+}
+.popup .view-card .bookmark-item:hover {
+    @apply bg-base-200;
+}
+.popup .view-card .bookmark-link {
+    @apply flex-col items-center gap-1 p-1;
+}
+.popup .view-card .bookmark-favicon {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+.popup .view-card .bookmark-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.popup .view-card .bookmark-title {
+    font-size: 0.7rem;
+    text-align: center;
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.popup .view-card .bookmark-timestamps,
+.popup .view-card .bookmark-actions {
+    display: none;
 }
 .popup .category-actions {
     gap: 0.125rem;

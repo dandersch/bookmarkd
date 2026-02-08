@@ -360,6 +360,7 @@ class BookmarkList extends HTMLElement {
         this._bookmarks = [];
         this._categories = [];
         this._collapsedCategories = this._loadCollapsedState();
+        this._categoryViews = this._loadCategoryViews();
     }
 
     connectedCallback() {
@@ -395,6 +396,38 @@ class BookmarkList extends HTMLElement {
         try {
             localStorage.setItem('bookmarkd-collapsed-categories', JSON.stringify(this._collapsedCategories));
         } catch {}
+    }
+
+    _getViewContext() {
+        return document.body.classList.contains('popup') ? 'popup' : 'dashboard';
+    }
+
+    _loadCategoryViews() {
+        try {
+            const ctx = document.body?.classList?.contains('popup') ? 'popup' : 'dashboard';
+            const saved = localStorage.getItem(`bookmarkd-category-views-${ctx}`);
+            return saved ? JSON.parse(saved) : {};
+        } catch {
+            return {};
+        }
+    }
+
+    _saveCategoryViews() {
+        try {
+            const ctx = this._getViewContext();
+            localStorage.setItem(`bookmarkd-category-views-${ctx}`, JSON.stringify(this._categoryViews));
+        } catch {}
+    }
+
+    _getCategoryView(categoryId) {
+        if (this._categoryViews[categoryId]) return this._categoryViews[categoryId];
+        return this.getAttribute('default-view') || 'card';
+    }
+
+    _setCategoryView(categoryId, view) {
+        this._categoryViews[categoryId] = view;
+        this._saveCategoryViews();
+        this.render();
     }
 
     _toggleCategory(categoryId) {
@@ -565,24 +598,23 @@ class BookmarkList extends HTMLElement {
 
             section.appendChild(titleContainer);
 
-            if (!isUncategorized) {
-                const actions = document.createElement('div');
-                actions.className = 'category-actions';
-                actions.innerHTML = `
-                    <button class="btn btn-ghost btn-xs btn-square edit-category-btn">✎</button>
-                `;
-                
-                actions.querySelector('.edit-category-btn').addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    this._openCategoryEditModal(categoryId, categoryName, categoryColor);
-                });
-                
-                section.appendChild(actions);
-            }
+            const actions = document.createElement('div');
+            actions.className = 'category-actions';
+            actions.innerHTML = `
+                <button class="btn btn-ghost btn-xs btn-square edit-category-btn">✎</button>
+            `;
+            
+            actions.querySelector('.edit-category-btn').addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this._openCategoryEditModal(categoryId, categoryName, categoryColor, isUncategorized);
+            });
+            
+            section.appendChild(actions);
 
+            const categoryView = this._getCategoryView(categoryId);
             const content = document.createElement('div');
-            content.className = 'collapse-content';
+            content.className = `collapse-content view-${categoryView}`;
             content.dataset.category = categoryName;
             content.dataset.categoryId = categoryId;
             if (categoryColor) {
@@ -736,7 +768,7 @@ class BookmarkList extends HTMLElement {
         }
     }
 
-    _openCategoryEditModal(categoryId, categoryName, categoryColor) {
+    _openCategoryEditModal(categoryId, categoryName, categoryColor, isUncategorized = false) {
         const list = this;
 
         let modal = document.getElementById('category-edit-modal');
@@ -752,6 +784,16 @@ class BookmarkList extends HTMLElement {
                             <button class="category-modal-clear-color btn btn-ghost btn-xs btn-circle absolute -top-1 -right-1 text-xs hidden" title="Clear color">✕</button>
                         </div>
                         <input type="text" class="input input-bordered input-sm w-full category-modal-title" placeholder="Category name" />
+                    </div>
+
+                    <div class="form-control mb-2">
+                        <label class="label py-1">
+                            <span class="label-text text-xs font-semibold">View</span>
+                        </label>
+                        <div class="category-modal-view-toggle flex gap-1">
+                            <button class="btn btn-xs category-view-btn" data-view="card">▦ Card</button>
+                            <button class="btn btn-xs category-view-btn" data-view="list">☰ List</button>
+                        </div>
                     </div>
 
                     <div class="flex justify-between items-center mt-4">
@@ -844,6 +886,17 @@ class BookmarkList extends HTMLElement {
                 await saveColor();
             });
 
+            const viewBtns = modal.querySelectorAll('.category-view-btn');
+            viewBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const view = btn.dataset.view;
+                    const catId = modal.dataset.categoryId;
+                    list._setCategoryView(catId, view);
+                    viewBtns.forEach(b => b.classList.toggle('btn-active', b.dataset.view === view));
+                });
+            });
+
             deleteBtn.addEventListener('click', () => {
                 confirmBox.classList.remove('hidden');
                 deleteBtn.classList.add('hidden');
@@ -908,9 +961,20 @@ class BookmarkList extends HTMLElement {
             clearColorBtn.classList.add('hidden');
         }
 
+        const currentView = this._getCategoryView(categoryId);
+        modal.querySelectorAll('.category-view-btn').forEach(btn => {
+            btn.classList.toggle('btn-active', btn.dataset.view === currentView);
+        });
+
+        titleInput.disabled = isUncategorized;
+        modal.querySelector('.category-modal-color-wrapper').classList.toggle('hidden', isUncategorized);
+        modal.querySelector('.category-modal-delete').classList.toggle('hidden', isUncategorized);
+
         modal.showModal();
-        titleInput.focus();
-        titleInput.select();
+        if (!isUncategorized) {
+            titleInput.focus();
+            titleInput.select();
+        }
     }
 
     async _updateCategory(oldName, newName, color) {
