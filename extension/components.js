@@ -695,48 +695,10 @@ class BookmarkList extends HTMLElement {
         `;
         
         addCategoryRow.querySelector('.add-category-btn').addEventListener('click', () => {
-            this._showAddCategoryInput(addCategoryRow);
+            this._openCategoryEditModal(null, '', '', false, true);
         });
         
         this.appendChild(addCategoryRow);
-    }
-
-    _showAddCategoryInput(container) {
-        container.innerHTML = `
-            <div class="add-category-input-wrapper">
-                <input type="text" class="input input-sm input-bordered add-category-input" placeholder="Category name...">
-                <input type="color" class="add-category-color-input" value="#808080" title="Category color">
-                <button class="btn btn-ghost btn-xs btn-square text-success save-category-btn">✓</button>
-                <button class="btn btn-ghost btn-xs btn-square text-warning cancel-category-btn">✕</button>
-            </div>
-        `;
-
-        const input = container.querySelector('.add-category-input');
-        const colorInput = container.querySelector('.add-category-color-input');
-        input.focus();
-
-        const saveCategory = async () => {
-            const name = input.value.trim();
-            const color = colorInput.value;
-            if (name) {
-                await this._createCategory(name, color);
-            } else {
-                this.render();
-            }
-        };
-
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                saveCategory();
-            } else if (e.key === 'Escape') {
-                e.preventDefault();
-                this.render();
-            }
-        });
-
-        container.querySelector('.save-category-btn').addEventListener('click', saveCategory);
-        container.querySelector('.cancel-category-btn').addEventListener('click', () => this.render());
     }
 
     async _createCategory(name, color) {
@@ -760,15 +722,18 @@ class BookmarkList extends HTMLElement {
                 throw new Error(text || 'Failed to create category');
             }
 
+            const created = await res.json();
             this.dispatchEvent(new CustomEvent('category-changed', { bubbles: true }));
+            return created;
         } catch (err) {
             console.error('Create category failed:', err);
             alert('Failed to create category: ' + err.message);
             this.render();
+            return null;
         }
     }
 
-    _openCategoryEditModal(categoryId, categoryName, categoryColor, isUncategorized = false) {
+    _openCategoryEditModal(categoryId, categoryName, categoryColor, isUncategorized = false, isCreate = false) {
         const list = this;
 
         let modal = document.getElementById('category-edit-modal');
@@ -798,6 +763,7 @@ class BookmarkList extends HTMLElement {
 
                     <div class="flex justify-between items-center mt-4">
                         <button class="btn btn-error btn-sm category-modal-delete">Delete</button>
+                        <button class="btn btn-primary btn-sm category-modal-save hidden">Save</button>
                         <button class="btn btn-ghost btn-sm category-modal-revert hidden" title="Revert changes">↺</button>
                     </div>
 
@@ -862,6 +828,7 @@ class BookmarkList extends HTMLElement {
             });
 
             const saveTitle = async () => {
+                if (modal.dataset.mode === 'create') return;
                 const newName = titleInput.value.trim();
                 const originalName = modal.dataset.originalName || '';
                 if (!newName || newName === originalName) return;
@@ -871,6 +838,7 @@ class BookmarkList extends HTMLElement {
             };
 
             const saveColor = async () => {
+                if (modal.dataset.mode === 'create') return;
                 const newColor = modal.dataset.currentColor || '';
                 const originalColor = modal.dataset.originalColor || '';
                 if (newColor === originalColor) return;
@@ -892,9 +860,34 @@ class BookmarkList extends HTMLElement {
                     e.preventDefault();
                     const view = btn.dataset.view;
                     const catId = modal.dataset.categoryId;
-                    list._setCategoryView(catId, view);
+                    if (modal.dataset.mode !== 'create') {
+                        list._setCategoryView(catId, view);
+                    }
+                    modal.dataset.pendingView = view;
                     viewBtns.forEach(b => b.classList.toggle('btn-active', b.dataset.view === view));
                 });
+            });
+
+            const saveBtn = modal.querySelector('.category-modal-save');
+            saveBtn.addEventListener('click', async () => {
+                const name = titleInput.value.trim();
+                if (!name) return;
+                const color = modal.dataset.currentColor || '';
+                const created = await list._createCategory(name, color || undefined);
+                if (created) {
+                    const pendingView = modal.dataset.pendingView;
+                    if (pendingView) {
+                        list._setCategoryView(created.id, pendingView);
+                    }
+                }
+                modal.close();
+            });
+
+            titleInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && modal.dataset.mode === 'create') {
+                    e.preventDefault();
+                    saveBtn.click();
+                }
             });
 
             deleteBtn.addEventListener('click', () => {
@@ -939,14 +932,17 @@ class BookmarkList extends HTMLElement {
         const titleInput = modal.querySelector('.category-modal-title');
         const revertBtn = modal.querySelector('.category-modal-revert');
 
-        modal.dataset.categoryId = categoryId;
+        modal.dataset.mode = isCreate ? 'create' : 'edit';
+        modal.dataset.categoryId = categoryId || '';
         modal.dataset.initialName = categoryName;
         modal.dataset.initialColor = categoryColor || '';
         modal.dataset.originalName = categoryName;
         modal.dataset.originalColor = categoryColor || '';
         modal.dataset.currentColor = categoryColor || '';
+        modal.dataset.pendingView = '';
 
         titleInput.value = categoryName;
+        titleInput.disabled = isUncategorized;
         revertBtn.classList.add('hidden');
 
         const colorInput = modal.querySelector('.category-modal-color');
@@ -961,19 +957,21 @@ class BookmarkList extends HTMLElement {
             clearColorBtn.classList.add('hidden');
         }
 
-        const currentView = this._getCategoryView(categoryId);
+        const defaultView = this.getAttribute('default-view') || 'card';
+        const currentView = isCreate ? defaultView : this._getCategoryView(categoryId);
+        modal.dataset.pendingView = isCreate ? defaultView : '';
         modal.querySelectorAll('.category-view-btn').forEach(btn => {
             btn.classList.toggle('btn-active', btn.dataset.view === currentView);
         });
 
-        titleInput.disabled = isUncategorized;
         modal.querySelector('.category-modal-color-wrapper').classList.toggle('hidden', isUncategorized);
-        modal.querySelector('.category-modal-delete').classList.toggle('hidden', isUncategorized);
+        modal.querySelector('.category-modal-delete').classList.toggle('hidden', isCreate || isUncategorized);
+        modal.querySelector('.category-modal-save').classList.toggle('hidden', !isCreate);
 
         modal.showModal();
         if (!isUncategorized) {
             titleInput.focus();
-            titleInput.select();
+            if (!isCreate) titleInput.select();
         }
     }
 
