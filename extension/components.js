@@ -361,6 +361,7 @@ class BookmarkList extends HTMLElement {
         this._categories = [];
         this._collapsedCategories = this._loadCollapsedState();
         this._categoryViews = this._loadCategoryViews();
+        this._categorySorts = this._loadCategorySorts();
     }
 
     connectedCallback() {
@@ -428,6 +429,55 @@ class BookmarkList extends HTMLElement {
         this._categoryViews[categoryId] = view;
         this._saveCategoryViews();
         this.render();
+    }
+
+    _loadCategorySorts() {
+        try {
+            const ctx = document.body?.classList?.contains('popup') ? 'popup' : 'dashboard';
+            const saved = localStorage.getItem(`bookmarkd-category-sorts-${ctx}`);
+            return saved ? JSON.parse(saved) : {};
+        } catch {
+            return {};
+        }
+    }
+
+    _saveCategorySorts() {
+        try {
+            const ctx = this._getViewContext();
+            localStorage.setItem(`bookmarkd-category-sorts-${ctx}`, JSON.stringify(this._categorySorts));
+        } catch {}
+    }
+
+    _getCategorySort(categoryId) {
+        return this._categorySorts[categoryId] || { by: 'manual', dir: 'asc' };
+    }
+
+    _setCategorySort(categoryId, by, dir) {
+        this._categorySorts[categoryId] = { by, dir };
+        this._saveCategorySorts();
+        this.render();
+    }
+
+    _sortBookmarks(bookmarks, sortConfig) {
+        if (sortConfig.by === 'manual') return bookmarks;
+        const sorted = [...bookmarks];
+        const dir = sortConfig.dir === 'desc' ? -1 : 1;
+        sorted.sort((a, b) => {
+            switch (sortConfig.by) {
+                case 'title':
+                    return dir * (a.title || '').localeCompare(b.title || '');
+                case 'date-added':
+                    return dir * ((a.timestamp || 0) - (b.timestamp || 0));
+                case 'date-visited': {
+                    const av = a.last_visited || 0;
+                    const bv = b.last_visited || 0;
+                    return dir * (av - bv);
+                }
+                default:
+                    return 0;
+            }
+        });
+        return sorted;
     }
 
     _toggleCategory(categoryId) {
@@ -613,8 +663,11 @@ class BookmarkList extends HTMLElement {
             section.appendChild(actions);
 
             const categoryView = this._getCategoryView(categoryId);
+            const categorySort = this._getCategorySort(categoryId);
+            const isManualSort = categorySort.by === 'manual';
             const content = document.createElement('div');
             content.className = `collapse-content view-${categoryView}`;
+            if (!isManualSort) content.classList.add('sort-active');
             content.dataset.category = categoryName;
             content.dataset.categoryId = categoryId;
             if (categoryColor) {
@@ -628,7 +681,8 @@ class BookmarkList extends HTMLElement {
                 content.appendChild(emptyDropZone);
             }
 
-            for (const bm of bookmarksInCategory) {
+            const sortedBookmarks = this._sortBookmarks(bookmarksInCategory, categorySort);
+            for (const bm of sortedBookmarks) {
                 const item = document.createElement('bookmark-item');
                 item.setAttribute('bookmark-id', bm.id);
                 item.setAttribute('url', bm.url);
@@ -640,18 +694,22 @@ class BookmarkList extends HTMLElement {
                 item.setAttribute('last-visited', bm.last_visited || '');
                 item.setAttribute('notes', bm.notes || '');
                 item.setAttribute('order', bm.order ?? 0);
+                if (!isManualSort) item.draggable = false;
                 content.appendChild(item);
             }
 
-            // Drop zone handlers
+            // Drop zone handlers — only allow reordering within manually-sorted categories
             content.addEventListener('dragover', (e) => {
                 if (!e.dataTransfer.types.includes('bookmark-id')) return;
+                const targetSort = this._getCategorySort(content.dataset.categoryId);
                 e.preventDefault();
                 e.dataTransfer.dropEffect = 'move';
                 content.classList.add('drag-over');
                 
-                const afterElement = this._getDragAfterElement(content, e.clientY, e.clientX);
-                this._showDropIndicator(content, afterElement);
+                if (targetSort.by === 'manual') {
+                    const afterElement = this._getDragAfterElement(content, e.clientY, e.clientX);
+                    this._showDropIndicator(content, afterElement);
+                }
                 this._autoScroll(e.clientY);
             });
 
@@ -673,11 +731,16 @@ class BookmarkList extends HTMLElement {
                 const draggedEl = this.querySelector(`bookmark-item[bookmark-id="${bookmarkId}"]`);
                 if (!draggedEl) return;
 
-                const afterElement = this._getDragAfterElement(content, e.clientY, e.clientX);
                 const targetCategoryId = content.dataset.categoryId;
-                const newOrder = this._computeDropOrder(content, draggedEl, afterElement, targetCategoryId);
-                
-                this._moveBookmark(bookmarkId, targetCategoryId, newOrder);
+                const targetSort = this._getCategorySort(targetCategoryId);
+                if (targetSort.by === 'manual') {
+                    const afterElement = this._getDragAfterElement(content, e.clientY, e.clientX);
+                    const newOrder = this._computeDropOrder(content, draggedEl, afterElement, targetCategoryId);
+                    this._moveBookmark(bookmarkId, targetCategoryId, newOrder);
+                } else {
+                    // Cross-category move: just change category, keep order
+                    this._moveBookmark(bookmarkId, targetCategoryId, undefined);
+                }
             });
 
             section.appendChild(content);
@@ -759,6 +822,22 @@ class BookmarkList extends HTMLElement {
                             <button class="btn btn-xs category-view-btn" data-view="card">▦ Card</button>
                             <button class="btn btn-xs category-view-btn" data-view="list">☰ List</button>
                         </div>
+                    </div>
+
+                    <div class="form-control mb-2">
+                        <label class="label py-1">
+                            <span class="label-text text-xs font-semibold">Sort by</span>
+                        </label>
+                        <div class="flex gap-1 items-center">
+                            <select class="select select-xs select-bordered category-modal-sort-by flex-1">
+                                <option value="manual">Manual (drag & drop)</option>
+                                <option value="title">Title</option>
+                                <option value="date-added">Date added</option>
+                                <option value="date-visited">Last visited</option>
+                            </select>
+                            <button class="btn btn-xs btn-ghost category-modal-sort-dir" title="Toggle sort direction">↑</button>
+                        </div>
+                        <span class="category-modal-sort-hint text-xs text-base-content/50 mt-1 hidden">Drag & drop reordering is disabled while sorting is active</span>
                     </div>
 
                     <div class="flex justify-between items-center mt-4">
@@ -868,6 +947,40 @@ class BookmarkList extends HTMLElement {
                 });
             });
 
+            const sortBySelect = modal.querySelector('.category-modal-sort-by');
+            const sortDirBtn = modal.querySelector('.category-modal-sort-dir');
+            const sortHint = modal.querySelector('.category-modal-sort-hint');
+
+            const updateSortUI = () => {
+                const isManual = sortBySelect.value === 'manual';
+                sortDirBtn.classList.toggle('hidden', isManual);
+                sortHint.classList.toggle('hidden', isManual);
+                sortDirBtn.textContent = modal.dataset.sortDir === 'desc' ? '↓' : '↑';
+                sortDirBtn.title = modal.dataset.sortDir === 'desc' ? 'Descending (click to toggle)' : 'Ascending (click to toggle)';
+            };
+
+            sortBySelect.addEventListener('change', () => {
+                const catId = modal.dataset.categoryId;
+                const dir = modal.dataset.sortDir || 'asc';
+                if (modal.dataset.mode !== 'create') {
+                    list._setCategorySort(catId, sortBySelect.value, dir);
+                }
+                modal.dataset.pendingSortBy = sortBySelect.value;
+                updateSortUI();
+            });
+
+            sortDirBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const newDir = modal.dataset.sortDir === 'desc' ? 'asc' : 'desc';
+                modal.dataset.sortDir = newDir;
+                const catId = modal.dataset.categoryId;
+                if (modal.dataset.mode !== 'create') {
+                    list._setCategorySort(catId, sortBySelect.value, newDir);
+                }
+                modal.dataset.pendingSortDir = newDir;
+                updateSortUI();
+            });
+
             const saveBtn = modal.querySelector('.category-modal-save');
             saveBtn.addEventListener('click', async () => {
                 const name = titleInput.value.trim();
@@ -878,6 +991,10 @@ class BookmarkList extends HTMLElement {
                     const pendingView = modal.dataset.pendingView;
                     if (pendingView) {
                         list._setCategoryView(created.id, pendingView);
+                    }
+                    const pendingSortBy = modal.dataset.pendingSortBy;
+                    if (pendingSortBy && pendingSortBy !== 'manual') {
+                        list._setCategorySort(created.id, pendingSortBy, modal.dataset.pendingSortDir || 'asc');
                     }
                 }
                 modal.close();
@@ -963,6 +1080,20 @@ class BookmarkList extends HTMLElement {
         modal.querySelectorAll('.category-view-btn').forEach(btn => {
             btn.classList.toggle('btn-active', btn.dataset.view === currentView);
         });
+
+        const currentSort = isCreate ? { by: 'manual', dir: 'asc' } : this._getCategorySort(categoryId);
+        const sortBySelect = modal.querySelector('.category-modal-sort-by');
+        const sortDirBtn = modal.querySelector('.category-modal-sort-dir');
+        const sortHint = modal.querySelector('.category-modal-sort-hint');
+        sortBySelect.value = currentSort.by;
+        modal.dataset.sortDir = currentSort.dir;
+        modal.dataset.pendingSortBy = '';
+        modal.dataset.pendingSortDir = '';
+        const isManual = currentSort.by === 'manual';
+        sortDirBtn.classList.toggle('hidden', isManual);
+        sortDirBtn.textContent = currentSort.dir === 'desc' ? '↓' : '↑';
+        sortDirBtn.title = currentSort.dir === 'desc' ? 'Descending (click to toggle)' : 'Ascending (click to toggle)';
+        sortHint.classList.toggle('hidden', isManual);
 
         modal.querySelector('.category-modal-color-wrapper').classList.toggle('hidden', isUncategorized);
         modal.querySelector('.category-modal-delete').classList.toggle('hidden', isCreate || isUncategorized);

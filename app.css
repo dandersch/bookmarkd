@@ -126,6 +126,11 @@
     @apply w-auto;
 }
 
+/* Sort-active: disable drag cursor on bookmark items */
+.sort-active .bookmark-item {
+    cursor: default;
+}
+
 /* Drag and drop styles */
 .bookmark-item.dragging {
     @apply opacity-50;

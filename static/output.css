@@ -2296,6 +2296,16 @@
   .p-8 {
     padding: calc(var(--spacing) * 8);
   }
+  .select-xs {
+    @layer daisyui.l1.l2 {
+      --size: calc(var(--size-field, 0.25rem) * 6);
+      font-size: 0.6875rem;
+      option {
+        padding-inline: calc(0.25rem * 2);
+        padding-block: calc(0.25rem * 1);
+      }
+    }
+  }
   .px-8 {
     padding-inline: calc(var(--spacing) * 8);
   }
@@ -2846,6 +2856,9 @@
 }
 .view-list .bookmark-timestamps {
   width: auto;
+}
+.sort-active .bookmark-item {
+  cursor: default;
 }
 .bookmark-item.dragging {
   opacity: 50%;
