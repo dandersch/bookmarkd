@@ -1,6 +1,6 @@
 class BookmarkItem extends HTMLElement {
     static get observedAttributes() {
-        return ['bookmark-id', 'url', 'title', 'category', 'category-id', 'favicon', 'timestamp', 'last-visited', 'notes', 'order'];
+        return ['bookmark-id', 'url', 'title', 'category', 'category-id', 'favicon', 'timestamp', 'last-visited', 'notes', 'order', 'watched', 'changed'];
     }
 
     constructor() {
@@ -50,6 +50,8 @@ class BookmarkItem extends HTMLElement {
         const favicon = this.getAttribute('favicon') || '';
         const timestamp = this.getAttribute('timestamp') || '';
         const lastVisited = this.getAttribute('last-visited') || '';
+        const watched = this.getAttribute('watched') === 'true';
+        const changed = this.getAttribute('changed') === 'true';
         const addedTime = this.formatTimestamp(timestamp);
         const visitedTime = this.formatTimestamp(lastVisited);
 
@@ -64,7 +66,10 @@ class BookmarkItem extends HTMLElement {
         this.draggable = true;
         this.innerHTML = `
             <a href="${url}" target="_blank" class="bookmark-link" title="${this.escapeHtml(url)}">
-                <img src="${favicon}" class="bookmark-favicon" alt="">
+                <div class="bookmark-favicon-wrapper">
+                    <img src="${favicon}" class="bookmark-favicon" alt="">
+                    ${changed ? '<span class="bookmark-changed-dot" title="Page has changed"></span>' : ''}
+                </div>
                 <div class="bookmark-info">
                     <span class="bookmark-title">${this.escapeHtml(title)}</span>
                     <span class="bookmark-url">${hostname}</span>
@@ -140,6 +145,8 @@ class BookmarkItem extends HTMLElement {
         fetch(`${config.serverUrl}/api/bookmarks/${id}/visit`, {
             method: 'POST',
             headers
+        }).then(() => {
+            this.setAttribute('changed', 'false');
         }).catch(err => console.error('Failed to record visit:', err));
     }
 
@@ -149,6 +156,8 @@ class BookmarkItem extends HTMLElement {
         const url = this.getAttribute('url') || '';
         const notes = this.getAttribute('notes') || '';
         const favicon = this.getAttribute('favicon') || '';
+        const watched = this.getAttribute('watched') === 'true';
+        const changed = this.getAttribute('changed') === 'true';
         const bookmarkItem = this;
 
         let modal = document.getElementById('edit-modal');
@@ -169,6 +178,12 @@ class BookmarkItem extends HTMLElement {
                     <textarea class="textarea textarea-bordered w-full h-24 edit-modal-notes" placeholder="Add your notes here..." maxlength="1000"></textarea>
                     <div class="text-right text-xs text-base-content/50 mt-1"><span class="edit-modal-notes-count">0</span> / 1000</div>
                     
+                    <label class="flex items-center gap-2 mt-3 cursor-pointer">
+                        <input type="checkbox" class="checkbox checkbox-sm checkbox-primary edit-modal-watched" />
+                        <span class="label-text text-sm">Watch for changes</span>
+                        <span class="edit-modal-changed-badge badge badge-error badge-sm hidden">Changed</span>
+                    </label>
+                    
                     <div class="flex justify-between items-center mt-4">
                         <button class="btn btn-error btn-sm edit-modal-delete">Delete</button>
                         <button class="btn btn-ghost btn-sm edit-modal-revert hidden" title="Revert changes">↺</button>
@@ -186,6 +201,27 @@ class BookmarkItem extends HTMLElement {
             const notesCount = modal.querySelector('.edit-modal-notes-count');
             const deleteBtn = modal.querySelector('.edit-modal-delete');
             const revertBtn = modal.querySelector('.edit-modal-revert');
+            const watchedCheckbox = modal.querySelector('.edit-modal-watched');
+            const changedBadge = modal.querySelector('.edit-modal-changed-badge');
+
+            watchedCheckbox.addEventListener('change', async () => {
+                const isWatched = watchedCheckbox.checked;
+                if (await saveField('watched', isWatched)) {
+                    const item = document.querySelector(`bookmark-item[bookmark-id="${modal.dataset.bookmarkId}"]`);
+                    if (item) item.setAttribute('watched', isWatched.toString());
+                    if (!isWatched) {
+                        changedBadge.classList.add('hidden');
+                    }
+                }
+            });
+
+            changedBadge.addEventListener('click', async () => {
+                if (await saveField('changed', false)) {
+                    changedBadge.classList.add('hidden');
+                    const item = document.querySelector(`bookmark-item[bookmark-id="${modal.dataset.bookmarkId}"]`);
+                    if (item) item.setAttribute('changed', 'false');
+                }
+            });
 
             const checkForChanges = () => {
                 const hasChanges = 
@@ -341,6 +377,16 @@ class BookmarkItem extends HTMLElement {
         notesTextarea.value = notes;
         notesCount.textContent = notes.length;
         revertBtn.classList.add('hidden');
+
+        const watchedCheckbox2 = modal.querySelector('.edit-modal-watched');
+        const changedBadge2 = modal.querySelector('.edit-modal-changed-badge');
+        watchedCheckbox2.checked = watched;
+        if (changed) {
+            changedBadge2.classList.remove('hidden');
+            changedBadge2.title = 'Click to dismiss';
+        } else {
+            changedBadge2.classList.add('hidden');
+        }
 
         modal.showModal();
         titleInput.focus();
@@ -694,6 +740,8 @@ class BookmarkList extends HTMLElement {
                 item.setAttribute('last-visited', bm.last_visited || '');
                 item.setAttribute('notes', bm.notes || '');
                 item.setAttribute('order', bm.order ?? 0);
+                item.setAttribute('watched', (bm.watched || false).toString());
+                item.setAttribute('changed', (bm.changed || false).toString());
                 if (!isManualSort) item.draggable = false;
                 content.appendChild(item);
             }

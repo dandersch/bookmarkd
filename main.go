@@ -1,10 +1,13 @@
 package main
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io"
 	"log"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
@@ -38,6 +41,10 @@ type Bookmark struct {
 	Order       int    `json:"order"`
 	LastVisited *int64 `json:"last_visited,omitempty"`
 	Notes       string `json:"notes,omitempty"`
+	Watched     bool   `json:"watched,omitempty"`
+	ContentHash string `json:"content_hash,omitempty"`
+	LastChecked *int64 `json:"last_checked,omitempty"`
+	Changed     bool   `json:"changed,omitempty"`
 }
 
 type Database struct {
@@ -163,6 +170,8 @@ func main() {
 
 	loadThemes()
 
+	startWatcher()
+
 	http.HandleFunc("/", handleIndex)
 	http.HandleFunc("/api/bookmarks", handleAPI)
 	http.HandleFunc("/api/bookmarks/", handleBookmarkAPI)
@@ -170,6 +179,7 @@ func main() {
 	http.HandleFunc("/api/categories/reorder", handleCategoriesReorder)
 	http.HandleFunc("/api/categories/", handleCategoryAPI)
 	http.HandleFunc("/api/themes", handleThemesAPI)
+	http.HandleFunc("/api/watch/check", handleWatchCheck)
 
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
@@ -646,6 +656,7 @@ func visitBookmark(w http.ResponseWriter, id string) {
 
 	now := time.Now().Unix()
 	bm.LastVisited = &now
+	bm.Changed = false
 	bookmarks[id] = bm
 	saveDatabase()
 	w.WriteHeader(http.StatusNoContent)
@@ -659,6 +670,8 @@ func updateBookmark(w http.ResponseWriter, r *http.Request, id string) {
 		CategoryID *string `json:"category_id"`
 		Order      *int    `json:"order"`
 		Notes      *string `json:"notes"`
+		Watched    *bool   `json:"watched"`
+		Changed    *bool   `json:"changed"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
@@ -689,6 +702,17 @@ func updateBookmark(w http.ResponseWriter, r *http.Request, id string) {
 			notes = notes[:1000]
 		}
 		bm.Notes = notes
+	}
+
+	if payload.Watched != nil {
+		bm.Watched = *payload.Watched
+		if *payload.Watched && bm.ContentHash == "" {
+			go fetchAndStoreInitialHash(id)
+		}
+	}
+
+	if payload.Changed != nil {
+		bm.Changed = *payload.Changed
 	}
 
 	newCategoryID := bm.CategoryID
@@ -793,6 +817,124 @@ func shiftOrdersFrom(categoryID string, threshold, delta int, excludeID string) 
 			bookmarks[id] = bm
 		}
 	}
+}
+
+// --- Watch ---
+
+func fetchAndStoreInitialHash(bookmarkID string) {
+	mu.RLock()
+	bm, exists := bookmarks[bookmarkID]
+	mu.RUnlock()
+	if !exists {
+		return
+	}
+
+	hash, err := fetchPageHash(bm.URL)
+	if err != nil {
+		log.Printf("Watch: failed to fetch initial hash for %s: %v", bm.URL, err)
+		return
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+	bm, exists = bookmarks[bookmarkID]
+	if !exists {
+		return
+	}
+	now := time.Now().Unix()
+	bm.ContentHash = hash
+	bm.LastChecked = &now
+	bookmarks[bookmarkID] = bm
+	saveDatabase()
+}
+
+func fetchPageHash(pageURL string) (string, error) {
+	client := &http.Client{Timeout: 30 * time.Second}
+	req, err := http.NewRequest("GET", pageURL, nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; Bookmarkd/1.0)")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	hasher := sha256.New()
+	if _, err := io.Copy(hasher, resp.Body); err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%x", hasher.Sum(nil)), nil
+}
+
+func handleWatchCheck(w http.ResponseWriter, r *http.Request) {
+	setCORSHeaders(w)
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	if r.Method != "POST" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	go checkWatchedBookmarks()
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"status": "check started"})
+}
+
+func startWatcher() {
+	go func() {
+		for {
+			interval := 6*time.Hour + time.Duration(rand.Intn(60))*time.Minute
+			time.Sleep(interval)
+			checkWatchedBookmarks()
+		}
+	}()
+}
+
+func checkWatchedBookmarks() {
+	mu.RLock()
+	var watched []Bookmark
+	for _, bm := range bookmarks {
+		if bm.Watched {
+			watched = append(watched, bm)
+		}
+	}
+	mu.RUnlock()
+
+	log.Printf("Watch: starting check for %d watched bookmarks", len(watched))
+
+	changed := 0
+	for _, bm := range watched {
+		hash, err := fetchPageHash(bm.URL)
+		if err != nil {
+			log.Printf("Watch: failed to check %s: %v", bm.URL, err)
+			continue
+		}
+
+		mu.Lock()
+		current, exists := bookmarks[bm.ID]
+		if exists && current.Watched {
+			now := time.Now().Unix()
+			current.LastChecked = &now
+			if current.ContentHash != "" && current.ContentHash != hash {
+				current.Changed = true
+				changed++
+				log.Printf("Watch: change detected on %s", current.URL)
+			}
+			current.ContentHash = hash
+			bookmarks[bm.ID] = current
+		}
+		mu.Unlock()
+	}
+
+	mu.Lock()
+	saveDatabase()
+	mu.Unlock()
+
+	log.Printf("Watch: check complete, %d/%d bookmarks changed", changed, len(watched))
 }
 
 // --- Persistence ---
