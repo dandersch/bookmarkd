@@ -29,6 +29,7 @@
     --tracking-wide: 0.025em;
     --tracking-wider: 0.05em;
     --leading-tight: 1.25;
+    --radius-sm: 0.25rem;
     --radius-lg: 0.5rem;
     --default-transition-duration: 150ms;
     --default-transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
@@ -2841,6 +2842,11 @@
 .bookmark-favicon-wrapper {
   position: relative;
   flex-shrink: 0;
+}
+.bookmark-favicon-wrapper.watched .bookmark-favicon {
+  border-radius: var(--radius-sm);
+  outline: 2px dashed var(--color-info);
+  outline-offset: 2px;
 }
 .bookmark-changed-dot {
   position: absolute;

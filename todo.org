@@ -53,11 +53,6 @@ github.com/.*/.*/issues/[0-9]*   issue
 ** TODO opml as a shareable html blogroll
 - [[https://web.archive.org/web/20251223065249/https://kmaasrud.com/blog/opml-is-underrated.html][opml is underrated]]
 - [[https://web.archive.org/web/20251223065250/https://kmaasrud.com/blogroll.xml][example of opml as html]]
-* TODO feat: sort-by
-- when added
-- title of bookmark
-- url of bookmark
-- last visited
 * TODO feat: detect changes of bookmark
 ** TODO periodically pull html and check if it has changed
 - maybe provide a (visual) diff
@@ -117,6 +112,12 @@ CLOSED: [2026-01-21 Wed 03:27]
 - [[https://github.com/ndom91/briefkasten][briefkasten]]: bookmark manager + extension
 - [[https://wallabag.org/][wallabag]]: archive & annotate webpages + extension
 - [[https://github.com/awesome-selfhosted/awesome-selfhosted?tab=readme-ov-file#bookmarks-and-link-sharing][awesome selfhosted: bookmarks & link sharing]]
+* DONE feat: sort-by
+CLOSED: [2026-02-11 Wed 12:07]
+- when added
+- title of bookmark
+- url of bookmark
+- last visited
 * DONE [2/2] import existing bookmarks
 CLOSED: [2026-01-24 Sat 14:29]
 ** DONE via a bookmarks.html / bookmarks.json file
