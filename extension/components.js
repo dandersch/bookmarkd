@@ -178,11 +178,13 @@ class BookmarkItem extends HTMLElement {
                     <textarea class="textarea textarea-bordered w-full h-24 edit-modal-notes" placeholder="Add your notes here..." maxlength="1000"></textarea>
                     <div class="text-right text-xs text-base-content/50 mt-1"><span class="edit-modal-notes-count">0</span> / 1000</div>
                     
-                    <label class="flex items-center gap-2 mt-3 cursor-pointer">
-                        <input type="checkbox" class="checkbox checkbox-sm checkbox-primary edit-modal-watched" />
-                        <span class="label-text text-sm">Watch for changes</span>
-                        <span class="edit-modal-changed-badge badge badge-error badge-sm hidden">Changed</span>
-                    </label>
+                    <div class="flex items-center gap-2 mt-3">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" class="checkbox checkbox-sm checkbox-primary edit-modal-watched" />
+                            <span class="label-text text-sm">Watch for changes</span>
+                        </label>
+                        <span class="edit-modal-changed-badge badge badge-error badge-sm hidden cursor-pointer">Changed</span>
+                    </div>
                     
                     <div class="flex justify-between items-center mt-4">
                         <button class="btn btn-error btn-sm edit-modal-delete">Delete</button>
