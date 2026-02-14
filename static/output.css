@@ -2325,6 +2325,16 @@
   .p-8 {
     padding: calc(var(--spacing) * 8);
   }
+  .select-sm {
+    @layer daisyui.l1.l2 {
+      --size: calc(var(--size-field, 0.25rem) * 8);
+      font-size: 0.75rem;
+      option {
+        padding-inline: calc(0.25rem * 2.5);
+        padding-block: calc(0.25rem * 1);
+      }
+    }
+  }
   .select-xs {
     @layer daisyui.l1.l2 {
       --size: calc(var(--size-field, 0.25rem) * 6);

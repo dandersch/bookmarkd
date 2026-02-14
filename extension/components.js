@@ -1,6 +1,6 @@
 class BookmarkItem extends HTMLElement {
     static get observedAttributes() {
-        return ['bookmark-id', 'url', 'title', 'category', 'category-id', 'favicon', 'timestamp', 'last-visited', 'notes', 'order', 'watched', 'changed'];
+        return ['bookmark-id', 'url', 'title', 'category', 'category-id', 'favicon', 'timestamp', 'last-visited', 'notes', 'order', 'watched', 'changed', 'watch-interval'];
     }
 
     constructor() {
@@ -158,6 +158,7 @@ class BookmarkItem extends HTMLElement {
         const favicon = this.getAttribute('favicon') || '';
         const watched = this.getAttribute('watched') === 'true';
         const changed = this.getAttribute('changed') === 'true';
+        const watchInterval = parseInt(this.getAttribute('watch-interval')) || 360;
         const bookmarkItem = this;
 
         let modal = document.getElementById('edit-modal');
@@ -183,6 +184,14 @@ class BookmarkItem extends HTMLElement {
                             <input type="checkbox" class="checkbox checkbox-sm checkbox-primary edit-modal-watched" />
                             <span class="label-text text-sm">Watch for changes</span>
                         </label>
+                        <select class="select select-bordered select-sm edit-modal-watch-interval hidden">
+                            <option value="30">Every 30 min</option>
+                            <option value="60">Every 1 hour</option>
+                            <option value="180">Every 3 hours</option>
+                            <option value="360" selected>Every 6 hours</option>
+                            <option value="720">Every 12 hours</option>
+                            <option value="1440">Every day</option>
+                        </select>
                         <span class="edit-modal-changed-badge badge badge-error badge-sm hidden cursor-pointer">Changed</span>
                     </div>
                     
@@ -204,6 +213,7 @@ class BookmarkItem extends HTMLElement {
             const deleteBtn = modal.querySelector('.edit-modal-delete');
             const revertBtn = modal.querySelector('.edit-modal-revert');
             const watchedCheckbox = modal.querySelector('.edit-modal-watched');
+            const intervalSelect = modal.querySelector('.edit-modal-watch-interval');
             const changedBadge = modal.querySelector('.edit-modal-changed-badge');
 
             watchedCheckbox.addEventListener('change', async () => {
@@ -211,9 +221,18 @@ class BookmarkItem extends HTMLElement {
                 if (await saveField('watched', isWatched)) {
                     const item = document.querySelector(`bookmark-item[bookmark-id="${modal.dataset.bookmarkId}"]`);
                     if (item) item.setAttribute('watched', isWatched.toString());
+                    intervalSelect.classList.toggle('hidden', !isWatched);
                     if (!isWatched) {
                         changedBadge.classList.add('hidden');
                     }
+                }
+            });
+
+            intervalSelect.addEventListener('change', async () => {
+                const interval = parseInt(intervalSelect.value);
+                if (await saveField('watch_interval', interval)) {
+                    const item = document.querySelector(`bookmark-item[bookmark-id="${modal.dataset.bookmarkId}"]`);
+                    if (item) item.setAttribute('watch-interval', interval.toString());
                 }
             });
 
@@ -382,7 +401,10 @@ class BookmarkItem extends HTMLElement {
 
         const watchedCheckbox2 = modal.querySelector('.edit-modal-watched');
         const changedBadge2 = modal.querySelector('.edit-modal-changed-badge');
+        const intervalSelect2 = modal.querySelector('.edit-modal-watch-interval');
         watchedCheckbox2.checked = watched;
+        intervalSelect2.value = watchInterval.toString();
+        intervalSelect2.classList.toggle('hidden', !watched);
         if (changed) {
             changedBadge2.classList.remove('hidden');
             changedBadge2.title = 'Click to dismiss';
@@ -744,6 +766,7 @@ class BookmarkList extends HTMLElement {
                 item.setAttribute('order', bm.order ?? 0);
                 item.setAttribute('watched', (bm.watched || false).toString());
                 item.setAttribute('changed', (bm.changed || false).toString());
+                item.setAttribute('watch-interval', bm.watch_interval || 360);
                 if (!isManualSort) item.draggable = false;
                 content.appendChild(item);
             }

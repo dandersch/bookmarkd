@@ -7,7 +7,6 @@ import (
 	"html/template"
 	"io"
 	"log"
-	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
@@ -41,7 +40,8 @@ type Bookmark struct {
 	Order       int    `json:"order"`
 	LastVisited *int64 `json:"last_visited,omitempty"`
 	Notes       string `json:"notes,omitempty"`
-	Watched     bool   `json:"watched,omitempty"`
+	Watched       bool   `json:"watched,omitempty"`
+	WatchInterval int    `json:"watch_interval,omitempty"`
 	ContentHash string `json:"content_hash,omitempty"`
 	LastChecked *int64 `json:"last_checked,omitempty"`
 	Changed     bool   `json:"changed,omitempty"`
@@ -670,8 +670,9 @@ func updateBookmark(w http.ResponseWriter, r *http.Request, id string) {
 		CategoryID *string `json:"category_id"`
 		Order      *int    `json:"order"`
 		Notes      *string `json:"notes"`
-		Watched    *bool   `json:"watched"`
-		Changed    *bool   `json:"changed"`
+		Watched       *bool   `json:"watched"`
+		WatchInterval *int    `json:"watch_interval"`
+		Changed       *bool   `json:"changed"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
@@ -709,6 +710,14 @@ func updateBookmark(w http.ResponseWriter, r *http.Request, id string) {
 		if *payload.Watched && bm.ContentHash == "" {
 			go fetchAndStoreInitialHash(id)
 		}
+	}
+
+	if payload.WatchInterval != nil {
+		interval := *payload.WatchInterval
+		if interval < 30 {
+			interval = 30
+		}
+		bm.WatchInterval = interval
 	}
 
 	if payload.Changed != nil {
@@ -887,8 +896,7 @@ func handleWatchCheck(w http.ResponseWriter, r *http.Request) {
 func startWatcher() {
 	go func() {
 		for {
-			interval := 6*time.Hour + time.Duration(rand.Intn(60))*time.Minute
-			time.Sleep(interval)
+			time.Sleep(15 * time.Minute)
 			checkWatchedBookmarks()
 		}
 	}()
@@ -897,8 +905,17 @@ func startWatcher() {
 func checkWatchedBookmarks() {
 	mu.RLock()
 	var watched []Bookmark
+	now := time.Now().Unix()
 	for _, bm := range bookmarks {
-		if bm.Watched {
+		if !bm.Watched {
+			continue
+		}
+		interval := bm.WatchInterval
+		if interval <= 0 {
+			interval = 360 // default 6 hours
+		}
+		intervalSec := int64(interval) * 60
+		if bm.LastChecked == nil || (now - *bm.LastChecked) >= intervalSec {
 			watched = append(watched, bm)
 		}
 	}
