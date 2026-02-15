@@ -62,11 +62,11 @@ class BookmarkItem extends HTMLElement {
             hostname = url;
         }
 
-        this.className = 'bookmark-item';
+        this.className = 'bookmark-item' + (watched ? ' watched' : '');
         this.draggable = true;
         this.innerHTML = `
             <a href="${url}" target="_blank" class="bookmark-link" title="${this.escapeHtml(url)}">
-                <div class="bookmark-favicon-wrapper${watched ? ' watched' : ''}">
+                <div class="bookmark-favicon-wrapper">
                     <img src="${favicon}" class="bookmark-favicon" alt="">
                     ${changed ? '<span class="bookmark-changed-dot" title="Page has changed"></span>' : ''}
                 </div>

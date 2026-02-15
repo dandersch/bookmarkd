@@ -89,10 +89,24 @@
     @apply relative shrink-0;
 }
 
-.bookmark-favicon-wrapper.watched .bookmark-favicon {
-    @apply rounded-sm;
-    outline: 2px dashed var(--color-info);
-    outline-offset: 2px;
+.bookmark-item.watched {
+    position: relative;
+    border-color: color-mix(in srgb, var(--color-info) 25%, transparent);
+}
+
+.bookmark-item.watched::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--color-info) 18%, transparent), transparent);
+    animation: watched-pulse 4s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes watched-pulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
 }
 
 .bookmark-changed-dot {

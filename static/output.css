@@ -29,7 +29,6 @@
     --tracking-wide: 0.025em;
     --tracking-wider: 0.05em;
     --leading-tight: 1.25;
-    --radius-sm: 0.25rem;
     --radius-lg: 0.5rem;
     --default-transition-duration: 150ms;
     --default-transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
@@ -2853,10 +2852,32 @@
   position: relative;
   flex-shrink: 0;
 }
-.bookmark-favicon-wrapper.watched .bookmark-favicon {
-  border-radius: var(--radius-sm);
-  outline: 2px dashed var(--color-info);
-  outline-offset: 2px;
+.bookmark-item.watched {
+  position: relative;
+  border-color: var(--color-info);
+  @supports (color: color-mix(in lab, red, red)) {
+    border-color: color-mix(in srgb, var(--color-info) 25%, transparent);
+  }
+}
+.bookmark-item.watched::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, var(--color-info), transparent);
+  @supports (color: color-mix(in lab, red, red)) {
+    background: linear-gradient(135deg, color-mix(in srgb, var(--color-info) 18%, transparent), transparent);
+  }
+  animation: watched-pulse 4s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes watched-pulse {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 .bookmark-changed-dot {
   position: absolute;
