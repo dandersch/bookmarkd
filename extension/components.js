@@ -1,6 +1,6 @@
 class BookmarkItem extends HTMLElement {
     static get observedAttributes() {
-        return ['bookmark-id', 'url', 'title', 'category', 'category-id', 'favicon', 'timestamp', 'last-visited', 'notes', 'order', 'watched', 'changed', 'watch-interval'];
+        return ['bookmark-id', 'url', 'title', 'category', 'category-id', 'favicon', 'timestamp', 'last-visited', 'notes', 'order', 'watched', 'changed', 'changed-at', 'watch-interval'];
     }
 
     constructor() {
@@ -24,6 +24,23 @@ class BookmarkItem extends HTMLElement {
             serverUrl: list?.getAttribute('server-url') || '',
             authHeader: list?.getAttribute('auth-header') || ''
         };
+    }
+
+    formatTimeAgo(ts) {
+        if (!ts) return '';
+        const date = new Date(parseInt(ts) * 1000);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMin = Math.floor(diffMs / (1000 * 60));
+        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+        if (diffMin < 1) return 'just now';
+        if (diffMin < 60) return `${diffMin}m ago`;
+        if (diffHours < 24) return `${diffHours}h ago`;
+        if (diffDays < 7) return `${diffDays}d ago`;
+        if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
+        return `${Math.floor(diffDays / 30)}mo ago`;
     }
 
     formatTimestamp(ts) {
@@ -52,8 +69,10 @@ class BookmarkItem extends HTMLElement {
         const lastVisited = this.getAttribute('last-visited') || '';
         const watched = this.getAttribute('watched') === 'true';
         const changed = this.getAttribute('changed') === 'true';
+        const changedAt = this.getAttribute('changed-at') || '';
         const addedTime = this.formatTimestamp(timestamp);
         const visitedTime = this.formatTimestamp(lastVisited);
+        const changedAgo = this.formatTimeAgo(changedAt);
 
         let hostname = '';
         try {
@@ -68,7 +87,7 @@ class BookmarkItem extends HTMLElement {
             <a href="${url}" target="_blank" class="bookmark-link" title="${this.escapeHtml(url)}">
                 <div class="bookmark-favicon-wrapper">
                     <img src="${favicon}" class="bookmark-favicon" alt="">
-                    ${changed ? '<span class="bookmark-changed-dot" title="Page has changed"></span>' : ''}
+                    ${changed ? `<span class="bookmark-changed-dot" title="Changed ${changedAgo || 'recently'}"></span>` : ''}
                 </div>
                 <div class="bookmark-info">
                     <span class="bookmark-title">${this.escapeHtml(title)}</span>
@@ -158,6 +177,7 @@ class BookmarkItem extends HTMLElement {
         const favicon = this.getAttribute('favicon') || '';
         const watched = this.getAttribute('watched') === 'true';
         const changed = this.getAttribute('changed') === 'true';
+        const changedAt = this.getAttribute('changed-at') || '';
         const watchInterval = parseInt(this.getAttribute('watch-interval')) || 360;
         const bookmarkItem = this;
 
@@ -179,7 +199,7 @@ class BookmarkItem extends HTMLElement {
                     <textarea class="textarea textarea-bordered w-full h-24 edit-modal-notes" placeholder="Add your notes here..." maxlength="1000"></textarea>
                     <div class="text-right text-xs text-base-content/50 mt-1"><span class="edit-modal-notes-count">0</span> / 1000</div>
                     
-                    <div class="flex items-center gap-2 mt-3">
+                    <div class="flex flex-wrap items-center gap-2 mt-3">
                         <label class="flex items-center gap-2 cursor-pointer">
                             <input type="checkbox" class="checkbox checkbox-sm checkbox-primary edit-modal-watched" />
                             <span class="label-text text-sm">Watch for changes</span>
@@ -406,6 +426,8 @@ class BookmarkItem extends HTMLElement {
         intervalSelect2.value = watchInterval.toString();
         intervalSelect2.classList.toggle('hidden', !watched);
         if (changed) {
+            const ago = this.formatTimeAgo(changedAt);
+            changedBadge2.textContent = ago || 'Changed';
             changedBadge2.classList.remove('hidden');
             changedBadge2.title = 'Click to dismiss';
         } else {
@@ -766,6 +788,7 @@ class BookmarkList extends HTMLElement {
                 item.setAttribute('order', bm.order ?? 0);
                 item.setAttribute('watched', (bm.watched || false).toString());
                 item.setAttribute('changed', (bm.changed || false).toString());
+                if (bm.changed_at) item.setAttribute('changed-at', bm.changed_at);
                 item.setAttribute('watch-interval', bm.watch_interval || 360);
                 if (!isManualSort) item.draggable = false;
                 content.appendChild(item);

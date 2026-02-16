@@ -45,6 +45,7 @@ type Bookmark struct {
 	ContentHash string `json:"content_hash,omitempty"`
 	LastChecked *int64 `json:"last_checked,omitempty"`
 	Changed     bool   `json:"changed,omitempty"`
+	ChangedAt   *int64 `json:"changed_at,omitempty"`
 }
 
 type Database struct {
@@ -657,6 +658,7 @@ func visitBookmark(w http.ResponseWriter, id string) {
 	now := time.Now().Unix()
 	bm.LastVisited = &now
 	bm.Changed = false
+	bm.ChangedAt = nil
 	bookmarks[id] = bm
 	saveDatabase()
 	w.WriteHeader(http.StatusNoContent)
@@ -722,6 +724,9 @@ func updateBookmark(w http.ResponseWriter, r *http.Request, id string) {
 
 	if payload.Changed != nil {
 		bm.Changed = *payload.Changed
+		if !*payload.Changed {
+			bm.ChangedAt = nil
+		}
 	}
 
 	newCategoryID := bm.CategoryID
@@ -938,6 +943,8 @@ func checkWatchedBookmarks() {
 			current.LastChecked = &now
 			if current.ContentHash != "" && current.ContentHash != hash {
 				current.Changed = true
+				changedAt := time.Now().Unix()
+				current.ChangedAt = &changedAt
 				changed++
 				log.Printf("Watch: change detected on %s", current.URL)
 			}
