@@ -130,7 +130,7 @@
     @apply opacity-40;
 }
 .collapse-content {
-    @apply grid gap-2 pt-2 px-2 mb-4 bg-base-300/50;
+    @apply grid gap-2 pt-2 px-2 mb-4 bg-base-300/50 rounded-b-box;
 }
 .collapse-content.view-card {
     grid-template-columns: repeat(4, 1fr);
