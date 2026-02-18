@@ -763,7 +763,8 @@ class BookmarkList extends HTMLElement {
             content.dataset.category = categoryName;
             content.dataset.categoryId = categoryId;
             if (categoryColor) {
-                content.style.backgroundColor = this._darkenColor(categoryColor, 0.5);
+                content.style.border = `2px solid ${categoryColor}`;
+                content.style.borderTop = 'none';
             }
 
             if (bookmarksInCategory.length === 0) {
