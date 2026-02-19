@@ -893,7 +893,7 @@ func handleWatchCheck(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	go checkWatchedBookmarks()
+	go checkWatchedBookmarks(true)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "check started"})
 }
@@ -902,12 +902,12 @@ func startWatcher() {
 	go func() {
 		for {
 			time.Sleep(15 * time.Minute)
-			checkWatchedBookmarks()
+			checkWatchedBookmarks(false)
 		}
 	}()
 }
 
-func checkWatchedBookmarks() {
+func checkWatchedBookmarks(force bool) {
 	mu.RLock()
 	var watched []Bookmark
 	now := time.Now().Unix()
@@ -915,14 +915,17 @@ func checkWatchedBookmarks() {
 		if !bm.Watched {
 			continue
 		}
-		interval := bm.WatchInterval
-		if interval <= 0 {
-			interval = 360 // default 6 hours
+		if !force {
+			interval := bm.WatchInterval
+			if interval <= 0 {
+				interval = 360 // default 6 hours
+			}
+			intervalSec := int64(interval) * 60
+			if bm.LastChecked != nil && (now - *bm.LastChecked) < intervalSec {
+				continue
+			}
 		}
-		intervalSec := int64(interval) * 60
-		if bm.LastChecked == nil || (now - *bm.LastChecked) >= intervalSec {
-			watched = append(watched, bm)
-		}
+		watched = append(watched, bm)
 	}
 	mu.RUnlock()
 
