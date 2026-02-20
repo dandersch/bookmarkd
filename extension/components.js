@@ -607,6 +607,7 @@ class BookmarkList extends HTMLElement {
     filterBookmarks(query) {
         const lowerQuery = query.toLowerCase();
         const sections = this.querySelectorAll('.collapse');
+        let totalVisible = 0;
         
         sections.forEach(section => {
             const items = section.querySelectorAll('bookmark-item');
@@ -624,7 +625,10 @@ class BookmarkList extends HTMLElement {
                                category.includes(lowerQuery);
                 
                 item.style.display = matches ? '' : 'none';
-                if (matches) hasVisibleItems = true;
+                if (matches) {
+                    hasVisibleItems = true;
+                    totalVisible++;
+                }
             });
 
             if (checkbox) {
@@ -636,6 +640,8 @@ class BookmarkList extends HTMLElement {
             }
             section.style.display = hasVisibleItems || !lowerQuery ? '' : 'none';
         });
+
+        return totalVisible;
     }
 
     render() {
@@ -1792,9 +1798,14 @@ class SearchBar extends HTMLElement {
             ? 'input input-xs input-bordered bg-primary-content/10 border-primary-content/20 text-primary-content placeholder:text-primary-content/50 w-full focus:outline-none focus:border-primary-content/40'
             : 'input input-lg input-bordered bg-primary-content/10 border-primary-content/20 text-primary-content placeholder:text-primary-content/50 w-full focus:outline-none focus:border-primary-content/40';
 
-        this.innerHTML = `<input type="text" class="${inputClass}" placeholder="${placeholder}">`;
+        const badgeSize = isCompact ? '0.75rem' : '0.875rem';
+        this.style.display = 'block';
+        this.style.position = 'relative';
+        this.innerHTML = `<input type="text" class="${inputClass}" placeholder="${placeholder}">` +
+            `<span style="position:absolute; right:0.75rem; top:50%; transform:translateY(-50%); font-size:${badgeSize}; opacity:0.5; color:inherit; pointer-events:none; display:none;"></span>`;
 
         const input = this.querySelector('input');
+        const badge = this.querySelector('span');
         input.addEventListener('input', (e) => {
             const query = e.target.value;
             this.dispatchEvent(new CustomEvent('search', { detail: query, bubbles: true }));
@@ -1803,7 +1814,13 @@ class SearchBar extends HTMLElement {
             if (targetId) {
                 const targetEl = document.getElementById(targetId);
                 if (targetEl && typeof targetEl.filterBookmarks === 'function') {
-                    targetEl.filterBookmarks(query);
+                    const count = targetEl.filterBookmarks(query);
+                    if (query) {
+                        badge.textContent = `${count} results`;
+                        badge.style.display = '';
+                    } else {
+                        badge.style.display = 'none';
+                    }
                 }
             }
         });
