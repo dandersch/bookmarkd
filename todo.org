@@ -1,11 +1,3 @@
-* TODO categories can have customizable colors
-* TODO better styling
-dashboard:
-- no rounded corners, especially on cards
-- "collapse-content" should have distinct background color, except for at the bottom: there should be padding/margin (unsure which one) to have distance to the next category, to make it visually more part of its category divider. The visual should be like folders opening/closing for categories (un-)collapsing.
-- cards should be narrower but can be taller, 4 cards should fit in one row
-- search bar should be bigger and centered, should take up most of the center space
-
 * TODO dev: add tests
 * TODO extension: improve "add-bookmark" js bookmarklet
 ** TODO fix CORS problem that occurs on some sites (if possible)
@@ -112,6 +104,19 @@ CLOSED: [2026-01-21 Wed 03:27]
 - [[https://github.com/ndom91/briefkasten][briefkasten]]: bookmark manager + extension
 - [[https://wallabag.org/][wallabag]]: archive & annotate webpages + extension
 - [[https://github.com/awesome-selfhosted/awesome-selfhosted?tab=readme-ov-file#bookmarks-and-link-sharing][awesome selfhosted: bookmarks & link sharing]]
+* DONE categories can have customizable colors
+CLOSED: [2026-02-21 Sat 16:14]
+* DONE better styling
+CLOSED: [2026-02-21 Sat 16:14]
+dashboard:
+- no rounded corners, especially on cards
+- "collapse-content" should have distinct background color, except for at the
+  bottom: there should be padding/margin (unsure which one) to have distance to
+  the next category, to make it visually more part of its category divider. The
+  visual should be like folders opening/closing for categories (un-)collapsing.
+- cards should be narrower but can be taller, 4 cards should fit in one row
+- search bar should be bigger and centered, should take up most of the center space
+
 * DONE feat: sort-by
 CLOSED: [2026-02-11 Wed 12:07]
 - when added
