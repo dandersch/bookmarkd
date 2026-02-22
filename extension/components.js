@@ -84,7 +84,7 @@ class BookmarkItem extends HTMLElement {
         this.className = 'bookmark-item' + (watched ? ' watched' : '');
         this.draggable = true;
         this.innerHTML = `
-            <a href="${url}" target="_blank" class="bookmark-link" title="${this.escapeHtml(url)}">
+            <a href="${url}" target="_blank" class="bookmark-link" title="${this.escapeHtml(title)}&#10;${this.escapeHtml(url)}">
                 <div class="bookmark-favicon-wrapper">
                     <img src="${favicon}" class="bookmark-favicon" alt="">
                     ${changed ? `<span class="bookmark-changed-dot" title="Changed ${changedAgo || 'recently'}"></span>` : ''}
@@ -924,6 +924,7 @@ class BookmarkList extends HTMLElement {
                         <div class="category-modal-view-toggle flex gap-1">
                             <button class="btn btn-xs category-view-btn" data-view="card">▦ Card</button>
                             <button class="btn btn-xs category-view-btn" data-view="list">☰ List</button>
+                            <button class="btn btn-xs category-view-btn" data-view="icon">⊞ Icon</button>
                         </div>
                     </div>
 

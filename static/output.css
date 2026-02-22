@@ -2940,6 +2940,44 @@
 .collapse-content.view-list {
   grid-template-columns: 1fr;
 }
+.collapse-content.view-icon {
+  grid-template-columns: repeat(auto-fill, 64px);
+  gap: 0.5rem;
+}
+.view-icon .bookmark-item {
+  height: calc(var(--spacing) * 16);
+  width: calc(var(--spacing) * 16);
+  align-items: center;
+  justify-content: center;
+  padding: calc(var(--spacing) * 0);
+  --tw-shadow: 0 0 #0000;
+  box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+}
+.view-icon .bookmark-item:hover {
+  --tw-translate-y: calc(var(--spacing) * 0);
+  translate: var(--tw-translate-x) var(--tw-translate-y);
+  --tw-shadow: 0 0 #0000;
+  box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+}
+.view-icon .bookmark-link {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  padding: calc(var(--spacing) * 2);
+}
+.view-icon .bookmark-favicon {
+  height: calc(var(--spacing) * 10);
+  width: calc(var(--spacing) * 10);
+}
+.view-icon .bookmark-info, .view-icon .bookmark-timestamps {
+  display: none;
+}
+.view-icon .bookmark-actions {
+  top: calc(var(--spacing) * 0);
+  right: calc(var(--spacing) * 0);
+}
 .view-list .bookmark-item {
   --tw-shadow: 0 0 #0000;
   box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
@@ -3273,6 +3311,31 @@
 }
 .popup .view-card .bookmark-timestamps, .popup .view-card .bookmark-actions {
   display: none;
+}
+.popup .collapse-content.view-icon {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 48px);
+  gap: 0.25rem;
+  padding: 0.25rem;
+}
+.popup .view-icon .bookmark-item {
+  width: 48px;
+  height: 48px;
+}
+.popup .view-icon .bookmark-favicon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+.popup .view-icon .bookmark-info, .popup .view-icon .bookmark-timestamps, .popup .view-icon .bookmark-actions {
+  display: none;
+}
+.popup .view-icon .bookmark-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  width: 100%;
+  height: 100%;
 }
 .popup .category-actions {
   gap: 0.125rem;
