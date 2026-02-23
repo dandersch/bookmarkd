@@ -453,6 +453,7 @@ class BookmarkList extends HTMLElement {
         this._categories = [];
         this._collapsedCategories = this._loadCollapsedState();
         this._categoryViews = this._loadCategoryViews();
+        this._categorySizes = this._loadCategorySizes();
         this._categorySorts = this._loadCategorySorts();
     }
 
@@ -520,6 +521,34 @@ class BookmarkList extends HTMLElement {
     _setCategoryView(categoryId, view) {
         this._categoryViews[categoryId] = view;
         this._saveCategoryViews();
+        this.render();
+    }
+
+    _loadCategorySizes() {
+        try {
+            const ctx = document.body?.classList?.contains('popup') ? 'popup' : 'dashboard';
+            const saved = localStorage.getItem(`bookmarkd-category-sizes-${ctx}`);
+            return saved ? JSON.parse(saved) : {};
+        } catch {
+            return {};
+        }
+    }
+
+    _saveCategorySizes() {
+        try {
+            const ctx = this._getViewContext();
+            localStorage.setItem(`bookmarkd-category-sizes-${ctx}`, JSON.stringify(this._categorySizes));
+        } catch {}
+    }
+
+    _getCategorySize(categoryId) {
+        if (this._categorySizes[categoryId]) return this._categorySizes[categoryId];
+        return 1;
+    }
+
+    _setCategorySize(categoryId, size) {
+        this._categorySizes[categoryId] = size;
+        this._saveCategorySizes();
         this.render();
     }
 
@@ -765,6 +794,7 @@ class BookmarkList extends HTMLElement {
             const isManualSort = categorySort.by === 'manual';
             const content = document.createElement('div');
             content.className = `collapse-content view-${categoryView}`;
+            content.style.setProperty('--category-size', this._getCategorySize(categoryId));
             if (!isManualSort) content.classList.add('sort-active');
             content.dataset.category = categoryName;
             content.dataset.categoryId = categoryId;
@@ -921,10 +951,16 @@ class BookmarkList extends HTMLElement {
                         <label class="label py-1">
                             <span class="label-text text-xs font-semibold">View</span>
                         </label>
-                        <div class="category-modal-view-toggle flex gap-1">
-                            <button class="btn btn-xs category-view-btn" data-view="card">▦ Card</button>
-                            <button class="btn btn-xs category-view-btn" data-view="list">☰ List</button>
-                            <button class="btn btn-xs category-view-btn" data-view="icon">⊞ Icon</button>
+                        <div class="flex gap-3 items-center">
+                            <div class="category-modal-view-toggle flex gap-1">
+                                <button class="btn btn-xs category-view-btn" data-view="card">▦ Card</button>
+                                <button class="btn btn-xs category-view-btn" data-view="list">☰ List</button>
+                                <button class="btn btn-xs category-view-btn" data-view="icon">⊞ Icon</button>
+                            </div>
+                            <div class="flex items-center gap-1 flex-1">
+                                <span class="text-xs opacity-50">Size</span>
+                                <input type="range" class="range range-xs category-modal-size-slider flex-1" min="0.5" max="2" step="0.1" value="1">
+                            </div>
                         </div>
                     </div>
 
@@ -1051,6 +1087,16 @@ class BookmarkList extends HTMLElement {
                 });
             });
 
+            const sizeSlider = modal.querySelector('.category-modal-size-slider');
+            sizeSlider.addEventListener('input', (e) => {
+                const size = parseFloat(e.target.value);
+                const catId = modal.dataset.categoryId;
+                if (modal.dataset.mode !== 'create') {
+                    list._setCategorySize(catId, size);
+                }
+                modal.dataset.pendingSize = size;
+            });
+
             const sortBySelect = modal.querySelector('.category-modal-sort-by');
             const sortDirBtn = modal.querySelector('.category-modal-sort-dir');
             const sortHint = modal.querySelector('.category-modal-sort-hint');
@@ -1099,6 +1145,9 @@ class BookmarkList extends HTMLElement {
                     const pendingSortBy = modal.dataset.pendingSortBy;
                     if (pendingSortBy && pendingSortBy !== 'manual') {
                         list._setCategorySort(created.id, pendingSortBy, modal.dataset.pendingSortDir || 'asc');
+                    }
+                    if (modal.dataset.pendingSize) {
+                        list._setCategorySize(created.id, parseFloat(modal.dataset.pendingSize));
                     }
                 }
                 modal.close();
@@ -1184,6 +1233,10 @@ class BookmarkList extends HTMLElement {
         modal.querySelectorAll('.category-view-btn').forEach(btn => {
             btn.classList.toggle('btn-active', btn.dataset.view === currentView);
         });
+
+        const currentSize = isCreate ? 1 : this._getCategorySize(categoryId);
+        modal.querySelector('.category-modal-size-slider').value = currentSize;
+        modal.dataset.pendingSize = currentSize;
 
         const currentSort = isCreate ? { by: 'manual', dir: 'asc' } : this._getCategorySort(categoryId);
         const sortBySelect = modal.querySelector('.category-modal-sort-by');
