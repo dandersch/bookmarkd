@@ -604,6 +604,15 @@ class BookmarkList extends HTMLElement {
     _toggleCategory(categoryId) {
         this._collapsedCategories[categoryId] = !this._collapsedCategories[categoryId];
         this._saveCollapsedState();
+
+        const section = this.querySelector(`.collapse[data-category-id="${categoryId}"]`);
+        if (section) {
+            const checkbox = section.querySelector('input[type="checkbox"]');
+            if (checkbox) {
+                checkbox.checked = !this._collapsedCategories[categoryId];
+                return;
+            }
+        }
         this.render();
     }
 
