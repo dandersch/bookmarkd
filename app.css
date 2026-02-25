@@ -136,6 +136,10 @@
     overflow: hidden;
     min-height: 0 !important;
 }
+.collapse > input:not(:checked) ~ .collapse-content {
+    @apply mb-0 bg-transparent;
+    border: none !important;
+}
 .collapse-content.view-card {
     grid-template-columns: repeat(auto-fill, minmax(calc(250px * var(--category-size)), 1fr));
 }
