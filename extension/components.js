@@ -1371,6 +1371,9 @@ class BookmarkList extends HTMLElement {
             const newSections = [...container.querySelectorAll('.collapse[data-category-id]')];
             if (newSections.indexOf(dragged) < newSections.indexOf(uncategorized)) {
                 uncategorized.after(dragged);
+                // Keep add-category row at the bottom
+                const addRow = container.querySelector('.add-category-row');
+                if (addRow) container.appendChild(addRow);
             }
         }
 
@@ -1406,6 +1409,9 @@ class BookmarkList extends HTMLElement {
             const s = sections.get(id);
             if (s) container.appendChild(s);
         }
+        // Keep add-category row at the bottom
+        const addRow = container.querySelector('.add-category-row');
+        if (addRow) container.appendChild(addRow);
     }
 
     async _persistCategoryOrder(orderIds) {
