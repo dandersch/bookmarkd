@@ -219,10 +219,8 @@
 
 /* Category drag and drop */
 .collapse.category-dragging {
-    @apply opacity-50;
-}
-.collapse.category-drag-over {
-    @apply bg-primary/20;
+    @apply opacity-40 scale-[0.98] shadow-lg;
+    transition: opacity 150ms ease, transform 150ms ease;
 }
 .category-draggable {
     @apply cursor-grab;

@@ -713,39 +713,47 @@ class BookmarkList extends HTMLElement {
                     if (e.target.closest('bookmark-item')) return;
                     e.dataTransfer.setData('category-id', categoryId);
                     e.dataTransfer.effectAllowed = 'move';
-                    section.classList.add('category-dragging');
+                    this._draggedSection = section;
+                    this._dragOriginalOrder = [...this.querySelectorAll('.collapse[data-category-id]')].map(el => el.dataset.categoryId);
+                    requestAnimationFrame(() => section.classList.add('category-dragging'));
                 });
 
                 section.addEventListener('dragend', () => {
                     section.classList.remove('category-dragging');
-                    this.querySelectorAll('.category-drag-over').forEach(el => el.classList.remove('category-drag-over'));
+                    if (!this._dragDropped) {
+                        // Cancelled — restore original order
+                        if (this._dragOriginalOrder) {
+                            this._restoreCategoryOrder(this._dragOriginalOrder);
+                        }
+                    }
+                    this._draggedSection = null;
+                    this._dragOriginalOrder = null;
+                    this._dragDropped = false;
+                    this._dragRafPending = false;
                 });
 
                 section.addEventListener('dragover', (e) => {
-                    const draggedCategoryId = e.dataTransfer.types.includes('category-id');
-                    if (!draggedCategoryId) return;
+                    if (!e.dataTransfer.types.includes('category-id')) return;
                     e.preventDefault();
                     e.dataTransfer.dropEffect = 'move';
-                    section.classList.add('category-drag-over');
-                });
-
-                section.addEventListener('dragleave', (e) => {
-                    if (!section.contains(e.relatedTarget)) {
-                        section.classList.remove('category-drag-over');
-                    }
+                    if (!this._draggedSection || this._draggedSection === section) return;
+                    if (this._dragRafPending) return;
+                    this._dragRafPending = true;
+                    requestAnimationFrame(() => {
+                        this._dragRafPending = false;
+                        if (!this._draggedSection || this._draggedSection === section) return;
+                        this._animateCategorySwap(this._draggedSection, section, e.clientY);
+                    });
                 });
 
                 section.addEventListener('drop', (e) => {
-                    const draggedCategoryId = e.dataTransfer.getData('category-id');
-                    if (!draggedCategoryId || draggedCategoryId === categoryId) {
-                        section.classList.remove('category-drag-over');
-                        return;
-                    }
+                    if (!e.dataTransfer.getData('category-id')) return;
                     e.preventDefault();
-                    section.classList.remove('category-drag-over');
-                    const rect = section.getBoundingClientRect();
-                    const dropAfter = e.clientY > rect.top + rect.height / 2;
-                    this._reorderCategories(draggedCategoryId, categoryId, dropAfter);
+                    this._dragDropped = true;
+                    section.classList.remove('category-dragging');
+                    // Persist the current DOM order
+                    const newOrder = [...this.querySelectorAll('.collapse[data-category-id]')].map(el => el.dataset.categoryId);
+                    this._persistCategoryOrder(newOrder);
                 });
             }
 
@@ -1332,24 +1340,75 @@ class BookmarkList extends HTMLElement {
         }
     }
 
-    async _reorderCategories(draggedId, targetId, dropAfter = false) {
-        const currentOrder = this._categories
-            .filter(c => c.id !== 'uncategorized')
-            .sort((a, b) => a.order - b.order)
-            .map(c => c.id);
+    _animateCategorySwap(dragged, target, clientY) {
+        const container = this;
+        const sections = [...container.querySelectorAll('.collapse[data-category-id]')];
+        const draggedIdx = sections.indexOf(dragged);
+        const targetIdx = sections.indexOf(target);
+        if (draggedIdx === -1 || targetIdx === -1) return;
 
-        const draggedIndex = currentOrder.indexOf(draggedId);
-        let targetIndex = currentOrder.indexOf(targetId);
+        // Don't allow moving above uncategorized
+        const uncategorized = container.querySelector('.collapse[data-category-id="uncategorized"]');
+        if (uncategorized && target === uncategorized) return;
 
-        if (draggedIndex === -1 || targetIndex === -1) return;
+        // Capture positions before move (FLIP: First)
+        const rects = new Map();
+        for (const s of sections) {
+            rects.set(s, s.getBoundingClientRect());
+        }
 
-        currentOrder.splice(draggedIndex, 1);
-        targetIndex = currentOrder.indexOf(targetId);
-        if (dropAfter) targetIndex++;
-        currentOrder.splice(targetIndex, 0, draggedId);
+        // Move in DOM
+        const rect = target.getBoundingClientRect();
+        const dropAfter = clientY > rect.top + rect.height / 2;
+        if (dropAfter) {
+            target.after(dragged);
+        } else {
+            target.before(dragged);
+        }
 
-        const newOrder = ['uncategorized', ...currentOrder];
+        // Ensure dragged doesn't end up before uncategorized
+        if (uncategorized && uncategorized.parentNode === container) {
+            const newSections = [...container.querySelectorAll('.collapse[data-category-id]')];
+            if (newSections.indexOf(dragged) < newSections.indexOf(uncategorized)) {
+                uncategorized.after(dragged);
+            }
+        }
 
+        // Animate other sections (FLIP: Last, Invert, Play)
+        const newSections = [...container.querySelectorAll('.collapse[data-category-id]')];
+        for (const s of newSections) {
+            if (s === dragged) continue;
+            const oldRect = rects.get(s);
+            if (!oldRect) continue;
+            const newRect = s.getBoundingClientRect();
+            const dx = oldRect.left - newRect.left;
+            const dy = oldRect.top - newRect.top;
+            if (dx === 0 && dy === 0) continue;
+            s.style.transition = 'none';
+            s.style.transform = `translate(${dx}px, ${dy}px)`;
+            requestAnimationFrame(() => {
+                s.style.transition = 'transform 150ms ease';
+                s.style.transform = '';
+                s.addEventListener('transitionend', () => {
+                    s.style.transition = '';
+                }, { once: true });
+            });
+        }
+    }
+
+    _restoreCategoryOrder(orderIds) {
+        const container = this;
+        const sections = new Map();
+        for (const s of container.querySelectorAll('.collapse[data-category-id]')) {
+            sections.set(s.dataset.categoryId, s);
+        }
+        for (const id of orderIds) {
+            const s = sections.get(id);
+            if (s) container.appendChild(s);
+        }
+    }
+
+    async _persistCategoryOrder(orderIds) {
         const config = {
             serverUrl: this.getAttribute('server-url') || '',
             authHeader: this.getAttribute('auth-header') || ''
@@ -1362,7 +1421,7 @@ class BookmarkList extends HTMLElement {
             const res = await fetch(`${config.serverUrl}/api/categories/reorder`, {
                 method: 'PUT',
                 headers,
-                body: JSON.stringify({ order: newOrder })
+                body: JSON.stringify({ order: orderIds })
             });
 
             if (!res.ok) throw new Error('Failed to reorder categories');
