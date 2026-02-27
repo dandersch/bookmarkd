@@ -455,6 +455,7 @@ class BookmarkList extends HTMLElement {
         this._categoryViews = this._loadCategoryViews();
         this._categorySizes = this._loadCategorySizes();
         this._categorySorts = this._loadCategorySorts();
+        this._categoryRows = this._loadCategoryRows();
     }
 
     connectedCallback() {
@@ -567,6 +568,27 @@ class BookmarkList extends HTMLElement {
             const ctx = this._getViewContext();
             localStorage.setItem(`bookmarkd-category-sorts-${ctx}`, JSON.stringify(this._categorySorts));
         } catch {}
+    }
+
+    _loadCategoryRows() {
+        if (this._getViewContext() === 'popup') return null;
+        try {
+            const saved = localStorage.getItem('bookmarkd-category-rows');
+            return saved ? JSON.parse(saved) : null;
+        } catch {
+            return null;
+        }
+    }
+
+    _saveCategoryRows() {
+        if (this._getViewContext() === 'popup') return;
+        try {
+            localStorage.setItem('bookmarkd-category-rows', JSON.stringify(this._categoryRows));
+        } catch {}
+    }
+
+    _getDefaultRows(count) {
+        return Array(count).fill(1);
     }
 
     _getCategorySort(categoryId) {
@@ -694,6 +716,9 @@ class BookmarkList extends HTMLElement {
 
         this.innerHTML = '';
 
+        const isPopup = this._getViewContext() === 'popup';
+        const allSections = [];
+
         for (const category of sortedCategories) {
             const categoryId = category.id;
             const categoryName = category.name;
@@ -715,19 +740,23 @@ class BookmarkList extends HTMLElement {
                     e.dataTransfer.effectAllowed = 'move';
                     this._draggedSection = section;
                     this._dragOriginalOrder = [...this.querySelectorAll('.collapse[data-category-id]')].map(el => el.dataset.categoryId);
+                    this._dragOriginalRows = this._categoryRows ? [...this._categoryRows] : null;
                     requestAnimationFrame(() => section.classList.add('category-dragging'));
                 });
 
                 section.addEventListener('dragend', () => {
                     section.classList.remove('category-dragging');
                     if (!this._dragDropped) {
-                        // Cancelled — restore original order
                         if (this._dragOriginalOrder) {
                             this._restoreCategoryOrder(this._dragOriginalOrder);
+                        }
+                        if (this._dragOriginalRows) {
+                            this._categoryRows = this._dragOriginalRows;
                         }
                     }
                     this._draggedSection = null;
                     this._dragOriginalOrder = null;
+                    this._dragOriginalRows = null;
                     this._dragDropped = false;
                     this._dragRafPending = false;
                 });
@@ -742,7 +771,7 @@ class BookmarkList extends HTMLElement {
                     requestAnimationFrame(() => {
                         this._dragRafPending = false;
                         if (!this._draggedSection || this._draggedSection === section) return;
-                        this._animateCategorySwap(this._draggedSection, section, e.clientY);
+                        this._showCategoryDropIndicator(section, e.clientX, e.clientY);
                     });
                 });
 
@@ -751,9 +780,10 @@ class BookmarkList extends HTMLElement {
                     e.preventDefault();
                     this._dragDropped = true;
                     section.classList.remove('category-dragging');
-                    // Persist the current DOM order
-                    const newOrder = [...this.querySelectorAll('.collapse[data-category-id]')].map(el => el.dataset.categoryId);
-                    this._persistCategoryOrder(newOrder);
+                    if (this._draggedSection) {
+                        // Persist the current live-preview layout
+                        this._persistLiveLayout();
+                    }
                 });
             }
 
@@ -894,7 +924,29 @@ class BookmarkList extends HTMLElement {
             });
 
             section.appendChild(content);
-            this.appendChild(section);
+            allSections.push(section);
+        }
+
+        // Wrap in rows for dashboard, flat for popup
+        if (isPopup) {
+            for (const section of allSections) {
+                this.appendChild(section);
+            }
+        } else {
+            // Ensure _categoryRows matches current category count
+            if (!this._categoryRows || this._categoryRows.reduce((a, b) => a + b, 0) !== allSections.length) {
+                this._categoryRows = this._getDefaultRows(allSections.length);
+            }
+
+            let idx = 0;
+            for (const rowSize of this._categoryRows) {
+                const row = document.createElement('div');
+                row.className = 'category-row';
+                for (let i = 0; i < rowSize && idx < allSections.length; i++, idx++) {
+                    row.appendChild(allSections[idx]);
+                }
+                this.appendChild(row);
+            }
         }
 
         // Add "Add Category" row at the bottom
@@ -1340,48 +1392,142 @@ class BookmarkList extends HTMLElement {
         }
     }
 
-    _animateCategorySwap(dragged, target, clientY) {
-        const container = this;
-        const sections = [...container.querySelectorAll('.collapse[data-category-id]')];
-        const draggedIdx = sections.indexOf(dragged);
-        const targetIdx = sections.indexOf(target);
-        if (draggedIdx === -1 || targetIdx === -1) return;
-
-        // Don't allow moving above uncategorized
-        const uncategorized = container.querySelector('.collapse[data-category-id="uncategorized"]');
-        if (uncategorized && target === uncategorized) return;
-
-        // Capture positions before move (FLIP: First)
-        const rects = new Map();
-        for (const s of sections) {
-            rects.set(s, s.getBoundingClientRect());
-        }
-
-        // Move in DOM
+    _detectDropZone(target, clientX, clientY) {
         const rect = target.getBoundingClientRect();
-        const dropAfter = clientY > rect.top + rect.height / 2;
-        if (dropAfter) {
-            target.after(dragged);
+        const relX = (clientX - rect.left) / rect.width;
+        const relY = (clientY - rect.top) / rect.height;
+
+        const distTop = relY;
+        const distBottom = 1 - relY;
+        const distLeft = relX;
+        const distRight = 1 - relX;
+        const minVert = Math.min(distTop, distBottom);
+        const minHoriz = Math.min(distLeft, distRight);
+
+        let zone;
+        if (minVert < minHoriz) {
+            zone = distTop < distBottom ? 'top' : 'bottom';
         } else {
-            target.before(dragged);
+            zone = distLeft < distRight ? 'left' : 'right';
         }
 
-        // Ensure dragged doesn't end up before uncategorized
-        if (uncategorized && uncategorized.parentNode === container) {
-            const newSections = [...container.querySelectorAll('.collapse[data-category-id]')];
-            if (newSections.indexOf(dragged) < newSections.indexOf(uncategorized)) {
-                uncategorized.after(dragged);
-                // Keep add-category row at the bottom
-                const addRow = container.querySelector('.add-category-row');
-                if (addRow) container.appendChild(addRow);
+        // Check if same-row drop would exceed max 4
+        if (zone === 'left' || zone === 'right') {
+            const row = target.closest('.category-row');
+            if (row) {
+                const rowCount = row.querySelectorAll('.collapse[data-category-id]').length;
+                const draggedInRow = this._draggedSection && row.contains(this._draggedSection);
+                const effectiveCount = draggedInRow ? rowCount : rowCount + 1;
+                if (effectiveCount > 4) {
+                    zone = distTop < distBottom ? 'top' : 'bottom';
+                }
             }
         }
 
-        // Animate other sections (FLIP: Last, Invert, Play)
-        const newSections = [...container.querySelectorAll('.collapse[data-category-id]')];
-        for (const s of newSections) {
-            if (s === dragged) continue;
-            const oldRect = rects.get(s);
+        return zone;
+    }
+
+    _showCategoryDropIndicator(target, clientX, clientY) {
+        const zone = this._detectDropZone(target, clientX, clientY);
+        const dragged = this._draggedSection;
+        if (!dragged) return;
+
+        const isPopup = this._getViewContext() === 'popup';
+        if (isPopup) {
+            // Popup: simple vertical reorder
+            const rect = target.getBoundingClientRect();
+            const dropAfter = clientY > rect.top + rect.height / 2;
+            if (dropAfter) {
+                target.after(dragged);
+            } else {
+                target.before(dragged);
+            }
+            return;
+        }
+
+        // Build current layout from DOM
+        const rows = [...this.querySelectorAll('.category-row')];
+        let layout = rows.map(row =>
+            [...row.querySelectorAll('.collapse[data-category-id]')].map(el => el.dataset.categoryId)
+        );
+
+        const draggedId = dragged.dataset.categoryId;
+        const targetId = target.dataset.categoryId;
+
+        // Remove dragged from layout
+        layout = layout.map(row => row.filter(id => id !== draggedId)).filter(row => row.length > 0);
+
+        // Find target position (after removal)
+        let targetRowIdx = -1, targetPosIdx = -1;
+        for (let r = 0; r < layout.length; r++) {
+            const p = layout[r].indexOf(targetId);
+            if (p !== -1) {
+                targetRowIdx = r;
+                targetPosIdx = p;
+                break;
+            }
+        }
+        if (targetRowIdx === -1) return;
+
+        // Insert dragged into new position
+        if (zone === 'top') {
+            layout.splice(targetRowIdx, 0, [draggedId]);
+        } else if (zone === 'bottom') {
+            layout.splice(targetRowIdx + 1, 0, [draggedId]);
+        } else if (zone === 'left') {
+            layout[targetRowIdx].splice(targetPosIdx, 0, draggedId);
+        } else if (zone === 'right') {
+            layout[targetRowIdx].splice(targetPosIdx + 1, 0, draggedId);
+        }
+
+        // Enforce uncategorized stays first
+        const flatOrder = layout.flat();
+        const uncatIdx = flatOrder.indexOf('uncategorized');
+        if (uncatIdx > 0) return; // Don't allow moving before uncategorized
+
+        // Apply layout to DOM with FLIP animation
+        this._applyLayoutToDOM(layout);
+    }
+
+    _applyLayoutToDOM(layout) {
+        // Capture old positions (FLIP: First)
+        const allSections = this.querySelectorAll('.collapse[data-category-id]');
+        const rects = new Map();
+        for (const s of allSections) {
+            rects.set(s.dataset.categoryId, s.getBoundingClientRect());
+        }
+
+        // Build a map of category ID -> section element
+        const sectionMap = new Map();
+        for (const s of allSections) {
+            sectionMap.set(s.dataset.categoryId, s);
+        }
+
+        // Remove old category-row wrappers
+        for (const row of this.querySelectorAll('.category-row')) {
+            row.remove();
+        }
+
+        // Rebuild rows
+        const addRow = this.querySelector('.add-category-row');
+        for (const rowIds of layout) {
+            const row = document.createElement('div');
+            row.className = 'category-row';
+            for (const id of rowIds) {
+                const s = sectionMap.get(id);
+                if (s) row.appendChild(s);
+            }
+            if (addRow) {
+                this.insertBefore(row, addRow);
+            } else {
+                this.appendChild(row);
+            }
+        }
+
+        // Animate (FLIP: Last, Invert, Play)
+        for (const s of allSections) {
+            if (s === this._draggedSection) continue;
+            const oldRect = rects.get(s.dataset.categoryId);
             if (!oldRect) continue;
             const newRect = s.getBoundingClientRect();
             const dx = oldRect.left - newRect.left;
@@ -1399,19 +1545,46 @@ class BookmarkList extends HTMLElement {
         }
     }
 
+    _persistLiveLayout() {
+        const isPopup = this._getViewContext() === 'popup';
+        if (isPopup) {
+            const newOrder = [...this.querySelectorAll('.collapse[data-category-id]')].map(el => el.dataset.categoryId);
+            this._persistCategoryOrder(newOrder);
+            return;
+        }
+
+        const rows = [...this.querySelectorAll('.category-row')];
+        const layout = rows.map(row =>
+            [...row.querySelectorAll('.collapse[data-category-id]')].map(el => el.dataset.categoryId)
+        ).filter(row => row.length > 0);
+
+        const newOrder = layout.flat();
+        this._categoryRows = layout.map(row => row.length);
+        this._saveCategoryRows();
+        this._persistCategoryOrder(newOrder);
+    }
+
     _restoreCategoryOrder(orderIds) {
-        const container = this;
-        const sections = new Map();
-        for (const s of container.querySelectorAll('.collapse[data-category-id]')) {
-            sections.set(s.dataset.categoryId, s);
+        const isPopup = this._getViewContext() === 'popup';
+        if (isPopup) {
+            const container = this;
+            const sections = new Map();
+            for (const s of container.querySelectorAll('.collapse[data-category-id]')) {
+                sections.set(s.dataset.categoryId, s);
+            }
+            for (const id of orderIds) {
+                const s = sections.get(id);
+                if (s) container.appendChild(s);
+            }
+            const addRow = container.querySelector('.add-category-row');
+            if (addRow) container.appendChild(addRow);
+            return;
         }
-        for (const id of orderIds) {
-            const s = sections.get(id);
-            if (s) container.appendChild(s);
+        // Dashboard: full re-render to restore row layout
+        if (this._dragOriginalRows) {
+            this._categoryRows = this._dragOriginalRows;
         }
-        // Keep add-category row at the bottom
-        const addRow = container.querySelector('.add-category-row');
-        if (addRow) container.appendChild(addRow);
+        this.render();
     }
 
     async _persistCategoryOrder(orderIds) {

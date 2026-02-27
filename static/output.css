@@ -3081,6 +3081,22 @@
 .collapse:hover .drag-hint {
   opacity: 30%;
 }
+.category-row {
+  display: flex;
+  gap: 0.5rem;
+}
+.category-row > .collapse {
+  flex: 1;
+  min-width: 0;
+}
+@media (max-width: 768px) {
+  .category-row {
+    flex-direction: column;
+  }
+}
+.popup .category-row {
+  flex-direction: column;
+}
 .bookmark-actions {
   position: absolute;
   top: calc(var(--spacing) * 2);

@@ -235,6 +235,29 @@
     @apply opacity-30;
 }
 
+/* Category row layout (dashboard grid) */
+.category-row {
+    display: flex;
+    gap: 0.5rem;
+}
+.category-row > .collapse {
+    flex: 1;
+    min-width: 0;
+}
+
+
+/* On narrow screens, force single column */
+@media (max-width: 768px) {
+    .category-row {
+        flex-direction: column;
+    }
+}
+
+/* Popup always single column */
+.popup .category-row {
+    flex-direction: column;
+}
+
 .bookmark-actions {
     @apply absolute top-2 right-2 hidden gap-1;
 }
