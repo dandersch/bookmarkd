@@ -135,6 +135,7 @@
     @apply grid gap-2 pt-2 px-2 mb-4 bg-base-300/50 rounded-b-box;
     overflow: hidden;
     min-height: 0 !important;
+    align-content: start;
 }
 .collapse > input:not(:checked) ~ .collapse-content {
     @apply mb-0 bg-transparent;
@@ -239,7 +240,7 @@
 .category-row {
     display: flex;
     gap: 0.5rem;
-    align-items: flex-start;
+    align-items: stretch;
 }
 .category-row > .collapse {
     flex: 1;

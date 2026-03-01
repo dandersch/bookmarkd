@@ -2952,6 +2952,7 @@
   padding-top: calc(var(--spacing) * 2);
   overflow: hidden;
   min-height: 0 !important;
+  align-content: start;
 }
 .collapse > input:not(:checked) ~ .collapse-content {
   margin-bottom: calc(var(--spacing) * 0);
@@ -3084,7 +3085,7 @@
 .category-row {
   display: flex;
   gap: 0.5rem;
-  align-items: flex-start;
+  align-items: stretch;
 }
 .category-row > .collapse {
   flex: 1;
