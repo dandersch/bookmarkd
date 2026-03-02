@@ -58,7 +58,10 @@
 }
 
 .bookmark-timestamps {
-    @apply w-full flex justify-between text-xs text-base-content/50 min-w-0;
+    @apply w-full flex justify-between text-xs text-base-content/50 min-w-0 opacity-0 transition-opacity duration-200;
+}
+.bookmark-item:hover .bookmark-timestamps {
+    @apply opacity-100;
 }
 
 .bookmark-favicon {
@@ -78,11 +81,13 @@
 }
 
 .bookmark-timestamp {
-    @apply text-xs text-base-content/50 truncate min-w-0 flex-1;
+    @apply text-base-content/50 truncate min-w-0 flex-1;
+    font-size: 0.625rem;
 }
 
 .bookmark-visited {
-    @apply text-xs text-base-content/50 truncate min-w-0 flex-1 text-right;
+    @apply text-base-content/50 truncate min-w-0 flex-1 text-right;
+    font-size: 0.625rem;
 }
 
 .bookmark-favicon-wrapper {

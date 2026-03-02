@@ -2812,6 +2812,15 @@
   @supports (color: color-mix(in lab, red, red)) {
     color: color-mix(in oklab, var(--color-base-content) 50%, transparent);
   }
+  opacity: 0%;
+  transition-property: opacity;
+  transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
+  transition-duration: var(--tw-duration, var(--default-transition-duration));
+  --tw-duration: 200ms;
+  transition-duration: 200ms;
+}
+.bookmark-item:hover .bookmark-timestamps {
+  opacity: 100%;
 }
 .bookmark-favicon {
   height: calc(var(--spacing) * 8);
@@ -2853,12 +2862,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: var(--text-xs);
-  line-height: var(--tw-leading, var(--text-xs--line-height));
   color: var(--color-base-content);
   @supports (color: color-mix(in lab, red, red)) {
     color: color-mix(in oklab, var(--color-base-content) 50%, transparent);
   }
+  font-size: 0.625rem;
 }
 .bookmark-visited {
   min-width: calc(var(--spacing) * 0);
@@ -2867,12 +2875,11 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   text-align: right;
-  font-size: var(--text-xs);
-  line-height: var(--tw-leading, var(--text-xs--line-height));
   color: var(--color-base-content);
   @supports (color: color-mix(in lab, red, red)) {
     color: color-mix(in oklab, var(--color-base-content) 50%, transparent);
   }
+  font-size: 0.625rem;
 }
 .bookmark-favicon-wrapper {
   position: relative;
