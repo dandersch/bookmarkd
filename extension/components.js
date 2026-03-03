@@ -119,13 +119,32 @@ class BookmarkItem extends HTMLElement {
             e.dataTransfer.setData('bookmark-id', id);
             e.dataTransfer.effectAllowed = 'move';
             this.classList.add('dragging');
+            const list = this.closest('bookmark-list');
+            if (list) {
+                list._bmDragSource = this;
+                list._bmDragOrigContainer = this.parentElement;
+                list._bmDragOriginals = new Map();
+                // Snapshot original bookmark order for every category container
+                for (const cont of list.querySelectorAll('.collapse-content')) {
+                    list._bmDragOriginals.set(cont, [...cont.querySelectorAll('bookmark-item')]);
+                }
+                list._bmDragDropped = false;
+            }
         });
 
         this.addEventListener('dragend', () => {
             this.classList.remove('dragging');
-            // Clean up drop indicator when drag ends
             const list = this.closest('bookmark-list');
-            if (list && list._hideDropIndicator) {
+            if (list) {
+                if (!list._bmDragDropped && list._bmDragOriginals) {
+                    // Cancelled — restore original order
+                    list._restoreBookmarkOrder();
+                }
+                list._bmDragSource = null;
+                list._bmDragOrigContainer = null;
+                list._bmDragOriginals = null;
+                list._bmDragDropped = false;
+                list._bmDragRafPending = false;
                 list._hideDropIndicator();
             }
         });
@@ -878,49 +897,45 @@ class BookmarkList extends HTMLElement {
                 content.appendChild(item);
             }
 
-            // Drop zone handlers — only allow reordering within manually-sorted categories
+            // Drop zone handlers — live preview reordering
             content.addEventListener('dragover', (e) => {
                 if (!e.dataTransfer.types.includes('bookmark-id')) return;
-                const targetSort = this._getCategorySort(content.dataset.categoryId);
                 e.preventDefault();
                 e.dataTransfer.dropEffect = 'move';
                 content.classList.add('drag-over');
-                
-                if (targetSort.by === 'manual') {
-                    const afterElement = this._getDragAfterElement(content, e.clientY, e.clientX);
-                    this._showDropIndicator(content, afterElement);
-                }
+
+                if (!this._bmDragSource) { this._autoScroll(e.clientY); return; }
+
+                if (this._bmDragRafPending) return;
+                this._bmDragRafPending = true;
+                requestAnimationFrame(() => {
+                    this._bmDragRafPending = false;
+                    if (!this._bmDragSource) return;
+                    this._liveReorderBookmark(content, e.clientY, e.clientX);
+                });
                 this._autoScroll(e.clientY);
             });
 
             content.addEventListener('dragleave', (e) => {
                 if (!content.contains(e.relatedTarget)) {
                     content.classList.remove('drag-over');
-                    this._hideDropIndicator();
                 }
             });
 
             content.addEventListener('drop', (e) => {
                 e.preventDefault();
                 content.classList.remove('drag-over');
-                this._hideDropIndicator();
-                
+
                 const bookmarkId = e.dataTransfer.getData('bookmark-id');
                 if (!bookmarkId) return;
 
-                const draggedEl = this.querySelector(`bookmark-item[bookmark-id="${bookmarkId}"]`);
+                this._bmDragDropped = true;
+                const draggedEl = this._bmDragSource;
                 if (!draggedEl) return;
 
                 const targetCategoryId = content.dataset.categoryId;
-                const targetSort = this._getCategorySort(targetCategoryId);
-                if (targetSort.by === 'manual') {
-                    const afterElement = this._getDragAfterElement(content, e.clientY, e.clientX);
-                    const newOrder = this._computeDropOrder(content, draggedEl, afterElement, targetCategoryId);
-                    this._moveBookmark(bookmarkId, targetCategoryId, newOrder);
-                } else {
-                    // Cross-category move: just change category, keep order
-                    this._moveBookmark(bookmarkId, targetCategoryId, undefined);
-                }
+                // Persist the live-preview order
+                this._persistBookmarkLiveLayout(draggedEl, targetCategoryId, content);
             });
 
             section.appendChild(content);
@@ -1686,6 +1701,130 @@ class BookmarkList extends HTMLElement {
 
         // Cross-category: append at end
         return maxOtherOrder + 1;
+    }
+
+    _liveReorderBookmark(container, clientY, clientX) {
+        const dragged = this._bmDragSource;
+        if (!dragged) return;
+
+        const afterElement = this._getDragAfterElement(container, clientY, clientX);
+
+        // Check if position actually changed
+        const currentNext = dragged.nextElementSibling;
+        if (afterElement === dragged) return;
+        if (!afterElement && currentNext === null && dragged.parentElement === container) return;
+        if (afterElement && currentNext === afterElement && dragged.parentElement === container) return;
+
+        // Capture old positions for FLIP
+        const items = [...container.querySelectorAll('bookmark-item')];
+        // Also include items from source container if cross-category
+        const sourceContainer = dragged.parentElement;
+        const allContainers = new Set([container]);
+        if (sourceContainer && sourceContainer !== container) allContainers.add(sourceContainer);
+
+        const rects = new Map();
+        for (const cont of allContainers) {
+            for (const item of cont.querySelectorAll('bookmark-item')) {
+                rects.set(item, item.getBoundingClientRect());
+            }
+        }
+
+        // Move element in DOM
+        if (afterElement) {
+            container.insertBefore(dragged, afterElement);
+        } else {
+            container.appendChild(dragged);
+        }
+
+        // Handle empty-drop-zone: hide in target, show in source if it became empty
+        const targetEmptyZone = container.querySelector('.empty-drop-zone');
+        if (targetEmptyZone) targetEmptyZone.style.display = 'none';
+        if (sourceContainer && sourceContainer !== container) {
+            const remaining = sourceContainer.querySelectorAll('bookmark-item');
+            // Only the dragged element (which just left) or none remain
+            if (remaining.length === 0) {
+                let srcEmpty = sourceContainer.querySelector('.empty-drop-zone');
+                if (!srcEmpty) {
+                    srcEmpty = document.createElement('div');
+                    srcEmpty.className = 'empty-drop-zone';
+                    srcEmpty.textContent = 'Drop bookmarks here';
+                    sourceContainer.prepend(srcEmpty);
+                }
+                srcEmpty.style.display = '';
+            }
+        }
+
+        // FLIP animate all affected items (not the dragged one)
+        for (const cont of allContainers) {
+            for (const item of cont.querySelectorAll('bookmark-item')) {
+                if (item === dragged) continue;
+                const oldRect = rects.get(item);
+                if (!oldRect) continue;
+                const newRect = item.getBoundingClientRect();
+                const dx = oldRect.left - newRect.left;
+                const dy = oldRect.top - newRect.top;
+                if (dx === 0 && dy === 0) continue;
+                item.style.transition = 'none';
+                item.style.transform = `translate(${dx}px, ${dy}px)`;
+                requestAnimationFrame(() => {
+                    item.style.transition = 'transform 150ms ease';
+                    item.style.transform = '';
+                    item.addEventListener('transitionend', () => {
+                        item.style.transition = '';
+                    }, { once: true });
+                });
+            }
+        }
+    }
+
+    _restoreBookmarkOrder() {
+        if (!this._bmDragOriginals) return;
+        for (const [container, items] of this._bmDragOriginals) {
+            // Remove all bookmark-items from this container
+            for (const item of [...container.querySelectorAll('bookmark-item')]) {
+                item.remove();
+            }
+            // Re-insert in original order
+            const emptyZone = container.querySelector('.empty-drop-zone');
+            for (const item of items) {
+                container.appendChild(item);
+            }
+            // Remove empty-drop-zone if items were restored, add if empty
+            if (items.length > 0 && emptyZone) {
+                emptyZone.remove();
+            }
+        }
+    }
+
+    _persistBookmarkLiveLayout(draggedEl, targetCategoryId, container) {
+        // Read the final order from the DOM
+        const items = [...container.querySelectorAll('bookmark-item')];
+        const sourceCategoryId = draggedEl.getAttribute('category-id');
+        const isCrossCategory = sourceCategoryId !== targetCategoryId;
+
+        // Assign sequential order values based on DOM position
+        const orderUpdates = items.map((item, idx) => ({
+            id: item.getAttribute('bookmark-id'),
+            order: idx,
+        }));
+
+        // Persist all order changes
+        const config = {
+            serverUrl: this.getAttribute('server-url') || '',
+            authHeader: this.getAttribute('auth-header') || ''
+        };
+        const headers = { 'Content-Type': 'application/json' };
+        if (config.authHeader) headers['Authorization'] = config.authHeader;
+
+        // Move the dragged bookmark to the target category (also sets order)
+        const draggedIdx = items.indexOf(draggedEl);
+        const newOrder = draggedIdx >= 0 ? draggedIdx : 0;
+
+        this._moveBookmark(
+            draggedEl.getAttribute('bookmark-id'),
+            targetCategoryId,
+            newOrder
+        );
     }
 
     _ensureDropIndicator() {
