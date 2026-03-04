@@ -83,7 +83,17 @@ class BookmarkItem extends HTMLElement {
 
         this.className = 'bookmark-item' + (watched ? ' watched' : '');
         this.draggable = true;
-        this.innerHTML = `
+        const watchedSvg = watched ? (() => {
+            const steps = 10;
+            const rects = Array.from({length: steps}, (_, i) => {
+                const t = i / (steps - 1);
+                const len = 2 + t * 18;
+                const opacity = (1 - t) * (1 - t) * 0.8;
+                return `<rect pathLength="100" style="stroke-dasharray:${len} ${100 - len};opacity:${opacity.toFixed(3)}" />`;
+            }).reverse().join('');
+            return `<svg class="watched-border" aria-hidden="true">${rects}</svg>`;
+        })() : '';
+        this.innerHTML = `${watchedSvg}
             <a href="${url}" target="_blank" class="bookmark-link" title="${this.escapeHtml(title)}&#10;${this.escapeHtml(url)}">
                 <div class="bookmark-favicon-wrapper">
                     <img src="${favicon}" class="bookmark-favicon" alt="">
