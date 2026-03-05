@@ -645,6 +645,11 @@ class BookmarkList extends HTMLElement {
                     const bv = b.last_visited || 0;
                     return dir * (av - bv);
                 }
+                case 'last-changed': {
+                    const ac = a.changed_at || 0;
+                    const bc = b.changed_at || 0;
+                    return dir * (ac - bc);
+                }
                 default:
                     return 0;
             }
@@ -1068,6 +1073,7 @@ class BookmarkList extends HTMLElement {
                                 <option value="title">Title</option>
                                 <option value="date-added">Date added</option>
                                 <option value="date-visited">Last visited</option>
+                                <option value="last-changed">Last changed</option>
                             </select>
                             <button class="btn btn-xs btn-ghost category-modal-sort-dir" title="Toggle sort direction">↑</button>
                         </div>
@@ -1205,7 +1211,8 @@ class BookmarkList extends HTMLElement {
 
             sortBySelect.addEventListener('change', () => {
                 const catId = modal.dataset.categoryId;
-                const dir = modal.dataset.sortDir || 'asc';
+                const dir = sortBySelect.value === 'last-changed' ? 'desc' : (modal.dataset.sortDir || 'asc');
+                modal.dataset.sortDir = dir;
                 if (modal.dataset.mode !== 'create') {
                     list._setCategorySort(catId, sortBySelect.value, dir);
                 }
