@@ -46,7 +46,7 @@
 }
 
 .bookmark-item {
-    @apply flex flex-row items-stretch bg-base-300 transition-all duration-200 relative;
+    @apply flex flex-row items-stretch bg-base-100 transition-all duration-200 relative;
     border-radius: var(--radius-box);
 }
 .bookmark-item:hover {
@@ -126,7 +126,7 @@
 }
 
 .bookmark-changed-dot {
-    @apply absolute -top-1 -right-1 w-3 h-3 bg-error rounded-full border-2 border-base-300;
+    @apply absolute -top-1 -right-1 w-3 h-3 bg-error rounded-full border-2 border-base-100;
     animation: pulse-dot 2s ease-in-out infinite;
 }
 
@@ -141,14 +141,14 @@
 
 }
 .collapse-title {
-    @apply min-h-0 pl-3 pr-0 bg-base-300;
+    @apply min-h-0 pl-3 pr-0 bg-base-200;
 }
 .collapse-title::after {
     @apply opacity-40;
 }
 .collapse-content {
     --category-size: 1;
-    @apply grid gap-2 pt-2 px-2 mb-4 bg-base-300/50 rounded-b-box;
+    @apply grid gap-2 pt-2 px-2 mb-4 bg-base-200/50 rounded-b-box;
     overflow: hidden;
     min-height: 0 !important;
     align-content: start;
@@ -426,7 +426,7 @@
     padding: 0.25rem;
 }
 .popup .view-card .bookmark-item {
-    @apply flex-col items-center bg-base-300 p-2 text-center;
+    @apply flex-col items-center bg-base-100 p-2 text-center;
     border-radius: var(--radius-box);
 }
 .popup .view-card .bookmark-item:hover {
