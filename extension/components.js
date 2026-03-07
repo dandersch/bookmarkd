@@ -485,6 +485,7 @@ class BookmarkList extends HTMLElement {
         this._categorySizes = this._loadCategorySizes();
         this._categorySorts = this._loadCategorySorts();
         this._categoryRows = this._loadCategoryRows();
+        this._categoryWidths = this._loadCategoryWidths();
     }
 
     connectedCallback() {
@@ -618,6 +619,82 @@ class BookmarkList extends HTMLElement {
 
     _getDefaultRows(count) {
         return Array(count).fill(1);
+    }
+
+    _loadCategoryWidths() {
+        if (this._getViewContext() === 'popup') return [];
+        try {
+            const saved = localStorage.getItem('bookmarkd-category-widths');
+            return saved ? JSON.parse(saved) : [];
+        } catch {
+            return [];
+        }
+    }
+
+    _saveCategoryWidths() {
+        if (this._getViewContext() === 'popup') return;
+        try {
+            localStorage.setItem('bookmarkd-category-widths', JSON.stringify(this._categoryWidths));
+        } catch {}
+    }
+
+    _resetCategoryWidths() {
+        this._categoryWidths = [];
+        this._saveCategoryWidths();
+    }
+
+    _initResizeHandle(handle) {
+        let startX, leftEl, rightEl, leftStart, rightStart, rowWidth;
+
+        const onMouseMove = (e) => {
+            const dx = e.clientX - startX;
+            const leftFlex = Math.max(0.1, leftStart + dx / rowWidth);
+            const rightFlex = Math.max(0.1, rightStart - dx / rowWidth);
+            leftEl.style.flex = leftFlex + ' 1 0%';
+            rightEl.style.flex = rightFlex + ' 1 0%';
+        };
+
+        const onMouseUp = () => {
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+
+            const rowI = parseInt(handle.dataset.rowIdx);
+            const row = handle.closest('.category-row');
+            const cats = [...row.querySelectorAll(':scope > .collapse')];
+            while (this._categoryWidths.length <= rowI) this._categoryWidths.push(null);
+            this._categoryWidths[rowI] = cats.map(c => parseFloat(c.style.flex) || 1);
+            this._saveCategoryWidths();
+        };
+
+        handle.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            const row = handle.closest('.category-row');
+            const cats = [...row.querySelectorAll(':scope > .collapse')];
+            const bIdx = parseInt(handle.dataset.boundaryIdx);
+            leftEl = cats[bIdx];
+            rightEl = cats[bIdx + 1];
+            rowWidth = row.getBoundingClientRect().width;
+            leftStart = parseFloat(leftEl.style.flex) || 1;
+            rightStart = parseFloat(rightEl.style.flex) || 1;
+            startX = e.clientX;
+            document.body.style.cursor = 'col-resize';
+            document.body.style.userSelect = 'none';
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        });
+
+        handle.addEventListener('dblclick', () => {
+            const rowI = parseInt(handle.dataset.rowIdx);
+            const row = handle.closest('.category-row');
+            const cats = [...row.querySelectorAll(':scope > .collapse')];
+            for (const c of cats) c.style.flex = '';
+            if (this._categoryWidths[rowI]) {
+                this._categoryWidths[rowI] = null;
+                this._saveCategoryWidths();
+            }
+        });
     }
 
     _getCategorySort(categoryId) {
@@ -969,13 +1046,39 @@ class BookmarkList extends HTMLElement {
             }
 
             let idx = 0;
+            let rowIdx = 0;
             for (const rowSize of this._categoryRows) {
                 const row = document.createElement('div');
                 row.className = 'category-row';
+                const widths = this._categoryWidths[rowIdx];
                 for (let i = 0; i < rowSize && idx < allSections.length; i++, idx++) {
-                    row.appendChild(allSections[idx]);
+                    const section = allSections[idx];
+                    if (widths && widths[i] !== undefined) {
+                        section.style.flex = widths[i] + ' 1 0%';
+                    }
+                    if (rowSize > 1) {
+                        section.style.position = 'relative';
+                        if (i > 0) {
+                            const leftHandle = document.createElement('div');
+                            leftHandle.className = 'category-resize-handle category-resize-left';
+                            leftHandle.dataset.rowIdx = rowIdx;
+                            leftHandle.dataset.boundaryIdx = i - 1;
+                            section.appendChild(leftHandle);
+                            this._initResizeHandle(leftHandle);
+                        }
+                        if (i < rowSize - 1) {
+                            const rightHandle = document.createElement('div');
+                            rightHandle.className = 'category-resize-handle category-resize-right';
+                            rightHandle.dataset.rowIdx = rowIdx;
+                            rightHandle.dataset.boundaryIdx = i;
+                            section.appendChild(rightHandle);
+                            this._initResizeHandle(rightHandle);
+                        }
+                    }
+                    row.appendChild(section);
                 }
                 this.appendChild(row);
+                rowIdx++;
             }
         }
 
@@ -1593,6 +1696,7 @@ class BookmarkList extends HTMLElement {
         const newOrder = layout.flat();
         this._categoryRows = layout.map(row => row.length);
         this._saveCategoryRows();
+        this._resetCategoryWidths();
         this._persistCategoryOrder(newOrder);
     }
 

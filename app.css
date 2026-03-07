@@ -262,6 +262,25 @@
     flex: 1;
     min-width: 0;
 }
+.category-resize-handle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    cursor: col-resize;
+    z-index: 10;
+}
+.category-resize-left {
+    left: 0;
+}
+.category-resize-right {
+    right: 0;
+}
+@media (max-width: 768px) {
+    .category-resize-handle {
+        display: none;
+    }
+}
 
 
 /* On narrow screens, force single column */
