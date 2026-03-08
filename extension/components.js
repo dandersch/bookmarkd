@@ -644,12 +644,13 @@ class BookmarkList extends HTMLElement {
     }
 
     _initResizeHandle(handle) {
-        let startX, leftEl, rightEl, leftStart, rightStart, rowWidth;
+        let startX, leftEl, rightEl, leftStart, rightStart, rowWidth, totalFlex;
 
         const onMouseMove = (e) => {
             const dx = e.clientX - startX;
-            const leftFlex = Math.max(0.1, leftStart + dx / rowWidth);
-            const rightFlex = Math.max(0.1, rightStart - dx / rowWidth);
+            const dFlex = dx * totalFlex / rowWidth;
+            const leftFlex = Math.max(0.1, leftStart + dFlex);
+            const rightFlex = Math.max(0.1, rightStart - dFlex);
             leftEl.style.flex = leftFlex + ' 1 0%';
             rightEl.style.flex = rightFlex + ' 1 0%';
         };
@@ -676,6 +677,7 @@ class BookmarkList extends HTMLElement {
             leftEl = cats[bIdx];
             rightEl = cats[bIdx + 1];
             rowWidth = row.getBoundingClientRect().width;
+            totalFlex = cats.reduce((sum, c) => sum + (parseFloat(c.style.flex) || 1), 0);
             leftStart = parseFloat(leftEl.style.flex) || 1;
             rightStart = parseFloat(rightEl.style.flex) || 1;
             startX = e.clientX;
