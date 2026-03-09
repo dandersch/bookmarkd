@@ -924,6 +924,11 @@ class BookmarkList extends HTMLElement {
             const titleText = document.createElement('span');
             titleText.className = 'category-name';
             titleText.textContent = categoryName;
+            const countBadge = document.createElement('span');
+            countBadge.className = 'category-count badge badge-sm';
+            countBadge.textContent = bookmarksInCategory.length;
+            titleText.appendChild(countBadge);
+
             titleContainer.appendChild(titleText);
 
             if (!isUncategorized) {

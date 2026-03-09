@@ -13,3 +13,4 @@ test-profile/
 tests/screenshot.png
 *.png
 __pycache__
+.claude/

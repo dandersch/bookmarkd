@@ -3244,6 +3244,18 @@
 .collapse:hover .category-actions {
   display: flex;
 }
+.category-count {
+  margin-left: calc(var(--spacing) * 2);
+  opacity: 0%;
+  transition-property: opacity;
+  transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
+  transition-duration: var(--tw-duration, var(--default-transition-duration));
+  --tw-duration: 200ms;
+  transition-duration: 200ms;
+}
+.collapse:hover .category-count {
+  opacity: 50%;
+}
 .category-edit-input {
   position: relative;
   z-index: 10;
@@ -3617,7 +3629,7 @@ body.compact .collapse-title {
   padding: 0.25rem 0.5rem;
   font-size: 0.625rem;
 }
-body.compact .add-category-row, body.compact .category-actions {
+body.compact .add-category-row, body.compact .category-actions, body.compact .category-count {
   display: none !important;
 }
 @layer base {

@@ -309,6 +309,12 @@
 .collapse:hover .category-actions {
     @apply flex;
 }
+.category-count {
+    @apply opacity-0 transition-opacity duration-200 ml-2;
+}
+.collapse:hover .category-count {
+    @apply opacity-50;
+}
 .category-edit-input {
     @apply uppercase text-xs font-semibold tracking-wide relative z-10;
 }
@@ -605,6 +611,7 @@ body.compact .collapse-title {
     font-size: 0.625rem;
 }
 body.compact .add-category-row,
-body.compact .category-actions {
+body.compact .category-actions,
+body.compact .category-count {
     display: none !important;
 }
