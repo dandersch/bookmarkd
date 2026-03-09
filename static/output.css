@@ -3246,6 +3246,7 @@
 }
 .category-count {
   margin-left: calc(var(--spacing) * 2);
+  vertical-align: middle;
   opacity: 0%;
   transition-property: opacity;
   transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));

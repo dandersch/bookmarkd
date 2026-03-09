@@ -310,7 +310,7 @@
     @apply flex;
 }
 .category-count {
-    @apply opacity-0 transition-opacity duration-200 ml-2;
+    @apply opacity-0 transition-opacity duration-200 ml-2 align-middle;
 }
 .collapse:hover .category-count {
     @apply opacity-50;
