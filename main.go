@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -549,6 +550,96 @@ func deleteCategory(w http.ResponseWriter, name string) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// --- Favicon Logic ---
+
+var faviconLinkRe = regexp.MustCompile(`(?i)<link\s[^>]*?>`)
+var faviconAttrRe = regexp.MustCompile(`(?i)(\w+)\s*=\s*"([^"]*)"`)
+
+func fetchBestFavicon(pageURL string) string {
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Get(pageURL)
+	if err != nil {
+		return ""
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 256*1024))
+	if err != nil {
+		return ""
+	}
+
+	head := string(body)
+	if idx := strings.Index(strings.ToLower(head), "</head>"); idx != -1 {
+		head = head[:idx]
+	}
+
+	type iconCandidate struct {
+		href string
+		size int
+	}
+
+	var candidates []iconCandidate
+	for _, match := range faviconLinkRe.FindAllString(head, -1) {
+		attrs := map[string]string{}
+		for _, a := range faviconAttrRe.FindAllStringSubmatch(match, -1) {
+			attrs[strings.ToLower(a[1])] = a[2]
+		}
+
+		rel := strings.ToLower(attrs["rel"])
+		if rel != "icon" && rel != "shortcut icon" && rel != "apple-touch-icon" && rel != "apple-touch-icon-precomposed" {
+			continue
+		}
+
+		href := attrs["href"]
+		if href == "" {
+			continue
+		}
+
+		size := 0
+		if rel == "apple-touch-icon" || rel == "apple-touch-icon-precomposed" {
+			size = 180 // assume large if no sizes specified
+		}
+		if s := attrs["sizes"]; s != "" {
+			parts := strings.SplitN(strings.ToLower(s), "x", 2)
+			if len(parts) == 2 {
+				if n, err := strconv.Atoi(parts[0]); err == nil {
+					size = n
+				}
+			}
+		}
+
+		candidates = append(candidates, iconCandidate{href: href, size: size})
+	}
+
+	if len(candidates) == 0 {
+		return ""
+	}
+
+	// pick the largest
+	best := candidates[0]
+	for _, c := range candidates[1:] {
+		if c.size > best.size {
+			best = c
+		}
+	}
+
+	// resolve relative URLs
+	href := best.href
+	if !strings.HasPrefix(href, "http://") && !strings.HasPrefix(href, "https://") {
+		base, err := url.Parse(pageURL)
+		if err != nil {
+			return href
+		}
+		ref, err := url.Parse(href)
+		if err != nil {
+			return href
+		}
+		href = base.ResolveReference(ref).String()
+	}
+
+	return href
+}
+
 // --- Bookmark Logic ---
 
 func createBookmark(w http.ResponseWriter, r *http.Request) {
@@ -565,14 +656,9 @@ func createBookmark(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	faviconURL := payload.Favicon
+	faviconURL := fetchBestFavicon(payload.URL)
 	if faviconURL == "" {
-		parsedURL, _ := url.Parse(payload.URL)
-		domain := ""
-		if parsedURL != nil {
-			domain = parsedURL.Hostname()
-		}
-		faviconURL = fmt.Sprintf("https://www.google.com/s2/favicons?domain=%s&sz=64", domain)
+		faviconURL = payload.Favicon
 	}
 
 	mu.Lock()
