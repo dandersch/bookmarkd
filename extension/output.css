@@ -2597,12 +2597,6 @@
   .text-primary-content {
     color: var(--color-primary-content);
   }
-  .text-primary-content\/70 {
-    color: var(--color-primary-content);
-    @supports (color: color-mix(in lab, red, red)) {
-      color: color-mix(in oklab, var(--color-primary-content) 70%, transparent);
-    }
-  }
   .text-success {
     color: var(--color-success);
   }
