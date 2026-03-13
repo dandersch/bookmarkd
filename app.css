@@ -95,44 +95,11 @@
 }
 
 .bookmark-item.watched {
-    position: relative;
+    border-left: 3px solid color-mix(in oklch, var(--color-base-content) 20%, transparent);
 }
 
-.watched-border {
-    position: absolute;
-    inset: -1px;
-    width: calc(100% + 2px);
-    height: calc(100% + 2px);
-    pointer-events: none;
-    overflow: visible;
-}
-
-.watched-border rect {
-    x: 0;
-    y: 0;
-    width: 100%;
-    height: 100%;
-    rx: var(--radius-box);
-    ry: var(--radius-box);
-    fill: none;
-    stroke: white;
-    stroke-width: 2;
-    stroke-linecap: round;
-    animation: watched-snake 4s linear infinite;
-}
-
-@keyframes watched-snake {
-    to { stroke-dashoffset: -100; }
-}
-
-.bookmark-changed-dot {
-    @apply absolute -top-1 -right-1 w-3 h-3 bg-error rounded-full border-2 border-base-100;
-    animation: pulse-dot 2s ease-in-out infinite;
-}
-
-@keyframes pulse-dot {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+.bookmark-item.changed {
+    border-left: 3px solid var(--color-accent);
 }
 
 /* Fix DaisyUI collapse */
@@ -382,9 +349,7 @@
 .popup .bookmark-favicon-wrapper {
     @apply relative shrink-0;
 }
-.popup .bookmark-changed-dot {
-    @apply w-2 h-2;
-}
+
 .popup .bookmark-info {
     display: contents;
 }
@@ -603,9 +568,7 @@ body.compact .bookmark-favicon {
     width: 1.25rem;
     height: 1.25rem;
 }
-body.compact .bookmark-changed-dot {
-    @apply w-2 h-2 -top-0.5 -right-0.5 border;
-}
+
 body.compact .collapse-title {
     padding: 0.25rem 0.5rem;
     font-size: 0.625rem;
