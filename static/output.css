@@ -2886,6 +2886,15 @@
 }
 .bookmark-item.changed {
   border-left: 3px solid var(--color-accent);
+  animation: pulse-border 2s ease-in-out infinite;
+}
+@keyframes pulse-border {
+  0%, 100% {
+    border-left-color: var(--color-accent);
+  }
+  50% {
+    border-left-color: color-mix(in oklch, var(--color-accent) 30%, transparent);
+  }
 }
 .collapse {
   visibility: visible !important;
