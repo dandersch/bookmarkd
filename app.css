@@ -46,7 +46,7 @@
 }
 
 .bookmark-item {
-    @apply flex flex-row items-stretch bg-base-100 transition-all duration-200 relative;
+    @apply flex flex-row items-stretch bg-base-100 transition-all duration-200 relative min-w-0 overflow-hidden;
     border-radius: var(--radius-box);
 }
 .bookmark-item:hover {
@@ -123,6 +123,7 @@
     --category-size: 1;
     @apply grid gap-2 pt-2 px-2 mb-4 bg-base-200/50 rounded-b-box;
     overflow: hidden;
+    min-width: 0;
     min-height: 0 !important;
     align-content: start;
 }
@@ -131,13 +132,13 @@
     border: none !important;
 }
 .collapse-content.view-card {
-    grid-template-columns: repeat(auto-fill, minmax(calc(250px * var(--category-size)), 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(calc(250px * var(--category-size)), 100%), 1fr));
 }
 .collapse-content.view-list {
     grid-template-columns: 1fr;
 }
 .collapse-content.view-icon {
-    grid-template-columns: repeat(auto-fill, calc(64px * var(--category-size)));
+    grid-template-columns: repeat(auto-fill, min(calc(64px * var(--category-size)), 100%));
     gap: 0.5rem;
 }
 .view-icon .bookmark-item {
@@ -177,14 +178,20 @@
     height: calc(20px * var(--category-size));
 }
 .view-list .bookmark-title {
-    @apply font-normal;
+    @apply font-normal truncate;
     font-size: calc(0.875rem * var(--category-size));
+    -webkit-line-clamp: unset;
+    flex-shrink: 1;
 }
 .view-list .bookmark-info {
-    @apply flex-row items-center gap-2;
+    @apply flex-row items-center gap-2 overflow-hidden;
+}
+.view-list .bookmark-url {
+    @apply min-w-0;
+    flex-shrink: 10;
 }
 .view-list .bookmark-timestamps {
-    @apply w-auto;
+    @apply w-auto shrink-0;
 }
 
 /* Sort-active: disable drag cursor on bookmark items */
@@ -256,10 +263,14 @@
 }
 
 
-/* On narrow screens, force single column */
+/* On narrow screens, force single column and reduce padding */
 @media (max-width: 768px) {
     .category-row {
         flex-direction: column;
+    }
+    .bookmark-list-container {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
     }
 }
 
