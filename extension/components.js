@@ -2080,6 +2080,13 @@ class SettingsImport extends HTMLElement {
                 <button class="btn btn-sm btn-outline browser-import-btn">Import Browser Bookmarks</button>
                 <div class="browser-import-status mt-3 text-sm"></div>
                 ` : ''}
+
+                <div class="divider before:bg-base-300 after:bg-base-300 my-4"></div>
+
+                <label class="block mb-2 font-semibold">Export Bookmarks</label>
+                <p class="text-sm opacity-70 mb-3">Export all bookmarks as standard HTML (Netscape format)</p>
+                <button class="btn btn-sm btn-outline export-btn">Export Bookmarks</button>
+                <div class="export-status mt-3 text-sm"></div>
             </div>
         `;
 
@@ -2092,6 +2099,10 @@ class SettingsImport extends HTMLElement {
                 this.handleBrowserImport();
             });
         }
+
+        this.querySelector('.export-btn').addEventListener('click', () => {
+            this.handleExport();
+        });
     }
 
     async handleFileSelect(e) {
@@ -2289,6 +2300,86 @@ class SettingsImport extends HTMLElement {
         }
 
         btn.disabled = false;
+    }
+
+    async handleExport() {
+        const statusEl = this.querySelector('.export-status');
+        const btn = this.querySelector('.export-btn');
+        btn.disabled = true;
+        statusEl.textContent = 'Fetching bookmarks...';
+        statusEl.className = 'export-status mt-3 text-sm';
+
+        try {
+            const config = this.getConfig();
+            const headers = {};
+            if (config.authHeader) headers['Authorization'] = config.authHeader;
+
+            const res = await fetch(`${config.serverUrl}/api/bookmarks`, { headers });
+            if (!res.ok) throw new Error(`Server returned ${res.status}`);
+            const bookmarks = await res.json();
+
+            if (!bookmarks.length) {
+                statusEl.textContent = 'No bookmarks to export';
+                statusEl.classList.add('text-warning');
+                btn.disabled = false;
+                return;
+            }
+
+            const html = this.generateNetscapeHTML(bookmarks);
+            const blob = new Blob([html], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const date = new Date().toISOString().slice(0, 10);
+            a.href = url;
+            a.download = `bookmarkd-export-${date}.html`;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            statusEl.textContent = `Exported ${bookmarks.length} bookmarks`;
+            statusEl.classList.add('text-success');
+        } catch (err) {
+            console.error('Export failed:', err);
+            statusEl.textContent = 'Export failed: ' + err.message;
+            statusEl.classList.add('text-error');
+        }
+
+        btn.disabled = false;
+    }
+
+    generateNetscapeHTML(bookmarks) {
+        const grouped = {};
+        for (const bm of bookmarks) {
+            const cat = bm.category || 'Uncategorized';
+            if (!grouped[cat]) grouped[cat] = [];
+            grouped[cat].push(bm);
+        }
+
+        let html = `<!DOCTYPE NETSCAPE-Bookmark-file-1>
+<!-- This is an automatically generated file.
+     It will be read and overwritten.
+     DO NOT EDIT! -->
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">
+<TITLE>Bookmarks</TITLE>
+<H1>Bookmarks</H1>
+<DL><p>\n`;
+
+        for (const [category, bms] of Object.entries(grouped)) {
+            html += `    <DT><H3>${this.escapeHTML(category)}</H3>\n`;
+            html += `    <DL><p>\n`;
+            for (const bm of bms) {
+                const addDate = bm.timestamp ? ` ADD_DATE="${bm.timestamp}"` : '';
+                const icon = bm.favicon ? ` ICON="${this.escapeHTML(bm.favicon)}"` : '';
+                html += `        <DT><A HREF="${this.escapeHTML(bm.url)}"${addDate}${icon}>${this.escapeHTML(bm.title || bm.url)}</A>\n`;
+            }
+            html += `    </DL><p>\n`;
+        }
+
+        html += `</DL><p>\n`;
+        return html;
+    }
+
+    escapeHTML(str) {
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
     async fetchExistingUrls() {
