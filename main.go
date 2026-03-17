@@ -476,13 +476,7 @@ func updateCategory(w http.ResponseWriter, r *http.Request, oldName string) {
 	mu.Lock()
 	defer mu.Unlock()
 
-	var cat *Category
-	for _, c := range categories {
-		if c.Name == oldName {
-			cat = &c
-			break
-		}
-	}
+	cat := getCategoryByName(oldName)
 	if cat == nil {
 		http.Error(w, "Category not found", http.StatusNotFound)
 		return
@@ -519,13 +513,7 @@ func deleteCategory(w http.ResponseWriter, name string) {
 	mu.Lock()
 	defer mu.Unlock()
 
-	var cat *Category
-	for _, c := range categories {
-		if c.Name == name {
-			cat = &c
-			break
-		}
-	}
+	cat := getCategoryByName(name)
 	if cat == nil {
 		http.Error(w, "Category not found", http.StatusNotFound)
 		return
