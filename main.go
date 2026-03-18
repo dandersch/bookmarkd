@@ -86,6 +86,31 @@ func getCategoryByName(name string) *Category {
 	return nil
 }
 
+// resolveOrCreateCategory returns the category ID for the given name,
+// creating a new category if one doesn't already exist.
+// Must be called with mu held.
+func resolveOrCreateCategory(name string) string {
+	if name == "" || name == "Uncategorized" {
+		return uncategorizedID
+	}
+	if existing := getCategoryByName(name); existing != nil {
+		return existing.ID
+	}
+	maxOrder := 0
+	for _, cat := range categories {
+		if cat.Order > maxOrder {
+			maxOrder = cat.Order
+		}
+	}
+	newCat := Category{
+		ID:    uuid.New().String(),
+		Name:  name,
+		Order: maxOrder + 1,
+	}
+	categories[newCat.ID] = newCat
+	return newCat.ID
+}
+
 func bookmarksToSortedSlice() []Bookmark {
 	if len(bookmarks) == 0 {
 		return []Bookmark{}
@@ -654,27 +679,7 @@ func createBookmark(w http.ResponseWriter, r *http.Request) {
 
 	categoryID := payload.CategoryID
 	if categoryID == "" {
-		if payload.Category != "" && payload.Category != "Uncategorized" {
-			if existing := getCategoryByName(payload.Category); existing != nil {
-				categoryID = existing.ID
-			} else {
-				maxOrder := 0
-				for _, cat := range categories {
-					if cat.Order > maxOrder {
-						maxOrder = cat.Order
-					}
-				}
-				newCat := Category{
-					ID:    uuid.New().String(),
-					Name:  payload.Category,
-					Order: maxOrder + 1,
-				}
-				categories[newCat.ID] = newCat
-				categoryID = newCat.ID
-			}
-		} else {
-			categoryID = uncategorizedID
-		}
+		categoryID = resolveOrCreateCategory(payload.Category)
 	}
 
 	newBM := Bookmark{
@@ -807,23 +812,7 @@ func updateBookmark(w http.ResponseWriter, r *http.Request, id string) {
 	if payload.CategoryID != nil {
 		newCategoryID = *payload.CategoryID
 	} else if payload.Category != nil {
-		if existing := getCategoryByName(*payload.Category); existing != nil {
-			newCategoryID = existing.ID
-		} else if *payload.Category != "" {
-			maxOrder := 0
-			for _, cat := range categories {
-				if cat.Order > maxOrder {
-					maxOrder = cat.Order
-				}
-			}
-			newCat := Category{
-				ID:    uuid.New().String(),
-				Name:  *payload.Category,
-				Order: maxOrder + 1,
-			}
-			categories[newCat.ID] = newCat
-			newCategoryID = newCat.ID
-		}
+		newCategoryID = resolveOrCreateCategory(*payload.Category)
 	}
 
 	if payload.CategoryID != nil || payload.Category != nil || payload.Order != nil {
