@@ -200,13 +200,13 @@ func main() {
 	startWatcher()
 
 	http.HandleFunc("/", handleIndex)
-	http.HandleFunc("/api/bookmarks", handleAPI)
-	http.HandleFunc("/api/bookmarks/", handleBookmarkAPI)
-	http.HandleFunc("/api/categories", handleCategoriesAPI)
-	http.HandleFunc("/api/categories/reorder", handleCategoriesReorder)
-	http.HandleFunc("/api/categories/", handleCategoryAPI)
-	http.HandleFunc("/api/themes", handleThemesAPI)
-	http.HandleFunc("/api/watch/check", handleWatchCheck)
+	http.HandleFunc("/api/bookmarks", withCORS(handleAPI))
+	http.HandleFunc("/api/bookmarks/", withCORS(handleBookmarkAPI))
+	http.HandleFunc("/api/categories", withCORS(handleCategoriesAPI))
+	http.HandleFunc("/api/categories/reorder", withCORS(handleCategoriesReorder))
+	http.HandleFunc("/api/categories/", withCORS(handleCategoryAPI))
+	http.HandleFunc("/api/themes", withCORS(handleThemesAPI))
+	http.HandleFunc("/api/watch/check", withCORS(handleWatchCheck))
 
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
@@ -272,13 +272,6 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 
 
 func handleAPI(w http.ResponseWriter, r *http.Request) {
-	setCORSHeaders(w)
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
 	if r.Method == "GET" {
 		getBookmarksJSON(w)
 		return
@@ -291,13 +284,6 @@ func handleAPI(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleBookmarkAPI(w http.ResponseWriter, r *http.Request) {
-	setCORSHeaders(w)
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
 	path := strings.TrimPrefix(r.URL.Path, "/api/bookmarks/")
 	if path == "" {
 		http.Error(w, "Missing bookmark ID", http.StatusBadRequest)
@@ -331,13 +317,6 @@ func handleBookmarkAPI(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleCategoriesAPI(w http.ResponseWriter, r *http.Request) {
-	setCORSHeaders(w)
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
 	if r.Method == "GET" {
 		getCategoriesJSON(w)
 		return
@@ -351,13 +330,6 @@ func handleCategoriesAPI(w http.ResponseWriter, r *http.Request) {
 // switching to lexical ranking (e.g., fractional-indexing) which only requires
 // updating the moved item's order string, eliminating batch updates entirely.
 func handleCategoriesReorder(w http.ResponseWriter, r *http.Request) {
-	setCORSHeaders(w)
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
 	if r.Method != "PUT" {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -392,13 +364,6 @@ func handleCategoriesReorder(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleCategoryAPI(w http.ResponseWriter, r *http.Request) {
-	setCORSHeaders(w)
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
 	name := strings.TrimPrefix(r.URL.Path, "/api/categories/")
 	if name == "" {
 		http.Error(w, "Missing category name", http.StatusBadRequest)
@@ -433,6 +398,17 @@ func setCORSHeaders(w http.ResponseWriter) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+}
+
+func withCORS(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		setCORSHeaders(w)
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		next(w, r)
+	}
 }
 
 // --- Category Logic ---
@@ -947,11 +923,6 @@ func fetchPageHash(pageURL string) (string, error) {
 }
 
 func handleWatchCheck(w http.ResponseWriter, r *http.Request) {
-	setCORSHeaders(w)
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
 	if r.Method != "POST" {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -1207,13 +1178,6 @@ func parseThemeCSS(cssText string) *CustomTheme {
 }
 
 func handleThemesAPI(w http.ResponseWriter, r *http.Request) {
-	setCORSHeaders(w)
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
 	if r.Method == "GET" {
 		themeMu.RLock()
 		themes := make([]map[string]string, len(customThemes))
