@@ -527,9 +527,7 @@ func deleteCategory(w http.ResponseWriter, name string) {
 
 	for id, bm := range bookmarks {
 		if bm.CategoryID == cat.ID {
-			bm.CategoryID = uncategorizedID
-			bm.Order = maxOrderInCategory(uncategorizedID) + 1
-			bookmarks[id] = bm
+			delete(bookmarks, id)
 		}
 	}
 

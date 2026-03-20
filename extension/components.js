@@ -1260,7 +1260,7 @@ class BookmarkList extends HTMLElement {
                     </div>
 
                     <div class="category-modal-confirm hidden mt-3 p-3 bg-error/10 rounded-lg">
-                        <p class="text-sm mb-2">All bookmarks in this category will be moved to "Uncategorized".</p>
+                        <p class="text-sm mb-2">All bookmarks in this category will be removed.</p>
                         <div class="flex gap-2 justify-end">
                             <button class="btn btn-ghost btn-xs category-modal-cancel-delete">Cancel</button>
                             <button class="btn btn-error btn-xs category-modal-confirm-delete">Delete</button>
