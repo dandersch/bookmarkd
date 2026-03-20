@@ -606,6 +606,23 @@ class BookmarkList extends HTMLElement {
         } catch {}
     }
 
+    _loadCategoryOrder() {
+        if (this._getViewContext() === 'popup') return null;
+        try {
+            const saved = localStorage.getItem('bookmarkd-category-order');
+            return saved ? JSON.parse(saved) : null;
+        } catch {
+            return null;
+        }
+    }
+
+    _saveCategoryOrder(order) {
+        if (this._getViewContext() === 'popup') return;
+        try {
+            localStorage.setItem('bookmarkd-category-order', JSON.stringify(order));
+        } catch {}
+    }
+
     _getDefaultRows(count) {
         return Array(count).fill(1);
     }
@@ -1036,10 +1053,67 @@ class BookmarkList extends HTMLElement {
                 this.appendChild(section);
             }
         } else {
-            // Ensure _categoryRows matches current category count
-            if (!this._categoryRows || this._categoryRows.reduce((a, b) => a + b, 0) !== allSections.length) {
+            // Reconcile _categoryRows with current categories
+            const currentOrder = sortedCategories.map(c => c.id);
+            const prevOrder = this._loadCategoryOrder();
+            const rowTotal = this._categoryRows ? this._categoryRows.reduce((a, b) => a + b, 0) : 0;
+
+            if (!this._categoryRows || rowTotal === 0) {
                 this._categoryRows = this._getDefaultRows(allSections.length);
+            } else if (rowTotal !== allSections.length && prevOrder) {
+                const currentSet = new Set(currentOrder);
+                const prevSet = new Set(prevOrder);
+
+                const removed = prevOrder.filter(id => !currentSet.has(id));
+                const added = currentOrder.filter(id => !prevSet.has(id));
+
+                // Remove deleted categories from layout
+                for (const id of removed) {
+                    const idx = prevOrder.indexOf(id);
+                    if (idx === -1) continue;
+                    // Find which row this index falls in
+                    let cumulative = 0;
+                    for (let r = 0; r < this._categoryRows.length; r++) {
+                        if (idx < cumulative + this._categoryRows[r]) {
+                            this._categoryRows[r]--;
+                            if (this._categoryRows[r] <= 0) {
+                                this._categoryRows.splice(r, 1);
+                                if (this._categoryWidths.length > r) {
+                                    this._categoryWidths.splice(r, 1);
+                                }
+                            } else if (this._categoryWidths[r]) {
+                                const posInRow = idx - cumulative;
+                                this._categoryWidths[r].splice(posInRow, 1);
+                            }
+                            break;
+                        }
+                        cumulative += this._categoryRows[r];
+                    }
+                    // Update prevOrder so subsequent removals use correct indices
+                    prevOrder.splice(idx, 1);
+                }
+
+                // Append new categories as individual rows
+                for (const id of added) {
+                    this._categoryRows.push(1);
+                }
+
+                this._saveCategoryRows();
+                this._saveCategoryWidths();
+            } else if (rowTotal < allSections.length) {
+                // No prevOrder but categories added
+                const diff = allSections.length - rowTotal;
+                for (let d = 0; d < diff; d++) {
+                    this._categoryRows.push(1);
+                }
+                this._saveCategoryRows();
+            } else if (rowTotal > allSections.length) {
+                // No prevOrder but categories removed — must reset
+                this._categoryRows = this._getDefaultRows(allSections.length);
+                this._saveCategoryRows();
             }
+
+            this._saveCategoryOrder(currentOrder);
 
             let idx = 0;
             let rowIdx = 0;
@@ -1693,6 +1767,7 @@ class BookmarkList extends HTMLElement {
         this._categoryRows = layout.map(row => row.length);
         this._saveCategoryRows();
         this._resetCategoryWidths();
+        this._saveCategoryOrder(newOrder);
         this._persistCategoryOrder(newOrder);
     }
 
