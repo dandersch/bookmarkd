@@ -68,6 +68,7 @@ var (
 	customThemes []CustomTheme
 	mu           sync.RWMutex
 	themeMu      sync.RWMutex
+	tmpl         *template.Template
 )
 
 func getCategoryName(categoryID string) string {
@@ -195,6 +196,8 @@ func main() {
 		initializeDefaults()
 	}
 
+	tmpl = template.Must(template.ParseFiles("index.html"))
+
 	loadThemes()
 
 	startWatcher()
@@ -233,13 +236,6 @@ func initializeDefaults() {
 func handleIndex(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
-		return
-	}
-
-	tmpl, err := template.ParseFiles("index.html")
-	if err != nil {
-		http.Error(w, "Template error", http.StatusInternalServerError)
-		log.Printf("Template parse error: %v", err)
 		return
 	}
 
@@ -510,6 +506,8 @@ func updateCategory(w http.ResponseWriter, r *http.Request, oldName string) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// deleteCategory removes a category and all its bookmarks.
+// The frontend shows a confirmation dialog warning users about bookmark deletion.
 func deleteCategory(w http.ResponseWriter, name string) {
 	mu.Lock()
 	defer mu.Unlock()
@@ -1090,7 +1088,7 @@ func loadDatabase() error {
 	return nil
 }
 
-func saveDatabase() error {
+func saveDatabase() {
 	db := Database{
 		Categories: categoriesToSortedSlice(),
 		Bookmarks:  bookmarksToSortedSlice(),
@@ -1098,9 +1096,12 @@ func saveDatabase() error {
 
 	data, err := json.MarshalIndent(db, "", "  ")
 	if err != nil {
-		return err
+		log.Printf("Error marshaling database: %v", err)
+		return
 	}
-	return os.WriteFile(dbFile, data, 0644)
+	if err := os.WriteFile(dbFile, data, 0644); err != nil {
+		log.Printf("Error saving database: %v", err)
+	}
 }
 
 // --- Theme Management ---
