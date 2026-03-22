@@ -92,10 +92,8 @@ class BookmarkItem extends HTMLElement {
                     <span class="bookmark-title">${this.escapeHtml(title)}</span>
                     <span class="bookmark-url">${hostname}</span>
                 </div>
-                <div class="bookmark-timestamps">
-                    <span class="bookmark-timestamp">➕ ${addedTime}</span>
-                    <span class="bookmark-visited">${visitedTime ? '🕐 ' + visitedTime : ''}</span>
-                </div>
+
+
             </a>
             <div class="bookmark-actions">
                 <button class="btn btn-ghost btn-xs btn-square edit-btn" title="Edit">✎</button>
@@ -197,6 +195,8 @@ class BookmarkItem extends HTMLElement {
         const changed = this.getAttribute('changed') === 'true';
         const changedAt = this.getAttribute('changed-at') || '';
         const watchInterval = parseInt(this.getAttribute('watch-interval')) || 360;
+        const timestamp = this.getAttribute('timestamp') || '';
+        const lastVisited = this.getAttribute('last-visited') || '';
         const bookmarkItem = this;
 
         let modal = document.getElementById('edit-modal');
@@ -212,6 +212,11 @@ class BookmarkItem extends HTMLElement {
                             <input type="text" class="input input-bordered input-sm w-full edit-modal-title" placeholder="Title" />
                             <input type="text" class="input input-bordered input-sm w-full edit-modal-url" placeholder="URL" />
                         </div>
+                    </div>
+                    
+                    <div class="flex justify-between text-xs text-base-content/50 mt-1 mb-2">
+                        <span><span title="When added">➕</span> <span class="edit-modal-timestamp"></span></span>
+                        <span class="edit-modal-visited-wrapper"><span title="Last visited">🕐</span> <span class="edit-modal-visited"></span></span>
                     </div>
                     
                     <textarea class="textarea textarea-bordered w-full h-24 edit-modal-notes" placeholder="Add your notes here..." maxlength="1000"></textarea>
@@ -436,6 +441,14 @@ class BookmarkItem extends HTMLElement {
         notesTextarea.value = notes;
         notesCount.textContent = notes.length;
         revertBtn.classList.add('hidden');
+
+        const timestampEl = modal.querySelector('.edit-modal-timestamp');
+        const visitedEl = modal.querySelector('.edit-modal-visited');
+        const visitedWrapper = modal.querySelector('.edit-modal-visited-wrapper');
+        timestampEl.textContent = this.formatTimestamp(timestamp);
+        const visitedTime = this.formatTimestamp(lastVisited);
+        visitedEl.textContent = visitedTime;
+        visitedWrapper.style.display = visitedTime ? '' : 'none';
 
         const watchedCheckbox2 = modal.querySelector('.edit-modal-watched');
         const changedBadge2 = modal.querySelector('.edit-modal-changed-badge');

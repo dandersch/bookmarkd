@@ -58,10 +58,7 @@
 }
 
 .bookmark-timestamps {
-    @apply w-full flex justify-between text-xs text-base-content/50 min-w-0 opacity-0 transition-opacity duration-200;
-}
-.bookmark-item:hover .bookmark-timestamps {
-    @apply opacity-100;
+    @apply hidden;
 }
 
 .bookmark-favicon {
@@ -80,15 +77,7 @@
     @apply text-xs text-base-content/60 truncate;
 }
 
-.bookmark-timestamp {
-    @apply text-base-content/50 truncate min-w-0 flex-1;
-    font-size: 0.625rem;
-}
 
-.bookmark-visited {
-    @apply text-base-content/50 truncate min-w-0 flex-1 text-right;
-    font-size: 0.625rem;
-}
 
 .bookmark-favicon-wrapper {
     @apply relative shrink-0;
@@ -156,8 +145,7 @@
     width: calc(40px * var(--category-size));
     height: calc(40px * var(--category-size));
 }
-.view-icon .bookmark-info,
-.view-icon .bookmark-timestamps {
+.view-icon .bookmark-info {
     @apply hidden;
 }
 .view-icon .bookmark-actions {
@@ -190,10 +178,6 @@
     @apply min-w-0;
     flex-shrink: 10;
 }
-.view-list .bookmark-timestamps {
-    @apply w-auto shrink-0;
-}
-
 /* Sort-active: disable drag cursor on bookmark items */
 .sort-active .bookmark-item {
     cursor: default;
@@ -379,20 +363,8 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.popup .bookmark-url,
-.popup .bookmark-timestamp {
+.popup .bookmark-url {
     display: none;
-}
-.popup .bookmark-timestamps {
-    width: auto;
-    flex: 0 1 auto;
-    min-width: 0;
-    overflow: hidden;
-}
-.popup .bookmark-visited {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 .popup .bookmark-category {
     @apply shrink-0 text-[0.625rem] bg-neutral text-neutral-content px-1;
@@ -460,7 +432,6 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
-.popup .view-card .bookmark-timestamps,
 .popup .view-card .bookmark-actions {
     display: none;
 }
