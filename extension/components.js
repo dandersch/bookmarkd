@@ -191,6 +191,7 @@ class BookmarkItem extends HTMLElement {
         const url = this.getAttribute('url') || '';
         const notes = this.getAttribute('notes') || '';
         const favicon = this.getAttribute('favicon') || '';
+        const trackTime = this.getAttribute('track-time') === 'true';
         const watched = this.getAttribute('watched') === 'true';
         const changed = this.getAttribute('changed') === 'true';
         const changedAt = this.getAttribute('changed-at') || '';
@@ -224,6 +225,13 @@ class BookmarkItem extends HTMLElement {
                     
                     <div class="flex flex-wrap items-center gap-2 mt-3">
                         <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" class="checkbox checkbox-sm checkbox-primary edit-modal-track-time" />
+                            <span class="label-text text-sm">Track time spent on domain</span>
+                            <span class="text-xs text-base-content/40">(requires extension)</span>
+                        </label>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2 mt-2">
+                        <label class="flex items-center gap-2 cursor-pointer">
                             <input type="checkbox" class="checkbox checkbox-sm checkbox-primary edit-modal-watched" />
                             <span class="label-text text-sm">Watch for changes</span>
                         </label>
@@ -255,9 +263,18 @@ class BookmarkItem extends HTMLElement {
             const notesCount = modal.querySelector('.edit-modal-notes-count');
             const deleteBtn = modal.querySelector('.edit-modal-delete');
             const revertBtn = modal.querySelector('.edit-modal-revert');
+            const trackTimeCheckbox = modal.querySelector('.edit-modal-track-time');
             const watchedCheckbox = modal.querySelector('.edit-modal-watched');
             const intervalSelect = modal.querySelector('.edit-modal-watch-interval');
             const changedBadge = modal.querySelector('.edit-modal-changed-badge');
+
+            trackTimeCheckbox.addEventListener('change', async () => {
+                const isTracked = trackTimeCheckbox.checked;
+                if (await saveField('track_time', isTracked)) {
+                    const item = document.querySelector(`bookmark-item[bookmark-id="${modal.dataset.bookmarkId}"]`);
+                    if (item) item.setAttribute('track-time', isTracked.toString());
+                }
+            });
 
             watchedCheckbox.addEventListener('change', async () => {
                 const isWatched = watchedCheckbox.checked;
@@ -449,6 +466,9 @@ class BookmarkItem extends HTMLElement {
         const visitedTime = this.formatTimestamp(lastVisited);
         visitedEl.textContent = visitedTime;
         visitedWrapper.style.display = visitedTime ? '' : 'none';
+
+        const trackTimeCheckbox2 = modal.querySelector('.edit-modal-track-time');
+        trackTimeCheckbox2.checked = trackTime;
 
         const watchedCheckbox2 = modal.querySelector('.edit-modal-watched');
         const changedBadge2 = modal.querySelector('.edit-modal-changed-badge');
