@@ -7,7 +7,9 @@
     "sidePanel",
     "tabs",
     "storage",
-    "bookmarks"
+    "bookmarks",
+    "alarms",
+    "idle"
   ],
   "background": {
     "service_worker": "background.js",
