@@ -47,6 +47,7 @@ type Bookmark struct {
 	LastChecked *int64 `json:"last_checked,omitempty"`
 	Changed     bool   `json:"changed,omitempty"`
 	ChangedAt   *int64 `json:"changed_at,omitempty"`
+	TrackTime   bool   `json:"track_time,omitempty"`
 }
 
 type Database struct {
@@ -726,6 +727,7 @@ func updateBookmark(w http.ResponseWriter, r *http.Request, id string) {
 		Watched       *bool   `json:"watched"`
 		WatchInterval *int    `json:"watch_interval"`
 		Changed       *bool   `json:"changed"`
+		TrackTime     *bool   `json:"track_time"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
@@ -778,6 +780,10 @@ func updateBookmark(w http.ResponseWriter, r *http.Request, id string) {
 		if !*payload.Changed {
 			bm.ChangedAt = nil
 		}
+	}
+
+	if payload.TrackTime != nil {
+		bm.TrackTime = *payload.TrackTime
 	}
 
 	newCategoryID := bm.CategoryID

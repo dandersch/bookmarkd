@@ -1,6 +1,6 @@
 class BookmarkItem extends HTMLElement {
     static get observedAttributes() {
-        return ['bookmark-id', 'url', 'title', 'category', 'category-id', 'favicon', 'timestamp', 'last-visited', 'notes', 'order', 'watched', 'changed', 'changed-at', 'watch-interval'];
+        return ['bookmark-id', 'url', 'title', 'category', 'category-id', 'favicon', 'timestamp', 'last-visited', 'notes', 'order', 'watched', 'changed', 'changed-at', 'watch-interval', 'track-time'];
     }
 
     constructor() {
@@ -1011,6 +1011,7 @@ class BookmarkList extends HTMLElement {
                 item.setAttribute('changed', (bm.changed || false).toString());
                 if (bm.changed_at) item.setAttribute('changed-at', bm.changed_at);
                 item.setAttribute('watch-interval', bm.watch_interval || 360);
+                item.setAttribute('track-time', (bm.track_time || false).toString());
                 if (!isManualSort) item.draggable = false;
                 content.appendChild(item);
             }
