@@ -1164,8 +1164,12 @@ func saveTimeTracking() {
 	}
 }
 
+func normalizeDomain(domain string) string {
+	return strings.TrimPrefix(domain, "www.")
+}
+
 func handleTimeTrackingAPI(w http.ResponseWriter, r *http.Request) {
-	domain := strings.TrimPrefix(r.URL.Path, "/api/time-tracking/")
+	domain := normalizeDomain(strings.TrimPrefix(r.URL.Path, "/api/time-tracking/"))
 	if domain == "" {
 		http.Error(w, "Missing domain", http.StatusBadRequest)
 		return

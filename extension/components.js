@@ -230,6 +230,23 @@ class BookmarkItem extends HTMLElement {
                             <span class="text-xs text-base-content/40">(requires extension)</span>
                         </label>
                     </div>
+                    <div class="edit-modal-time-stats hidden mt-2">
+                        <div class="stats shadow-sm w-full bg-base-200">
+                            <div class="stat py-2 px-4">
+                                <div class="stat-title text-xs">Total Time</div>
+                                <div class="stat-value text-lg edit-modal-time-total">—</div>
+                            </div>
+                        </div>
+                        <div class="collapse collapse-arrow bg-base-200 mt-1">
+                            <input type="checkbox" class="peer" />
+                            <div class="collapse-title text-xs font-medium py-2 min-h-0">Daily breakdown</div>
+                            <div class="collapse-content px-0">
+                                <table class="table table-xs">
+                                    <tbody class="edit-modal-time-daily"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                     <div class="flex flex-wrap items-center gap-2 mt-2">
                         <label class="flex items-center gap-2 cursor-pointer">
                             <input type="checkbox" class="checkbox checkbox-sm checkbox-primary edit-modal-watched" />
@@ -268,11 +285,74 @@ class BookmarkItem extends HTMLElement {
             const intervalSelect = modal.querySelector('.edit-modal-watch-interval');
             const changedBadge = modal.querySelector('.edit-modal-changed-badge');
 
+            const timeStatsSection = modal.querySelector('.edit-modal-time-stats');
+
+            const formatDuration = (totalSeconds) => {
+                const h = Math.floor(totalSeconds / 3600);
+                const m = Math.floor((totalSeconds % 3600) / 60);
+                if (h > 0) return `${h}h ${m}m`;
+                if (m > 0) return `${m}m`;
+                return `${totalSeconds}s`;
+            };
+
+            const loadTimeStats = async (bookmarkUrl) => {
+                try {
+                    const domain = new URL(bookmarkUrl).hostname.replace(/^www\./, '');
+                    const config2 = document.querySelector(`bookmark-item[bookmark-id="${modal.dataset.bookmarkId}"]`)?.getConfig();
+                    if (!config2) return;
+
+                    const headers = {};
+                    if (config2.authHeader) headers['Authorization'] = config2.authHeader;
+
+                    const res = await fetch(`${config2.serverUrl}/api/time-tracking/${domain}`, { headers });
+                    if (!res.ok) return;
+
+                    const data = await res.json();
+                    const entries = data.entries || [];
+
+                    const totalEl = modal.querySelector('.edit-modal-time-total');
+                    const dailyEl = modal.querySelector('.edit-modal-time-daily');
+
+                    if (entries.length === 0) {
+                        totalEl.textContent = 'No data yet';
+                        dailyEl.innerHTML = '';
+                        return;
+                    }
+
+                    const totalSeconds = entries.reduce((sum, e) => sum + e.seconds, 0);
+                    totalEl.textContent = formatDuration(totalSeconds);
+
+                    // Group by day
+                    const days = {};
+                    for (const e of entries) {
+                        const date = new Date(e.timestamp * 1000);
+                        const key = date.toLocaleDateString('en-CA'); // YYYY-MM-DD
+                        days[key] = (days[key] || 0) + e.seconds;
+                    }
+
+                    const sortedDays = Object.entries(days).sort((a, b) => b[0].localeCompare(a[0]));
+                    dailyEl.innerHTML = sortedDays.map(([date, secs]) => {
+                        const d = new Date(date + 'T00:00:00');
+                        const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                        return `<tr><td class="text-base-content/60">${label}</td><td class="text-right">${formatDuration(secs)}</td></tr>`;
+                    }).join('');
+                } catch (err) {
+                    console.error('Failed to load time stats:', err);
+                }
+            };
+
+            modal._loadTimeStats = loadTimeStats;
+
             trackTimeCheckbox.addEventListener('change', async () => {
                 const isTracked = trackTimeCheckbox.checked;
                 if (await saveField('track_time', isTracked)) {
                     const item = document.querySelector(`bookmark-item[bookmark-id="${modal.dataset.bookmarkId}"]`);
                     if (item) item.setAttribute('track-time', isTracked.toString());
+                    timeStatsSection.classList.toggle('hidden', !isTracked);
+                    if (isTracked) {
+                        const urlInput2 = modal.querySelector('.edit-modal-url');
+                        loadTimeStats(urlInput2.value);
+                    }
                 }
             });
 
@@ -468,7 +548,12 @@ class BookmarkItem extends HTMLElement {
         visitedWrapper.style.display = visitedTime ? '' : 'none';
 
         const trackTimeCheckbox2 = modal.querySelector('.edit-modal-track-time');
+        const timeStatsSection2 = modal.querySelector('.edit-modal-time-stats');
         trackTimeCheckbox2.checked = trackTime;
+        timeStatsSection2.classList.toggle('hidden', !trackTime);
+        if (trackTime) {
+            modal._loadTimeStats(url);
+        }
 
         const watchedCheckbox2 = modal.querySelector('.edit-modal-watched');
         const changedBadge2 = modal.querySelector('.edit-modal-changed-badge');
