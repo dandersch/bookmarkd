@@ -226,7 +226,7 @@ class BookmarkItem extends HTMLElement {
                     <div class="flex flex-wrap items-center gap-2 mt-3">
                         <label class="flex items-center gap-2 cursor-pointer">
                             <input type="checkbox" class="checkbox checkbox-sm checkbox-primary edit-modal-track-time" />
-                            <span class="label-text text-sm">Track time spent on domain</span>
+                            <span class="label-text text-sm edit-modal-track-time-label">Track time spent on domain</span>
                             <span class="text-xs text-base-content/40">(requires extension)</span>
                         </label>
                     </div>
@@ -548,7 +548,14 @@ class BookmarkItem extends HTMLElement {
         visitedWrapper.style.display = visitedTime ? '' : 'none';
 
         const trackTimeCheckbox2 = modal.querySelector('.edit-modal-track-time');
+        const trackTimeLabel = modal.querySelector('.edit-modal-track-time-label');
         const timeStatsSection2 = modal.querySelector('.edit-modal-time-stats');
+        try {
+            const domain = new URL(url).hostname.replace(/^www\./, '');
+            trackTimeLabel.innerHTML = `Track time spent on <strong>${domain}</strong>`;
+        } catch {
+            trackTimeLabel.textContent = 'Track time spent on domain';
+        }
         trackTimeCheckbox2.checked = trackTime;
         timeStatsSection2.classList.toggle('hidden', !trackTime);
         if (trackTime) {
