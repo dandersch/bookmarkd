@@ -39,6 +39,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const serverUrl = config.serverUrl || "http://localhost:8080";
     
     // UI References
+    const trackingIndicator = document.getElementById('tracking-indicator');
     const previewCard = document.getElementById('preview-card');
     const previewTitle = document.getElementById('preview-title');
     const previewUrl = document.getElementById('preview-url');
@@ -159,6 +160,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         checkIfBookmarked();
     });
 
+    // Check if current domain is time-tracked
+    async function updateTrackingIndicator(url) {
+        try {
+            const domain = new URL(url).hostname.replace(/^www\./, '');
+            const response = await chrome.runtime.sendMessage({ type: 'IS_DOMAIN_TRACKED', domain });
+            trackingIndicator.classList.toggle('hidden', !response?.tracked);
+        } catch {
+            trackingIndicator.classList.add('hidden');
+        }
+    }
+
     // --- CORE LOGIC: Get current tab preview ---
     async function updatePreview() {
         try {
@@ -170,14 +182,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                 previewUrl.textContent = new URL(tab.url).hostname;
                 previewIcon.src = tab.favIconUrl || 'icon.png';
                 checkIfBookmarked();
+                updateTrackingIndicator(tab.url);
             } else {
                 currentValidTab = null;
                 previewCard.classList.add('hidden');
+                trackingIndicator.classList.add('hidden');
             }
         } catch (err) {
             console.error('Failed to get current tab:', err);
             currentValidTab = null;
             previewCard.classList.add('hidden');
+            trackingIndicator.classList.add('hidden');
         }
     }
 
@@ -194,9 +209,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 previewUrl.textContent = new URL(tab.url).hostname;
                 previewIcon.src = tab.favIconUrl || 'icon.png';
                 checkIfBookmarked();
+                updateTrackingIndicator(tab.url);
             } else {
                 currentValidTab = null;
                 previewCard.classList.add('hidden');
+                trackingIndicator.classList.add('hidden');
             }
         }
     });

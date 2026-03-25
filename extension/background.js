@@ -223,6 +223,13 @@ chrome.windows.onFocusChanged.addListener((windowId) => {
   }
 });
 
+// Respond to queries from popup
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === 'IS_DOMAIN_TRACKED') {
+    sendResponse({ tracked: trackedDomains.has(message.domain) });
+  }
+});
+
 // Initialize on service worker startup
 refreshTrackedDomains();
 updateCurrentDomain();
