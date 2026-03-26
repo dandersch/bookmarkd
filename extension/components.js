@@ -208,7 +208,7 @@ class BookmarkItem extends HTMLElement {
             modal.innerHTML = `
                 <div class="modal-box">
                     <div class="flex gap-3 mb-3">
-                        <img class="edit-modal-favicon w-10 h-10 rounded shrink-0" src="" alt="">
+                        <img class="edit-modal-favicon w-10 h-10 rounded shrink-0 cursor-pointer hover:opacity-70 hover:ring-2 hover:ring-primary transition-all" src="" alt="" title="Click to change favicon">
                         <div class="flex-1 flex flex-col gap-2">
                             <input type="text" class="input input-bordered input-sm w-full edit-modal-title" placeholder="Title" />
                             <input type="text" class="input input-bordered input-sm w-full edit-modal-url" placeholder="URL" />
@@ -514,6 +514,21 @@ class BookmarkItem extends HTMLElement {
                 titleInput.blur();
                 urlInput.blur();
                 notesTextarea.blur();
+            });
+
+            const faviconClickTarget = modal.querySelector('.edit-modal-favicon');
+            faviconClickTarget.addEventListener('click', async () => {
+                const currentSrc = faviconClickTarget.src;
+                const newUrl = prompt('Enter favicon URL:', currentSrc);
+                if (newUrl === null) return; // cancelled
+
+                const favicon = newUrl.trim();
+                if (!favicon) return;
+                if (await saveField('favicon', favicon)) {
+                    faviconClickTarget.src = favicon;
+                    const item = document.querySelector(`bookmark-item[bookmark-id="${modal.dataset.bookmarkId}"]`);
+                    if (item) item.setAttribute('favicon', favicon);
+                }
             });
         }
 

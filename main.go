@@ -743,6 +743,7 @@ func updateBookmark(w http.ResponseWriter, r *http.Request, id string) {
 		WatchInterval *int    `json:"watch_interval"`
 		Changed       *bool   `json:"changed"`
 		TrackTime     *bool   `json:"track_time"`
+		Favicon       *string `json:"favicon"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
@@ -799,6 +800,10 @@ func updateBookmark(w http.ResponseWriter, r *http.Request, id string) {
 
 	if payload.TrackTime != nil {
 		bm.TrackTime = *payload.TrackTime
+	}
+
+	if payload.Favicon != nil && *payload.Favicon != "" {
+		bm.Favicon = *payload.Favicon
 	}
 
 	newCategoryID := bm.CategoryID
