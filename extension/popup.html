@@ -20,7 +20,7 @@
                     <div class="favicon-wrapper relative w-10 h-10 rounded bg-base-100 p-1 shadow-sm ring-1 ring-base-content/10 transition-all group-hover:ring-2 group-hover:scale-110 group-hover:shadow-md" style="overflow: visible">
                         <img id="preview-icon" src="" alt="icon" class="object-contain w-full h-full" />
                         <div id="ribbon-indicator" class="absolute -top-1 -right-1 text-sm hidden">🔖</div>
-                        <div id="tracking-indicator" class="absolute -bottom-1.5 -right-1.5 text-sm hidden leading-none" title="Time tracked">⏱️</div>
+
                         <div id="action-overlay" class="absolute inset-0 flex items-center justify-center text-lg font-bold rounded opacity-0 group-hover:opacity-100 transition-opacity">+</div>
                     </div>
                 </div>
@@ -28,6 +28,10 @@
                     <div id="preview-title" contenteditable="true" class="text-sm font-bold leading-tight text-base-content rounded hover:bg-base-300 focus:bg-base-100 focus:outline-none focus:ring-1 focus:ring-primary truncate border border-transparent border-dashed hover:border-base-content/20 transition-all cursor-edit" spellcheck="false"></div>
                     <p id="preview-url" class="text-xs text-base-content/70 truncate mt-1"></p>
                 </div>
+            </div>
+            <div id="time-tracking-section" class="hidden mt-2 text-xs text-base-content/70 flex items-center gap-1" title="Time spent on domain today">
+                <span>⏱️</span>
+                <span id="time-tracking-value"></span>
             </div>
             <div id="notes-section" class="hidden mt-2">
                 <button id="notes-toggle" class="text-xs text-base-content/60 hover:text-base-content transition-colors flex items-center gap-1">

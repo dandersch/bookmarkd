@@ -39,7 +39,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const serverUrl = config.serverUrl || "http://localhost:8080";
     
     // UI References
-    const trackingIndicator = document.getElementById('tracking-indicator');
     const previewCard = document.getElementById('preview-card');
     const previewTitle = document.getElementById('preview-title');
     const previewUrl = document.getElementById('preview-url');
@@ -160,14 +159,37 @@ document.addEventListener('DOMContentLoaded', async () => {
         checkIfBookmarked();
     });
 
-    // Check if current domain is time-tracked
-    async function updateTrackingIndicator(url) {
+    // Time tracking section
+    const timeTrackingSection = document.getElementById('time-tracking-section');
+    const timeTrackingValue = document.getElementById('time-tracking-value');
+
+    async function updateTimeTrackingSection(url) {
         try {
             const domain = new URL(url).hostname.replace(/^www\./, '');
             const response = await chrome.runtime.sendMessage({ type: 'IS_DOMAIN_TRACKED', domain });
-            trackingIndicator.classList.toggle('hidden', !response?.tracked);
+            if (!response?.tracked) {
+                timeTrackingSection.classList.add('hidden');
+                return;
+            }
+
+            const headers = {};
+            if (config.authHeader) headers['Authorization'] = config.authHeader;
+            const res = await fetch(`${serverUrl}/api/time-tracking/${domain}`, { headers });
+            if (!res.ok) { timeTrackingSection.classList.add('hidden'); return; }
+
+            const data = await res.json();
+            const now = new Date();
+            const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime() / 1000;
+            const todaySeconds = (data.entries || [])
+                .filter(e => e.timestamp >= startOfDay)
+                .reduce((sum, e) => sum + e.seconds, 0);
+
+            const hours = Math.floor(todaySeconds / 3600);
+            const minutes = Math.floor((todaySeconds % 3600) / 60);
+            timeTrackingValue.textContent = `${hours}:${String(minutes).padStart(2, '0')}`;
+            timeTrackingSection.classList.remove('hidden');
         } catch {
-            trackingIndicator.classList.add('hidden');
+            timeTrackingSection.classList.add('hidden');
         }
     }
 
@@ -182,17 +204,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                 previewUrl.textContent = new URL(tab.url).hostname;
                 previewIcon.src = tab.favIconUrl || 'icon.png';
                 checkIfBookmarked();
-                updateTrackingIndicator(tab.url);
+                updateTimeTrackingSection(tab.url);
             } else {
                 currentValidTab = null;
                 previewCard.classList.add('hidden');
-                trackingIndicator.classList.add('hidden');
+                timeTrackingSection.classList.add('hidden');
             }
         } catch (err) {
             console.error('Failed to get current tab:', err);
             currentValidTab = null;
             previewCard.classList.add('hidden');
-            trackingIndicator.classList.add('hidden');
+            timeTrackingSection.classList.add('hidden');
         }
     }
 
@@ -209,11 +231,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 previewUrl.textContent = new URL(tab.url).hostname;
                 previewIcon.src = tab.favIconUrl || 'icon.png';
                 checkIfBookmarked();
-                updateTrackingIndicator(tab.url);
+                updateTimeTrackingSection(tab.url);
             } else {
                 currentValidTab = null;
                 previewCard.classList.add('hidden');
-                trackingIndicator.classList.add('hidden');
+                timeTrackingSection.classList.add('hidden');
             }
         }
     });
