@@ -47,7 +47,8 @@ type Bookmark struct {
 	LastChecked *int64 `json:"last_checked,omitempty"`
 	Changed     bool   `json:"changed,omitempty"`
 	ChangedAt   *int64 `json:"changed_at,omitempty"`
-	TrackTime   bool   `json:"track_time,omitempty"`
+	TrackTime      bool   `json:"track_time,omitempty"`
+	DailyTimeLimit int    `json:"daily_time_limit,omitempty"`
 }
 
 type Database struct {
@@ -742,8 +743,9 @@ func updateBookmark(w http.ResponseWriter, r *http.Request, id string) {
 		Watched       *bool   `json:"watched"`
 		WatchInterval *int    `json:"watch_interval"`
 		Changed       *bool   `json:"changed"`
-		TrackTime     *bool   `json:"track_time"`
-		Favicon       *string `json:"favicon"`
+		TrackTime      *bool   `json:"track_time"`
+		DailyTimeLimit *int   `json:"daily_time_limit"`
+		Favicon        *string `json:"favicon"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
@@ -800,6 +802,10 @@ func updateBookmark(w http.ResponseWriter, r *http.Request, id string) {
 
 	if payload.TrackTime != nil {
 		bm.TrackTime = *payload.TrackTime
+	}
+
+	if payload.DailyTimeLimit != nil {
+		bm.DailyTimeLimit = *payload.DailyTimeLimit
 	}
 
 	if payload.Favicon != nil && *payload.Favicon != "" {

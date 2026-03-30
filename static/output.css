@@ -10,7 +10,6 @@
     --color-black: #000;
     --spacing: 0.25rem;
     --container-xs: 20rem;
-    --container-lg: 32rem;
     --container-2xl: 42rem;
     --container-6xl: 72rem;
     --text-xs: 0.75rem;
@@ -1644,14 +1643,8 @@
   .-right-1 {
     right: calc(var(--spacing) * -1);
   }
-  .-right-1\.5 {
-    right: calc(var(--spacing) * -1.5);
-  }
   .right-2 {
     right: calc(var(--spacing) * 2);
-  }
-  .-bottom-1\.5 {
-    bottom: calc(var(--spacing) * -1.5);
   }
   .file-input {
     @layer daisyui.l1.l2.l3 {
@@ -2541,10 +2534,6 @@
     @layer daisyui.l1.l2 {
       font-size: max(var(--font-size, 0.6875rem), 0.6875rem);
     }
-  }
-  .leading-none {
-    --tw-leading: 1;
-    line-height: 1;
   }
   .leading-tight {
     --tw-leading: var(--leading-tight);

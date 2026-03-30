@@ -1,6 +1,6 @@
 class BookmarkItem extends HTMLElement {
     static get observedAttributes() {
-        return ['bookmark-id', 'url', 'title', 'category', 'category-id', 'favicon', 'timestamp', 'last-visited', 'notes', 'order', 'watched', 'changed', 'changed-at', 'watch-interval', 'track-time'];
+        return ['bookmark-id', 'url', 'title', 'category', 'category-id', 'favicon', 'timestamp', 'last-visited', 'notes', 'order', 'watched', 'changed', 'changed-at', 'watch-interval', 'track-time', 'daily-time-limit'];
     }
 
     constructor() {
@@ -192,6 +192,7 @@ class BookmarkItem extends HTMLElement {
         const notes = this.getAttribute('notes') || '';
         const favicon = this.getAttribute('favicon') || '';
         const trackTime = this.getAttribute('track-time') === 'true';
+        const dailyTimeLimit = parseInt(this.getAttribute('daily-time-limit')) || 0;
         const watched = this.getAttribute('watched') === 'true';
         const changed = this.getAttribute('changed') === 'true';
         const changedAt = this.getAttribute('changed-at') || '';
@@ -229,6 +230,11 @@ class BookmarkItem extends HTMLElement {
                             <span class="label-text text-sm edit-modal-track-time-label">Track time spent on domain</span>
                             <span class="text-xs text-base-content/40">(requires extension)</span>
                         </label>
+                    </div>
+                    <div class="edit-modal-time-limit hidden mt-2 flex items-center gap-2">
+                        <span class="label-text text-sm">Daily limit</span>
+                        <input type="text" class="input input-bordered input-sm w-20 text-center edit-modal-time-limit-input font-mono" placeholder="00:00" maxlength="5" />
+                        <span class="text-xs text-base-content/40">hh:mm (empty = no limit)</span>
                     </div>
                     <div class="edit-modal-time-stats hidden mt-2">
                         <div class="stats shadow-sm w-full bg-base-200">
@@ -286,6 +292,49 @@ class BookmarkItem extends HTMLElement {
             const changedBadge = modal.querySelector('.edit-modal-changed-badge');
 
             const timeStatsSection = modal.querySelector('.edit-modal-time-stats');
+            const timeLimitSection = modal.querySelector('.edit-modal-time-limit');
+            const timeLimitInput = modal.querySelector('.edit-modal-time-limit-input');
+
+            // Format minutes to HH:MM for the input
+            const minutesToHHMM = (mins) => {
+                if (!mins) return '';
+                const h = Math.floor(mins / 60);
+                const m = mins % 60;
+                return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+            };
+
+            // Parse HH:MM to minutes
+            const hhmmToMinutes = (str) => {
+                if (!str || !str.trim()) return 0;
+                const parts = str.split(':');
+                const h = parseInt(parts[0]) || 0;
+                const m = parseInt(parts[1]) || 0;
+                return h * 60 + m;
+            };
+
+            // Auto-format: insert colon as user types
+            timeLimitInput.addEventListener('input', () => {
+                let v = timeLimitInput.value.replace(/[^0-9:]/g, '');
+                // Auto-insert colon after 2 digits if not present
+                if (v.length === 2 && !v.includes(':')) {
+                    v = v + ':';
+                }
+                timeLimitInput.value = v;
+            });
+
+            timeLimitInput.addEventListener('blur', async () => {
+                const newMinutes = hhmmToMinutes(timeLimitInput.value);
+                const origMinutes = parseInt(modal.dataset.originalTimeLimit) || 0;
+                // Normalize displayed value
+                timeLimitInput.value = newMinutes ? minutesToHHMM(newMinutes) : '';
+                if (newMinutes === origMinutes) return;
+
+                if (await saveField('daily_time_limit', newMinutes)) {
+                    modal.dataset.originalTimeLimit = newMinutes.toString();
+                    const item = document.querySelector(`bookmark-item[bookmark-id="${modal.dataset.bookmarkId}"]`);
+                    if (item) item.setAttribute('daily-time-limit', newMinutes.toString());
+                }
+            });
 
             const formatDuration = (totalSeconds) => {
                 const h = Math.floor(totalSeconds / 3600);
@@ -349,6 +398,7 @@ class BookmarkItem extends HTMLElement {
                     const item = document.querySelector(`bookmark-item[bookmark-id="${modal.dataset.bookmarkId}"]`);
                     if (item) item.setAttribute('track-time', isTracked.toString());
                     timeStatsSection.classList.toggle('hidden', !isTracked);
+                    timeLimitSection.classList.toggle('hidden', !isTracked);
                     if (isTracked) {
                         const urlInput2 = modal.querySelector('.edit-modal-url');
                         loadTimeStats(urlInput2.value);
@@ -573,6 +623,17 @@ class BookmarkItem extends HTMLElement {
         }
         trackTimeCheckbox2.checked = trackTime;
         timeStatsSection2.classList.toggle('hidden', !trackTime);
+        const timeLimitSection2 = modal.querySelector('.edit-modal-time-limit');
+        const timeLimitInput2 = modal.querySelector('.edit-modal-time-limit-input');
+        timeLimitSection2.classList.toggle('hidden', !trackTime);
+        const minutesToHHMM2 = (mins) => {
+            if (!mins) return '';
+            const h = Math.floor(mins / 60);
+            const m = mins % 60;
+            return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+        };
+        timeLimitInput2.value = minutesToHHMM2(dailyTimeLimit);
+        modal.dataset.originalTimeLimit = dailyTimeLimit.toString();
         if (trackTime) {
             modal._loadTimeStats(url);
         }
@@ -1139,6 +1200,7 @@ class BookmarkList extends HTMLElement {
                 if (bm.changed_at) item.setAttribute('changed-at', bm.changed_at);
                 item.setAttribute('watch-interval', bm.watch_interval || 360);
                 item.setAttribute('track-time', (bm.track_time || false).toString());
+                item.setAttribute('daily-time-limit', bm.daily_time_limit || 0);
                 if (!isManualSort) item.draggable = false;
                 content.appendChild(item);
             }
