@@ -188,11 +188,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             if (remaining > 0) {
                 timeTrackingRemaining.textContent = `-${formatHHMM(remaining)}`;
-                timeTrackingRemaining.style.color = '';
+                timeTrackingRemaining.classList.remove('text-error');
             } else {
                 const over = Math.abs(remaining);
                 timeTrackingRemaining.textContent = `+${formatHHMM(over)}`;
-                timeTrackingRemaining.style.color = 'oklch(var(--er))';
+                timeTrackingRemaining.classList.add('text-error');
             }
         } else {
             timeTrackingRemaining.classList.add('hidden');
