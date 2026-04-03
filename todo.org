@@ -86,6 +86,7 @@ CLOSED: [2026-01-21 Wed 03:27]
 - idea: mimick a split view by having a peek at page inside sidebar
 
 * TODO look at similar projects
+- [[https://news.ycombinator.com/item?id=47337607][sitespy - tool that watches webpages and exposes changes as RSS]]
 - [[https://chromewebstore.google.com/detail/arcthing-window-tab-manag/bnfchihnnoljghnkdbpomeheeohjpnfo][arcthing]]: extension for arc-like tabs
 - [[https://addons.mozilla.org/de/firefox/addon/sidebery/][sidebery]]: extension for tabs tree & bookmarks in sidebar
 - [[arc.net][arc]]: browser

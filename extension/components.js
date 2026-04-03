@@ -1637,9 +1637,19 @@ class BookmarkList extends HTMLElement {
                 }
             });
 
-            deleteBtn.addEventListener('click', () => {
-                confirmBox.classList.remove('hidden');
-                deleteBtn.classList.add('hidden');
+            deleteBtn.addEventListener('click', async () => {
+                const name = modal.dataset.originalName;
+                const catBookmarks = list._bookmarks.filter(bm => {
+                    const cat = list._categories.find(c => c.name === name);
+                    return cat && bm.category_id === cat.id;
+                });
+                if (catBookmarks.length === 0) {
+                    await list._deleteCategory(name);
+                    modal.close();
+                } else {
+                    confirmBox.classList.remove('hidden');
+                    deleteBtn.classList.add('hidden');
+                }
             });
 
             cancelDeleteBtn.addEventListener('click', () => {
