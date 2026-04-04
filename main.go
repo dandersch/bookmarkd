@@ -18,8 +18,11 @@ import (
 	"sync"
 	"time"
 
+	_ "database/sql"
+
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
+	_ "modernc.org/sqlite"
 )
 
 // Data Models
