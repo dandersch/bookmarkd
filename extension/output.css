@@ -3011,24 +3011,6 @@
   position: relative;
   flex-shrink: 0;
 }
-.bookmark-item.watched {
-  border-left: 3px solid var(--color-base-content);
-  @supports (color: color-mix(in lab, red, red)) {
-    border-left: 3px solid color-mix(in oklch, var(--color-base-content) 20%, transparent);
-  }
-}
-.bookmark-item.changed {
-  border-left: 3px solid var(--color-accent);
-  animation: pulse-border 2s ease-in-out infinite;
-}
-@keyframes pulse-border {
-  0%, 100% {
-    border-left-color: var(--color-accent);
-  }
-  50% {
-    border-left-color: color-mix(in oklch, var(--color-accent) 30%, transparent);
-  }
-}
 .collapse {
   visibility: visible !important;
   position: relative;

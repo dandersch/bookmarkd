@@ -83,20 +83,6 @@
     @apply relative shrink-0;
 }
 
-.bookmark-item.watched {
-    border-left: 3px solid color-mix(in oklch, var(--color-base-content) 20%, transparent);
-}
-
-.bookmark-item.changed {
-    border-left: 3px solid var(--color-accent);
-    animation: pulse-border 2s ease-in-out infinite;
-}
-
-@keyframes pulse-border {
-    0%, 100% { border-left-color: var(--color-accent); }
-    50% { border-left-color: color-mix(in oklch, var(--color-accent) 30%, transparent); }
-}
-
 /* Fix DaisyUI collapse */
 .collapse {
     @apply visible! bg-transparent relative;

@@ -1,6 +1,6 @@
 class BookmarkItem extends HTMLElement {
     static get observedAttributes() {
-        return ['bookmark-id', 'url', 'title', 'category', 'category-id', 'favicon', 'timestamp', 'last-visited', 'notes', 'order', 'watched', 'changed', 'changed-at', 'watch-interval', 'track-time', 'daily-time-limit'];
+        return ['bookmark-id', 'url', 'title', 'category', 'category-id', 'favicon', 'timestamp', 'last-visited', 'notes', 'order', 'track-time', 'daily-time-limit'];
     }
 
     constructor() {
@@ -24,23 +24,6 @@ class BookmarkItem extends HTMLElement {
             serverUrl: list?.getAttribute('server-url') || '',
             authHeader: list?.getAttribute('auth-header') || ''
         };
-    }
-
-    formatTimeAgo(ts) {
-        if (!ts) return '';
-        const date = new Date(parseInt(ts) * 1000);
-        const now = new Date();
-        const diffMs = now - date;
-        const diffMin = Math.floor(diffMs / (1000 * 60));
-        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-        if (diffMin < 1) return 'just now';
-        if (diffMin < 60) return `${diffMin}m ago`;
-        if (diffHours < 24) return `${diffHours}h ago`;
-        if (diffDays < 7) return `${diffDays}d ago`;
-        if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
-        return `${Math.floor(diffDays / 30)}mo ago`;
     }
 
     formatTimestamp(ts) {
@@ -67,12 +50,8 @@ class BookmarkItem extends HTMLElement {
         const favicon = this.getAttribute('favicon') || '';
         const timestamp = this.getAttribute('timestamp') || '';
         const lastVisited = this.getAttribute('last-visited') || '';
-        const watched = this.getAttribute('watched') === 'true';
-        const changed = this.getAttribute('changed') === 'true';
-        const changedAt = this.getAttribute('changed-at') || '';
         const addedTime = this.formatTimestamp(timestamp);
         const visitedTime = this.formatTimestamp(lastVisited);
-        const changedAgo = this.formatTimeAgo(changedAt);
 
         let hostname = '';
         try {
@@ -81,7 +60,7 @@ class BookmarkItem extends HTMLElement {
             hostname = url;
         }
 
-        this.className = 'bookmark-item' + (changed ? ' changed' : watched ? ' watched' : '');
+        this.className = 'bookmark-item';
         this.draggable = true;
         this.innerHTML = `
             <a href="${url}" target="_blank" class="bookmark-link" title="${this.escapeHtml(title)}&#10;${this.escapeHtml(url)}">
@@ -180,8 +159,6 @@ class BookmarkItem extends HTMLElement {
         fetch(`${config.serverUrl}/api/bookmarks/${id}/visit`, {
             method: 'POST',
             headers
-        }).then(() => {
-            this.setAttribute('changed', 'false');
         }).catch(err => console.error('Failed to record visit:', err));
     }
 
@@ -193,10 +170,6 @@ class BookmarkItem extends HTMLElement {
         const favicon = this.getAttribute('favicon') || '';
         const trackTime = this.getAttribute('track-time') === 'true';
         const dailyTimeLimit = parseInt(this.getAttribute('daily-time-limit')) || 0;
-        const watched = this.getAttribute('watched') === 'true';
-        const changed = this.getAttribute('changed') === 'true';
-        const changedAt = this.getAttribute('changed-at') || '';
-        const watchInterval = parseInt(this.getAttribute('watch-interval')) || 360;
         const timestamp = this.getAttribute('timestamp') || '';
         const lastVisited = this.getAttribute('last-visited') || '';
         const bookmarkItem = this;
@@ -253,22 +226,6 @@ class BookmarkItem extends HTMLElement {
                             </div>
                         </div>
                     </div>
-                    <div class="flex flex-wrap items-center gap-2 mt-2">
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" class="checkbox checkbox-sm checkbox-primary edit-modal-watched" />
-                            <span class="label-text text-sm">Watch for changes</span>
-                        </label>
-                        <select class="select select-bordered select-sm edit-modal-watch-interval hidden">
-                            <option value="30">Every 30 min</option>
-                            <option value="60">Every 1 hour</option>
-                            <option value="180">Every 3 hours</option>
-                            <option value="360" selected>Every 6 hours</option>
-                            <option value="720">Every 12 hours</option>
-                            <option value="1440">Every day</option>
-                        </select>
-                        <span class="edit-modal-changed-badge badge badge-error badge-sm hidden cursor-pointer">Changed</span>
-                    </div>
-                    
                     <div class="flex justify-between items-center mt-4">
                         <button class="btn btn-error btn-sm edit-modal-delete">Delete</button>
                         <button class="btn btn-ghost btn-sm edit-modal-revert hidden" title="Revert changes">↺</button>
@@ -287,9 +244,6 @@ class BookmarkItem extends HTMLElement {
             const deleteBtn = modal.querySelector('.edit-modal-delete');
             const revertBtn = modal.querySelector('.edit-modal-revert');
             const trackTimeCheckbox = modal.querySelector('.edit-modal-track-time');
-            const watchedCheckbox = modal.querySelector('.edit-modal-watched');
-            const intervalSelect = modal.querySelector('.edit-modal-watch-interval');
-            const changedBadge = modal.querySelector('.edit-modal-changed-badge');
 
             const timeStatsSection = modal.querySelector('.edit-modal-time-stats');
             const timeLimitSection = modal.querySelector('.edit-modal-time-limit');
@@ -403,34 +357,6 @@ class BookmarkItem extends HTMLElement {
                         const urlInput2 = modal.querySelector('.edit-modal-url');
                         loadTimeStats(urlInput2.value);
                     }
-                }
-            });
-
-            watchedCheckbox.addEventListener('change', async () => {
-                const isWatched = watchedCheckbox.checked;
-                if (await saveField('watched', isWatched)) {
-                    const item = document.querySelector(`bookmark-item[bookmark-id="${modal.dataset.bookmarkId}"]`);
-                    if (item) item.setAttribute('watched', isWatched.toString());
-                    intervalSelect.classList.toggle('hidden', !isWatched);
-                    if (!isWatched) {
-                        changedBadge.classList.add('hidden');
-                    }
-                }
-            });
-
-            intervalSelect.addEventListener('change', async () => {
-                const interval = parseInt(intervalSelect.value);
-                if (await saveField('watch_interval', interval)) {
-                    const item = document.querySelector(`bookmark-item[bookmark-id="${modal.dataset.bookmarkId}"]`);
-                    if (item) item.setAttribute('watch-interval', interval.toString());
-                }
-            });
-
-            changedBadge.addEventListener('click', async () => {
-                if (await saveField('changed', false)) {
-                    changedBadge.classList.add('hidden');
-                    const item = document.querySelector(`bookmark-item[bookmark-id="${modal.dataset.bookmarkId}"]`);
-                    if (item) item.setAttribute('changed', 'false');
                 }
             });
 
@@ -636,21 +562,6 @@ class BookmarkItem extends HTMLElement {
         modal.dataset.originalTimeLimit = dailyTimeLimit.toString();
         if (trackTime) {
             modal._loadTimeStats(url);
-        }
-
-        const watchedCheckbox2 = modal.querySelector('.edit-modal-watched');
-        const changedBadge2 = modal.querySelector('.edit-modal-changed-badge');
-        const intervalSelect2 = modal.querySelector('.edit-modal-watch-interval');
-        watchedCheckbox2.checked = watched;
-        intervalSelect2.value = watchInterval.toString();
-        intervalSelect2.classList.toggle('hidden', !watched);
-        if (changed) {
-            const ago = this.formatTimeAgo(changedAt);
-            changedBadge2.textContent = ago || 'Changed';
-            changedBadge2.classList.remove('hidden');
-            changedBadge2.title = 'Click to dismiss';
-        } else {
-            changedBadge2.classList.add('hidden');
         }
 
         modal.showModal();
@@ -907,7 +818,12 @@ class BookmarkList extends HTMLElement {
     }
 
     _getCategorySort(categoryId) {
-        return this._categorySorts[categoryId] || { by: 'manual', dir: 'asc' };
+        const sort = this._categorySorts[categoryId];
+        const supportedSorts = ['manual', 'title', 'date-added', 'date-visited'];
+        if (!sort || !supportedSorts.includes(sort.by)) {
+            return { by: 'manual', dir: 'asc' };
+        }
+        return sort;
     }
 
     _setCategorySort(categoryId, by, dir) {
@@ -930,11 +846,6 @@ class BookmarkList extends HTMLElement {
                     const av = a.last_visited || 0;
                     const bv = b.last_visited || 0;
                     return dir * (av - bv);
-                }
-                case 'last-changed': {
-                    const ac = a.changed_at || 0;
-                    const bc = b.changed_at || 0;
-                    return dir * (ac - bc);
                 }
                 default:
                     return 0;
@@ -1195,10 +1106,6 @@ class BookmarkList extends HTMLElement {
                 item.setAttribute('last-visited', bm.last_visited || '');
                 item.setAttribute('notes', bm.notes || '');
                 item.setAttribute('order', bm.order ?? 0);
-                item.setAttribute('watched', (bm.watched || false).toString());
-                item.setAttribute('changed', (bm.changed || false).toString());
-                if (bm.changed_at) item.setAttribute('changed-at', bm.changed_at);
-                item.setAttribute('watch-interval', bm.watch_interval || 360);
                 item.setAttribute('track-time', (bm.track_time || false).toString());
                 item.setAttribute('daily-time-limit', bm.daily_time_limit || 0);
                 if (!isManualSort) item.draggable = false;
@@ -1449,7 +1356,6 @@ class BookmarkList extends HTMLElement {
                                 <option value="title">Title</option>
                                 <option value="date-added">Date added</option>
                                 <option value="date-visited">Last visited</option>
-                                <option value="last-changed">Last changed</option>
                             </select>
                             <button class="btn btn-xs btn-ghost category-modal-sort-dir" title="Toggle sort direction">↑</button>
                         </div>
@@ -1587,7 +1493,7 @@ class BookmarkList extends HTMLElement {
 
             sortBySelect.addEventListener('change', () => {
                 const catId = modal.dataset.categoryId;
-                const dir = sortBySelect.value === 'last-changed' ? 'desc' : (modal.dataset.sortDir || 'asc');
+                const dir = modal.dataset.sortDir || 'asc';
                 modal.dataset.sortDir = dir;
                 if (modal.dataset.mode !== 'create') {
                     list._setCategorySort(catId, sortBySelect.value, dir);

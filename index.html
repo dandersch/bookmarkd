@@ -11,11 +11,7 @@
 <body class="max-w-6xl bg-base-100 text-base-content min-h-screen mx-auto">
     <!-- Header -->
     <header class="bg-primary p-6 flex items-center gap-4">
-        <div class="shrink-0">
-            <button id="watch-check-btn" class="btn btn-ghost btn-sm text-primary-content text-lg" title="Check watched bookmarks">
-                <span id="watch-check-icon" class="inline-block">↺</span>
-            </button>
-        </div>
+        <div class="shrink-0 w-8" aria-hidden="true"></div>
         <div class="flex-1 flex justify-center px-8">
             <search-bar id="search" target="bookmark-list" class="w-full max-w-2xl"></search-bar>
         </div>
@@ -119,23 +115,6 @@
         
         settingsBtn.addEventListener('click', () => {
             settingsModal.showModal();
-        });
-
-        // Watch check button
-        const watchCheckBtn = document.getElementById('watch-check-btn');
-        watchCheckBtn.addEventListener('click', async () => {
-            const icon = document.getElementById('watch-check-icon');
-            icon.classList.add('animate-spin');
-            watchCheckBtn.disabled = true;
-            try {
-                await Promise.all([
-                    fetch('/api/watch/check', { method: 'POST' }),
-                    new Promise(r => setTimeout(r, 1000))
-                ]);
-            } finally {
-                icon.classList.remove('animate-spin');
-                watchCheckBtn.disabled = false;
-            }
         });
 
         // Refresh bookmarks after import
