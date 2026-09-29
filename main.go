@@ -33,18 +33,16 @@ type Category struct {
 }
 
 type Bookmark struct {
-	ID             string `json:"id"`
-	URL            string `json:"url"`
-	Title          string `json:"title"`
-	Category       string `json:"category"`
-	CategoryID     string `json:"category_id"`
-	Timestamp      int64  `json:"timestamp"`
-	Favicon        string `json:"favicon"`
-	Order          int    `json:"order"`
-	LastVisited    *int64 `json:"last_visited,omitempty"`
-	Notes          string `json:"notes,omitempty"`
-	TrackTime      bool   `json:"track_time,omitempty"`
-	DailyTimeLimit int    `json:"daily_time_limit,omitempty"`
+	ID          string `json:"id"`
+	URL         string `json:"url"`
+	Title       string `json:"title"`
+	Category    string `json:"category"`
+	CategoryID  string `json:"category_id"`
+	Timestamp   int64  `json:"timestamp"`
+	Favicon     string `json:"favicon"`
+	Order       int    `json:"order"`
+	LastVisited *int64 `json:"last_visited,omitempty"`
+	Notes       string `json:"notes,omitempty"`
 }
 
 type Database struct {
@@ -57,26 +55,14 @@ type CustomTheme struct {
 	CSS  string
 }
 
-type TimeEntry struct {
-	Timestamp int64 `json:"timestamp"`
-	Seconds   int   `json:"seconds"`
-}
-
-type DomainTimeData struct {
-	Entries []TimeEntry `json:"entries"`
-}
-
 const dbFile = "bookmarks.json"
-const timeTrackingFile = "time_tracking.json"
 const uncategorizedID = "uncategorized"
 
 var (
 	categories   map[string]Category
 	bookmarks    map[string]Bookmark
 	customThemes []CustomTheme
-	timeTracking map[string]*DomainTimeData
 	mu           sync.RWMutex
-	timeMu       sync.RWMutex
 	themeMu      sync.RWMutex
 	tmpl         *template.Template
 )
@@ -206,8 +192,6 @@ func main() {
 		initializeDefaults()
 	}
 
-	loadTimeTracking()
-
 	tmpl = template.Must(template.ParseFiles("index.html"))
 
 	loadThemes()
@@ -219,7 +203,6 @@ func main() {
 	http.HandleFunc("/api/categories/reorder", withCORS(handleCategoriesReorder))
 	http.HandleFunc("/api/categories/", withCORS(handleCategoryAPI))
 	http.HandleFunc("/api/themes", withCORS(handleThemesAPI))
-	http.HandleFunc("/api/time-tracking/", withCORS(handleTimeTrackingAPI))
 
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
@@ -721,15 +704,13 @@ func visitBookmark(w http.ResponseWriter, id string) {
 
 func updateBookmark(w http.ResponseWriter, r *http.Request, id string) {
 	var payload struct {
-		Title          *string `json:"title"`
-		URL            *string `json:"url"`
-		Category       *string `json:"category"`
-		CategoryID     *string `json:"category_id"`
-		Order          *int    `json:"order"`
-		Notes          *string `json:"notes"`
-		TrackTime      *bool   `json:"track_time"`
-		DailyTimeLimit *int    `json:"daily_time_limit"`
-		Favicon        *string `json:"favicon"`
+		Title      *string `json:"title"`
+		URL        *string `json:"url"`
+		Category   *string `json:"category"`
+		CategoryID *string `json:"category_id"`
+		Order      *int    `json:"order"`
+		Notes      *string `json:"notes"`
+		Favicon    *string `json:"favicon"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
@@ -760,14 +741,6 @@ func updateBookmark(w http.ResponseWriter, r *http.Request, id string) {
 			notes = notes[:1000]
 		}
 		bm.Notes = notes
-	}
-
-	if payload.TrackTime != nil {
-		bm.TrackTime = *payload.TrackTime
-	}
-
-	if payload.DailyTimeLimit != nil {
-		bm.DailyTimeLimit = *payload.DailyTimeLimit
 	}
 
 	if payload.Favicon != nil && *payload.Favicon != "" {
@@ -970,114 +943,6 @@ func saveDatabase() {
 	if err := os.WriteFile(dbFile, data, 0644); err != nil {
 		log.Printf("Error saving database: %v", err)
 	}
-}
-
-// --- Time Tracking ---
-
-func loadTimeTracking() {
-	file, err := os.ReadFile(timeTrackingFile)
-	if err != nil {
-		if os.IsNotExist(err) {
-			timeTracking = make(map[string]*DomainTimeData)
-			return
-		}
-		log.Printf("Warning: Could not load time tracking: %v", err)
-		timeTracking = make(map[string]*DomainTimeData)
-		return
-	}
-
-	timeMu.Lock()
-	defer timeMu.Unlock()
-
-	if err := json.Unmarshal(file, &timeTracking); err != nil {
-		log.Printf("Warning: Could not parse time tracking: %v", err)
-		timeTracking = make(map[string]*DomainTimeData)
-		return
-	}
-
-	if timeTracking == nil {
-		timeTracking = make(map[string]*DomainTimeData)
-	}
-}
-
-func saveTimeTracking() {
-	data, err := json.MarshalIndent(timeTracking, "", "  ")
-	if err != nil {
-		log.Printf("Error marshaling time tracking: %v", err)
-		return
-	}
-	if err := os.WriteFile(timeTrackingFile, data, 0644); err != nil {
-		log.Printf("Error saving time tracking: %v", err)
-	}
-}
-
-func normalizeDomain(domain string) string {
-	return strings.TrimPrefix(domain, "www.")
-}
-
-func handleTimeTrackingAPI(w http.ResponseWriter, r *http.Request) {
-	domain := normalizeDomain(strings.TrimPrefix(r.URL.Path, "/api/time-tracking/"))
-	if domain == "" {
-		http.Error(w, "Missing domain", http.StatusBadRequest)
-		return
-	}
-
-	if r.Method == "GET" {
-		getTimeTracking(w, domain)
-		return
-	}
-
-	if r.Method == "POST" {
-		postTimeTracking(w, r, domain)
-		return
-	}
-
-	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-}
-
-func getTimeTracking(w http.ResponseWriter, domain string) {
-	timeMu.RLock()
-	data, exists := timeTracking[domain]
-	timeMu.RUnlock()
-
-	w.Header().Set("Content-Type", "application/json")
-	if !exists {
-		json.NewEncoder(w).Encode(DomainTimeData{Entries: []TimeEntry{}})
-		return
-	}
-	json.NewEncoder(w).Encode(data)
-}
-
-func postTimeTracking(w http.ResponseWriter, r *http.Request, domain string) {
-	var payload struct {
-		Timestamp int64 `json:"timestamp"`
-		Seconds   int   `json:"seconds"`
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
-		return
-	}
-
-	if payload.Seconds <= 0 {
-		http.Error(w, "Seconds must be positive", http.StatusBadRequest)
-		return
-	}
-
-	timeMu.Lock()
-	defer timeMu.Unlock()
-
-	if timeTracking[domain] == nil {
-		timeTracking[domain] = &DomainTimeData{Entries: []TimeEntry{}}
-	}
-
-	timeTracking[domain].Entries = append(timeTracking[domain].Entries, TimeEntry{
-		Timestamp: payload.Timestamp,
-		Seconds:   payload.Seconds,
-	})
-
-	saveTimeTracking()
-	w.WriteHeader(http.StatusNoContent)
 }
 
 // --- Theme Management ---

@@ -159,104 +159,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         checkIfBookmarked();
     });
 
-    // Time tracking section
-    const timeTrackingSection = document.getElementById('time-tracking-section');
-    const timeTrackingValue = document.getElementById('time-tracking-value');
-    const timeTrackingRemaining = document.getElementById('time-tracking-remaining');
-    let timeTrackingInterval = null;
-    let trackedTodaySeconds = 0;
-    let trackedLimitMinutes = 0;
-    let trackedLastFetch = 0;
-
-    function formatHHMM(totalSeconds) {
-        const h = Math.floor(totalSeconds / 3600);
-        const m = Math.floor((totalSeconds % 3600) / 60);
-        return `${h}:${String(m).padStart(2, '0')}`;
-    }
-
-    function updateTimeDisplay() {
-        // Estimate current seconds: fetched total + time elapsed since fetch
-        const elapsed = Math.floor((Date.now() - trackedLastFetch) / 1000);
-        const currentSeconds = trackedTodaySeconds + elapsed;
-
-        timeTrackingValue.textContent = formatHHMM(currentSeconds);
-
-        if (trackedLimitMinutes > 0) {
-            const limitSeconds = trackedLimitMinutes * 60;
-            const remaining = limitSeconds - currentSeconds;
-            timeTrackingRemaining.classList.remove('hidden');
-
-            if (remaining > 0) {
-                timeTrackingRemaining.textContent = `-${formatHHMM(remaining)}`;
-                timeTrackingRemaining.classList.remove('text-error');
-            } else {
-                const over = Math.abs(remaining);
-                timeTrackingRemaining.textContent = `+${formatHHMM(over)}`;
-                timeTrackingRemaining.classList.add('text-error');
-            }
-        } else {
-            timeTrackingRemaining.classList.add('hidden');
-        }
-    }
-
-    function startTimeTrackingTimer() {
-        if (timeTrackingInterval) clearInterval(timeTrackingInterval);
-        updateTimeDisplay();
-        timeTrackingInterval = setInterval(updateTimeDisplay, 1000);
-    }
-
-    function stopTimeTrackingTimer() {
-        if (timeTrackingInterval) {
-            clearInterval(timeTrackingInterval);
-            timeTrackingInterval = null;
-        }
-    }
-
-    async function updateTimeTrackingSection(url) {
-        try {
-            const domain = new URL(url).hostname.replace(/^www\./, '');
-            const response = await chrome.runtime.sendMessage({ type: 'IS_DOMAIN_TRACKED', domain });
-            if (!response?.tracked) {
-                timeTrackingSection.classList.add('hidden');
-                stopTimeTrackingTimer();
-                return;
-            }
-
-            const headers = {};
-            if (config.authHeader) headers['Authorization'] = config.authHeader;
-            const res = await fetch(`${serverUrl}/api/time-tracking/${domain}`, { headers });
-            if (!res.ok) { timeTrackingSection.classList.add('hidden'); stopTimeTrackingTimer(); return; }
-
-            const data = await res.json();
-            const now = new Date();
-            const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime() / 1000;
-            trackedTodaySeconds = (data.entries || [])
-                .filter(e => e.timestamp >= startOfDay)
-                .reduce((sum, e) => sum + e.seconds, 0);
-            trackedLastFetch = Date.now();
-
-            // Find daily time limit from already-loaded bookmarks
-            trackedLimitMinutes = 0;
-            for (const bm of allBookmarks) {
-                if (bm.daily_time_limit && bm.daily_time_limit > 0) {
-                    try {
-                        const bmDomain = new URL(bm.url).hostname.replace(/^www\./, '');
-                        if (bmDomain === domain) {
-                            trackedLimitMinutes = bm.daily_time_limit;
-                            break;
-                        }
-                    } catch {}
-                }
-            }
-
-            timeTrackingSection.classList.remove('hidden');
-            startTimeTrackingTimer();
-        } catch {
-            timeTrackingSection.classList.add('hidden');
-            stopTimeTrackingTimer();
-        }
-    }
-
     // --- CORE LOGIC: Get current tab preview ---
     async function updatePreview() {
         try {
@@ -268,17 +170,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                 previewUrl.textContent = new URL(tab.url).hostname;
                 previewIcon.src = tab.favIconUrl || 'icon.png';
                 checkIfBookmarked();
-                updateTimeTrackingSection(tab.url);
             } else {
                 currentValidTab = null;
                 previewCard.classList.add('hidden');
-                timeTrackingSection.classList.add('hidden');
             }
         } catch (err) {
             console.error('Failed to get current tab:', err);
             currentValidTab = null;
             previewCard.classList.add('hidden');
-            timeTrackingSection.classList.add('hidden');
         }
     }
 
@@ -295,11 +194,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 previewUrl.textContent = new URL(tab.url).hostname;
                 previewIcon.src = tab.favIconUrl || 'icon.png';
                 checkIfBookmarked();
-                updateTimeTrackingSection(tab.url);
             } else {
                 currentValidTab = null;
                 previewCard.classList.add('hidden');
-                timeTrackingSection.classList.add('hidden');
             }
         }
     });
