@@ -42,7 +42,6 @@ type Bookmark struct {
 	Favicon     string `json:"favicon"`
 	Order       int    `json:"order"`
 	LastVisited *int64 `json:"last_visited,omitempty"`
-	Notes       string `json:"notes,omitempty"`
 }
 
 type Database struct {
@@ -709,7 +708,6 @@ func updateBookmark(w http.ResponseWriter, r *http.Request, id string) {
 		Category   *string `json:"category"`
 		CategoryID *string `json:"category_id"`
 		Order      *int    `json:"order"`
-		Notes      *string `json:"notes"`
 		Favicon    *string `json:"favicon"`
 	}
 
@@ -733,14 +731,6 @@ func updateBookmark(w http.ResponseWriter, r *http.Request, id string) {
 
 	if payload.URL != nil {
 		bm.URL = *payload.URL
-	}
-
-	if payload.Notes != nil {
-		notes := *payload.Notes
-		if len(notes) > 1000 {
-			notes = notes[:1000]
-		}
-		bm.Notes = notes
 	}
 
 	if payload.Favicon != nil && *payload.Favicon != "" {

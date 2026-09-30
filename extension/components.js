@@ -1,6 +1,6 @@
 class BookmarkItem extends HTMLElement {
     static get observedAttributes() {
-        return ['bookmark-id', 'url', 'title', 'category', 'category-id', 'favicon', 'timestamp', 'last-visited', 'notes', 'order'];
+        return ['bookmark-id', 'url', 'title', 'category', 'category-id', 'favicon', 'timestamp', 'last-visited', 'order'];
     }
 
     constructor() {
@@ -166,7 +166,6 @@ class BookmarkItem extends HTMLElement {
         const id = this.getAttribute('bookmark-id');
         const title = this.getAttribute('title') || '';
         const url = this.getAttribute('url') || '';
-        const notes = this.getAttribute('notes') || '';
         const favicon = this.getAttribute('favicon') || '';
         const timestamp = this.getAttribute('timestamp') || '';
         const lastVisited = this.getAttribute('last-visited') || '';
@@ -192,9 +191,6 @@ class BookmarkItem extends HTMLElement {
                         <span class="edit-modal-visited-wrapper"><span title="Last visited">🕐</span> <span class="edit-modal-visited"></span></span>
                     </div>
                     
-                    <textarea class="textarea textarea-bordered w-full h-24 edit-modal-notes" placeholder="Add your notes here..." maxlength="1000"></textarea>
-                    <div class="text-right text-xs text-base-content/50 mt-1"><span class="edit-modal-notes-count">0</span> / 1000</div>
-                    
                     <div class="flex justify-between items-center mt-4">
                         <button class="btn btn-error btn-sm edit-modal-delete">Delete</button>
                         <button class="btn btn-ghost btn-sm edit-modal-revert hidden" title="Revert changes">↺</button>
@@ -208,25 +204,18 @@ class BookmarkItem extends HTMLElement {
 
             const titleInput = modal.querySelector('.edit-modal-title');
             const urlInput = modal.querySelector('.edit-modal-url');
-            const notesTextarea = modal.querySelector('.edit-modal-notes');
-            const notesCount = modal.querySelector('.edit-modal-notes-count');
             const deleteBtn = modal.querySelector('.edit-modal-delete');
             const revertBtn = modal.querySelector('.edit-modal-revert');
 
             const checkForChanges = () => {
                 const hasChanges = 
                     titleInput.value !== modal.dataset.initialTitle ||
-                    urlInput.value !== modal.dataset.initialUrl ||
-                    notesTextarea.value !== modal.dataset.initialNotes;
+                    urlInput.value !== modal.dataset.initialUrl;
                 revertBtn.classList.toggle('hidden', !hasChanges);
             };
 
             titleInput.addEventListener('input', checkForChanges);
             urlInput.addEventListener('input', checkForChanges);
-            notesTextarea.addEventListener('input', () => {
-                notesCount.textContent = notesTextarea.value.length;
-                checkForChanges();
-            });
 
             const saveField = async (field, value) => {
                 const currentId = modal.dataset.bookmarkId;
@@ -276,18 +265,6 @@ class BookmarkItem extends HTMLElement {
                 }
             });
 
-            notesTextarea.addEventListener('blur', async () => {
-                const newNotes = notesTextarea.value;
-                const originalNotes = modal.dataset.originalNotes || '';
-                if (newNotes === originalNotes) return;
-
-                if (await saveField('notes', newNotes)) {
-                    const item = document.querySelector(`bookmark-item[bookmark-id="${modal.dataset.bookmarkId}"]`);
-                    if (item) item.setAttribute('notes', newNotes);
-                    modal.dataset.originalNotes = newNotes;
-                }
-            });
-
             deleteBtn.addEventListener('click', async () => {
                 const currentId = modal.dataset.bookmarkId;
                 const item = document.querySelector(`bookmark-item[bookmark-id="${currentId}"]`);
@@ -302,7 +279,6 @@ class BookmarkItem extends HTMLElement {
             revertBtn.addEventListener('click', async () => {
                 const initialTitle = modal.dataset.initialTitle || '';
                 const initialUrl = modal.dataset.initialUrl || '';
-                const initialNotes = modal.dataset.initialNotes || '';
                 const currentId = modal.dataset.bookmarkId;
                 const item = document.querySelector(`bookmark-item[bookmark-id="${currentId}"]`);
                 if (!item) return;
@@ -315,23 +291,19 @@ class BookmarkItem extends HTMLElement {
                     const res = await fetch(`${config.serverUrl}/api/bookmarks/${currentId}`, {
                         method: 'PATCH',
                         headers,
-                        body: JSON.stringify({ title: initialTitle, url: initialUrl, notes: initialNotes })
+                        body: JSON.stringify({ title: initialTitle, url: initialUrl })
                     });
 
                     if (!res.ok) throw new Error('Failed to revert');
 
                     titleInput.value = initialTitle;
                     urlInput.value = initialUrl;
-                    notesTextarea.value = initialNotes;
-                    notesCount.textContent = initialNotes.length;
 
                     modal.dataset.originalTitle = initialTitle;
                     modal.dataset.originalUrl = initialUrl;
-                    modal.dataset.originalNotes = initialNotes;
 
                     item.setAttribute('title', initialTitle);
                     item.setAttribute('url', initialUrl);
-                    item.setAttribute('notes', initialNotes);
 
                     revertBtn.classList.add('hidden');
                 } catch (err) {
@@ -342,7 +314,6 @@ class BookmarkItem extends HTMLElement {
             modal.addEventListener('close', () => {
                 titleInput.blur();
                 urlInput.blur();
-                notesTextarea.blur();
             });
 
             const faviconClickTarget = modal.querySelector('.edit-modal-favicon');
@@ -364,23 +335,17 @@ class BookmarkItem extends HTMLElement {
         const faviconImg = modal.querySelector('.edit-modal-favicon');
         const titleInput = modal.querySelector('.edit-modal-title');
         const urlInput = modal.querySelector('.edit-modal-url');
-        const notesTextarea = modal.querySelector('.edit-modal-notes');
-        const notesCount = modal.querySelector('.edit-modal-notes-count');
         const revertBtn = modal.querySelector('.edit-modal-revert');
 
         modal.dataset.bookmarkId = id;
         modal.dataset.initialTitle = title;
         modal.dataset.initialUrl = url;
-        modal.dataset.initialNotes = notes;
         modal.dataset.originalTitle = title;
         modal.dataset.originalUrl = url;
-        modal.dataset.originalNotes = notes;
 
         faviconImg.src = favicon;
         titleInput.value = title;
         urlInput.value = url;
-        notesTextarea.value = notes;
-        notesCount.textContent = notes.length;
         revertBtn.classList.add('hidden');
 
         const timestampEl = modal.querySelector('.edit-modal-timestamp');
@@ -931,7 +896,6 @@ class BookmarkList extends HTMLElement {
                 item.setAttribute('favicon', bm.favicon);
                 item.setAttribute('timestamp', bm.timestamp || '');
                 item.setAttribute('last-visited', bm.last_visited || '');
-                item.setAttribute('notes', bm.notes || '');
                 item.setAttribute('order', bm.order ?? 0);
                 if (!isManualSort) item.draggable = false;
                 content.appendChild(item);
