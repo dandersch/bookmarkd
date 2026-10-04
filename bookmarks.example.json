@@ -1,0 +1,130 @@
+{
+  "categories": [
+    { "id": "uncategorized", "name": "Uncategorized", "order": 0 },
+    { "id": "demo-development", "name": "Development", "order": 1, "color": "#60a5fa" },
+    { "id": "demo-design", "name": "Design & inspiration", "order": 2, "color": "#c084fc" },
+    { "id": "demo-reading", "name": "Reading & discovery", "order": 3, "color": "#fbbf24" }
+  ],
+  "bookmarks": [
+    {
+      "id": "demo-01", "url": "https://en.wikipedia.org/wiki/Special:Random", "title": "Something new to learn",
+      "category_id": "uncategorized", "timestamp": 1790593200, "order": 0,
+      "favicon": "https://www.google.com/s2/favicons?domain=en.wikipedia.org&sz=64"
+    },
+    {
+      "id": "demo-02", "url": "https://developer.mozilla.org/en-US/docs/Web", "title": "MDN — Web platform documentation",
+      "category_id": "demo-development", "timestamp": 1790506800, "last_visited": 1790596800, "order": 0,
+      "favicon": "https://www.google.com/s2/favicons?domain=developer.mozilla.org&sz=64"
+    },
+    {
+      "id": "demo-03", "url": "https://go.dev/doc/", "title": "Go documentation",
+      "category_id": "demo-development", "timestamp": 1790420400, "order": 1,
+      "favicon": "https://www.google.com/s2/favicons?domain=go.dev&sz=64"
+    },
+    {
+      "id": "demo-04", "url": "https://web.dev/learn", "title": "Learn modern web development",
+      "category_id": "demo-development", "timestamp": 1790334000, "last_visited": 1790510400, "order": 2,
+      "favicon": "https://www.google.com/s2/favicons?domain=web.dev&sz=64"
+    },
+    {
+      "id": "demo-05", "url": "https://www.figma.com/community", "title": "Figma Community — Design resources",
+      "category_id": "demo-design", "timestamp": 1790247600, "order": 0,
+      "favicon": "https://www.google.com/s2/favicons?domain=figma.com&sz=64"
+    },
+    {
+      "id": "demo-06", "url": "https://fonts.google.com/", "title": "Google Fonts — Find your next typeface",
+      "category_id": "demo-design", "timestamp": 1790161200, "last_visited": 1790424000, "order": 1,
+      "favicon": "https://www.google.com/s2/favicons?domain=fonts.google.com&sz=64"
+    },
+    {
+      "id": "demo-07", "url": "https://www.smashingmagazine.com/", "title": "Smashing Magazine — Design & UX",
+      "category_id": "demo-design", "timestamp": 1790074800, "order": 2,
+      "favicon": "https://www.google.com/s2/favicons?domain=smashingmagazine.com&sz=64"
+    },
+    {
+      "id": "demo-08", "url": "https://www.gutenberg.org/", "title": "Project Gutenberg — Free ebooks",
+      "category_id": "demo-reading", "timestamp": 1789988400, "last_visited": 1790337600, "order": 0,
+      "favicon": "https://www.google.com/s2/favicons?domain=gutenberg.org&sz=64"
+    },
+    {
+      "id": "demo-09", "url": "https://www.quantamagazine.org/", "title": "Quanta Magazine — Science worth exploring",
+      "category_id": "demo-reading", "timestamp": 1789902000, "order": 1,
+      "favicon": "https://www.google.com/s2/favicons?domain=quantamagazine.org&sz=64"
+    },
+    {
+      "id": "demo-10", "url": "https://www.itsnicethat.com/", "title": "It's Nice That — Creative stories",
+      "category_id": "demo-reading", "timestamp": 1789815600, "order": 2,
+      "favicon": "https://www.google.com/s2/favicons?domain=itsnicethat.com&sz=64"
+    },
+    {
+      "id": "demo-11", "url": "https://archive.org/", "title": "Internet Archive — Explore the collections",
+      "category_id": "uncategorized", "timestamp": 1790593500, "order": 1,
+      "favicon": "https://www.google.com/s2/favicons?domain=archive.org&sz=64"
+    },
+    {
+      "id": "demo-12", "url": "https://www.openstreetmap.org/", "title": "OpenStreetMap — A map of the world",
+      "category_id": "uncategorized", "timestamp": 1790593800, "order": 2,
+      "favicon": "https://www.google.com/s2/favicons?domain=openstreetmap.org&sz=64"
+    },
+    {
+      "id": "demo-13", "url": "https://github.com/", "title": "GitHub — Build something together",
+      "category_id": "demo-development", "timestamp": 1790247900, "last_visited": 1790597100, "order": 3,
+      "favicon": "https://www.google.com/s2/favicons?domain=github.com&sz=64"
+    },
+    {
+      "id": "demo-14", "url": "https://caniuse.com/", "title": "Can I use — Browser compatibility tables",
+      "category_id": "demo-development", "timestamp": 1790161500, "order": 4,
+      "favicon": "https://www.google.com/s2/favicons?domain=caniuse.com&sz=64"
+    },
+    {
+      "id": "demo-15", "url": "https://sqlite.org/docs.html", "title": "SQLite — Small, fast, reliable",
+      "category_id": "demo-development", "timestamp": 1790075100, "order": 5,
+      "favicon": "https://www.google.com/s2/favicons?domain=sqlite.org&sz=64"
+    },
+    {
+      "id": "demo-16", "url": "https://developer.chrome.com/docs/devtools", "title": "Chrome DevTools documentation",
+      "category_id": "demo-development", "timestamp": 1789988700, "order": 6,
+      "favicon": "https://www.google.com/s2/favicons?domain=developer.chrome.com&sz=64"
+    },
+    {
+      "id": "demo-17", "url": "https://dribbble.com/", "title": "Dribbble — Discover creative work",
+      "category_id": "demo-design", "timestamp": 1789989000, "order": 3,
+      "favicon": "https://www.google.com/s2/favicons?domain=dribbble.com&sz=64"
+    },
+    {
+      "id": "demo-18", "url": "https://www.awwwards.com/", "title": "Awwwards — Web design inspiration",
+      "category_id": "demo-design", "timestamp": 1789902300, "last_visited": 1790424300, "order": 4,
+      "favicon": "https://www.google.com/s2/favicons?domain=awwwards.com&sz=64"
+    },
+    {
+      "id": "demo-19", "url": "https://coolors.co/", "title": "Coolors — Explore color palettes",
+      "category_id": "demo-design", "timestamp": 1789815900, "order": 5,
+      "favicon": "https://www.google.com/s2/favicons?domain=coolors.co&sz=64"
+    },
+    {
+      "id": "demo-20", "url": "https://www.nasa.gov/", "title": "NASA — Discover the universe",
+      "category_id": "demo-reading", "timestamp": 1789729200, "order": 3,
+      "favicon": "https://www.google.com/s2/favicons?domain=nasa.gov&sz=64"
+    },
+    {
+      "id": "demo-21", "url": "https://www.atlasobscura.com/", "title": "Atlas Obscura — The world's hidden wonders",
+      "category_id": "demo-reading", "timestamp": 1789642800, "last_visited": 1790337900, "order": 4,
+      "favicon": "https://www.google.com/s2/favicons?domain=atlasobscura.com&sz=64"
+    },
+    {
+      "id": "demo-22", "url": "https://aeon.co/", "title": "Aeon — Essays on big ideas",
+      "category_id": "demo-reading", "timestamp": 1789556400, "order": 5,
+      "favicon": "https://www.google.com/s2/favicons?domain=aeon.co&sz=64"
+    },
+    {
+      "id": "demo-23", "url": "https://www.khanacademy.org/", "title": "Khan Academy — Learn something new",
+      "category_id": "demo-reading", "timestamp": 1789470000, "order": 6,
+      "favicon": "https://www.google.com/s2/favicons?domain=khanacademy.org&sz=64"
+    },
+    {
+      "id": "demo-24", "url": "https://www.openculture.com/", "title": "Open Culture — Free cultural & educational media",
+      "category_id": "demo-reading", "timestamp": 1789383600, "order": 7,
+      "favicon": "https://www.google.com/s2/favicons?domain=openculture.com&sz=64"
+    }
+  ]
+}

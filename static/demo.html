@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Bookmarkd demo layout</title>
+</head>
+<body>
+    <p>Opening the demo layout… <a href="/">Continue to Bookmarkd</a></p>
+    <script>
+        // Apply only the sample categories' preferences in this browser.
+        const views = {
+            uncategorized: 'list',
+            'demo-development': 'card',
+            'demo-design': 'icon',
+            'demo-reading': 'list'
+        };
+        const sizes = {
+            uncategorized: 0.7,
+            'demo-development': 0.9,
+            'demo-design': 1.7,
+            'demo-reading': 1.2
+        };
+        localStorage.setItem('bookmarkd-category-views-dashboard', JSON.stringify(views));
+        localStorage.setItem('bookmarkd-category-sizes-dashboard', JSON.stringify(sizes));
+        localStorage.setItem('bookmarkd-category-rows', JSON.stringify([2, 2]));
+        localStorage.setItem('bookmarkd-category-widths', JSON.stringify([[1, 2], [1, 1.5]]));
+        localStorage.setItem('bookmarkd-category-order', JSON.stringify(Object.keys(views)));
+        localStorage.setItem('bookmarkd-collapsed-categories', '{}');
+        location.replace('/');
+    </script>
+</body>
+</html>
