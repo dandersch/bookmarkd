@@ -6,10 +6,46 @@ class BookmarkItem extends HTMLElement {
     constructor() {
         super();
         this._editing = false;
+
+        // Register element-level handlers once, not on every render or preview move.
+        this.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('bookmark-id', this.getAttribute('bookmark-id'));
+            e.dataTransfer.effectAllowed = 'move';
+            this.classList.add('dragging');
+            const list = this.closest('bookmark-list');
+            if (list) {
+                list._bmDragSource = this;
+                list._bmDragOrigContainer = this.parentElement;
+                list._bmDragOriginals = new Map();
+                // Snapshot original bookmark order for every category container
+                for (const cont of list.querySelectorAll('.collapse-content')) {
+                    list._bmDragOriginals.set(cont, [...cont.querySelectorAll('bookmark-item')]);
+                }
+                list._bmDragDropped = false;
+            }
+        });
+
+        this.addEventListener('dragend', () => {
+            this.classList.remove('dragging');
+            const list = this.closest('bookmark-list');
+            if (list) {
+                if (!list._bmDragDropped && list._bmDragOriginals) {
+                    // Cancelled — restore original order
+                    list._restoreBookmarkOrder();
+                }
+                list._bmDragSource = null;
+                list._bmDragOrigContainer = null;
+                list._bmDragOriginals = null;
+                list._bmDragDropped = false;
+                list._bmDragRafPending = false;
+                list._hideDropIndicator();
+            }
+        });
     }
 
     connectedCallback() {
-        this.render();
+        // Moving a custom element reconnects it; keep its active drag DOM intact.
+        if (!this.firstElementChild) this.render();
     }
 
     attributeChangedCallback() {
@@ -88,41 +124,6 @@ class BookmarkItem extends HTMLElement {
             e.preventDefault();
             e.stopPropagation();
             this.openEditModal();
-        });
-
-        // Drag and drop
-        this.addEventListener('dragstart', (e) => {
-            e.dataTransfer.setData('bookmark-id', id);
-            e.dataTransfer.effectAllowed = 'move';
-            this.classList.add('dragging');
-            const list = this.closest('bookmark-list');
-            if (list) {
-                list._bmDragSource = this;
-                list._bmDragOrigContainer = this.parentElement;
-                list._bmDragOriginals = new Map();
-                // Snapshot original bookmark order for every category container
-                for (const cont of list.querySelectorAll('.collapse-content')) {
-                    list._bmDragOriginals.set(cont, [...cont.querySelectorAll('bookmark-item')]);
-                }
-                list._bmDragDropped = false;
-            }
-        });
-
-        this.addEventListener('dragend', () => {
-            this.classList.remove('dragging');
-            const list = this.closest('bookmark-list');
-            if (list) {
-                if (!list._bmDragDropped && list._bmDragOriginals) {
-                    // Cancelled — restore original order
-                    list._restoreBookmarkOrder();
-                }
-                list._bmDragSource = null;
-                list._bmDragOrigContainer = null;
-                list._bmDragOriginals = null;
-                list._bmDragDropped = false;
-                list._bmDragRafPending = false;
-                list._hideDropIndicator();
-            }
         });
     }
 
@@ -910,12 +911,14 @@ class BookmarkList extends HTMLElement {
 
                 if (!this._bmDragSource) { this._autoScroll(e.clientY); return; }
 
+                this._bmDragPosition = { container: content, x: e.clientX, y: e.clientY };
                 if (this._bmDragRafPending) return;
                 this._bmDragRafPending = true;
                 requestAnimationFrame(() => {
                     this._bmDragRafPending = false;
-                    if (!this._bmDragSource) return;
-                    this._liveReorderBookmark(content, e.clientY, e.clientX);
+                    if (!this._bmDragSource || this._bmDragDropped) return;
+                    const { container, x, y } = this._bmDragPosition;
+                    this._liveReorderBookmark(container, y, x);
                 });
                 this._autoScroll(e.clientY);
             });
@@ -1729,41 +1732,25 @@ class BookmarkList extends HTMLElement {
 
     _getDragAfterElement(container, y, x) {
         const items = [...container.querySelectorAll('bookmark-item:not(.dragging)')];
-        const isGrid = getComputedStyle(container).display === 'grid';
-        
-        if (!isGrid) {
-            // Vertical list: use Y only
-            return items.reduce((closest, child) => {
-                const box = child.getBoundingClientRect();
-                const offset = y - box.top - box.height / 2;
-                if (offset < 0 && offset > closest.offset) {
-                    return { offset, element: child };
-                }
-                return closest;
-            }, { offset: Number.NEGATIVE_INFINITY }).element;
-        }
-        
-        // Grid layout: find closest item based on position
-        let closest = null;
-        let closestDist = Infinity;
-        
+        const isList = container.classList.contains('view-list');
+
         for (const child of items) {
+            if (!child.getClientRects().length) continue;
             const box = child.getBoundingClientRect();
-            const centerX = box.left + box.width / 2;
-            const centerY = box.top + box.height / 2;
-            
-            // Only consider items that are after the cursor position
-            // (below current row, or same row but to the right)
-            if (y < box.bottom && (y >= box.top || x < centerX)) {
-                const dist = Math.hypot(x - centerX, y - centerY);
-                if (dist < closestDist && (x < centerX || y < centerY)) {
-                    closestDist = dist;
-                    closest = child;
-                }
+            // FLIP and hover translations must not change the insertion target.
+            const transform = new DOMMatrix(getComputedStyle(child).transform);
+            const top = box.top - transform.m42;
+            const left = box.left - transform.m41;
+
+            if (isList) {
+                if (y < top + box.height / 2) return child;
+            } else if (y < top || (y < top + box.height && x < left + box.width / 2)) {
+                // Grid order is row-major, not whichever diagonal is closest.
+                return child;
             }
         }
-        
-        return closest;
+
+        return null;
     }
 
     _getOrderAttr(el) {
@@ -1897,28 +1884,11 @@ class BookmarkList extends HTMLElement {
     }
 
     _persistBookmarkLiveLayout(draggedEl, targetCategoryId, container) {
-        // Read the final order from the DOM
-        const items = [...container.querySelectorAll('bookmark-item')];
-        const sourceCategoryId = draggedEl.getAttribute('category-id');
-        const isCrossCategory = sourceCategoryId !== targetCategoryId;
-
-        // Assign sequential order values based on DOM position
-        const orderUpdates = items.map((item, idx) => ({
-            id: item.getAttribute('bookmark-id'),
-            order: idx,
-        }));
-
-        // Persist all order changes
-        const config = {
-            serverUrl: this.getAttribute('server-url') || '',
-            authHeader: this.getAttribute('auth-header') || ''
-        };
-        const headers = { 'Content-Type': 'application/json' };
-        if (config.authHeader) headers['Authorization'] = config.authHeader;
-
-        // Move the dragged bookmark to the target category (also sets order)
-        const draggedIdx = items.indexOf(draggedEl);
-        const newOrder = draggedIdx >= 0 ? draggedIdx : 0;
+        // The API shifts stored order values, which can have gaps after deletion.
+        // Translate the preview's next sibling into that order space, not a DOM index.
+        const newOrder = this._computeDropOrder(
+            container, draggedEl, draggedEl.nextElementSibling, targetCategoryId
+        );
 
         this._moveBookmark(
             draggedEl.getAttribute('bookmark-id'),
