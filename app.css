@@ -94,6 +94,12 @@
 .collapse-title::after {
     @apply opacity-40;
 }
+.category-colored > .collapse-title {
+    background-color: color-mix(in oklab, var(--category-color) 14%, var(--color-base-200));
+    color: var(--color-base-content);
+    opacity: 1;
+    box-shadow: inset 0 2px 0 var(--category-color);
+}
 .collapse-content {
     --category-size: 1;
     @apply grid gap-2 pt-2 px-2 mb-4 bg-base-200/50 rounded-b-box;

@@ -756,6 +756,10 @@ class BookmarkList extends HTMLElement {
             section.dataset.categoryId = categoryId;
             section.dataset.categoryColor = categoryColor;
             section.draggable = !isUncategorized;
+            if (categoryColor) {
+                section.classList.add('category-colored');
+                section.style.setProperty('--category-color', categoryColor);
+            }
 
             if (!isUncategorized) {
                 section.addEventListener('dragstart', (e) => {
@@ -822,10 +826,6 @@ class BookmarkList extends HTMLElement {
             if (!isUncategorized) {
                 titleContainer.classList.add('category-draggable');
             }
-            if (categoryColor) {
-                titleContainer.style.backgroundColor = categoryColor;
-                titleContainer.style.opacity = '1';
-            }
 
             titleContainer.addEventListener('click', (e) => {
                 if (e.target.closest('.category-actions')) return;
@@ -874,10 +874,6 @@ class BookmarkList extends HTMLElement {
             if (!isManualSort) content.classList.add('sort-active');
             content.dataset.category = categoryName;
             content.dataset.categoryId = categoryId;
-            if (categoryColor) {
-                content.style.border = `2px solid ${categoryColor}`;
-                content.style.borderTop = 'none';
-            }
 
             if (bookmarksInCategory.length === 0) {
                 const emptyDropZone = document.createElement('div');
