@@ -3,7 +3,7 @@
     { "id": "uncategorized", "name": "Uncategorized", "order": 0 },
     { "id": "demo-development", "name": "Development", "order": 1, "color": "#60a5fa" },
     { "id": "demo-design", "name": "Design & inspiration", "order": 2, "color": "#c084fc" },
-    { "id": "demo-reading", "name": "Reading & discovery", "order": 3, "color": "#fbbf24" }
+    { "id": "demo-reading", "name": "Discovery", "order": 3, "color": "#fbbf24" }
   ],
   "bookmarks": [
     {
@@ -125,6 +125,36 @@
       "id": "demo-24", "url": "https://www.openculture.com/", "title": "Open Culture — Free cultural & educational media",
       "category_id": "demo-reading", "timestamp": 1789383600, "order": 7,
       "favicon": "https://www.google.com/s2/favicons?domain=openculture.com&sz=64"
+    },
+    {
+      "id": "demo-25", "url": "https://www.rust-lang.org/learn", "title": "The Rust Programming Language",
+      "category_id": "demo-development", "timestamp": 1789297200, "order": 7,
+      "favicon": "https://www.google.com/s2/favicons?domain=rust-lang.org&sz=64"
+    },
+    {
+      "id": "demo-26", "url": "https://www.framer.com/motion/", "title": "Motion — Animation for the web",
+      "category_id": "demo-design", "timestamp": 1789210800, "order": 6,
+      "favicon": "https://www.google.com/s2/favicons?domain=framer.com&sz=64"
+    },
+    {
+      "id": "demo-27", "url": "https://www.are.na/", "title": "Are.na — Connect ideas",
+      "category_id": "demo-design", "timestamp": 1789124400, "order": 7,
+      "favicon": "https://www.google.com/s2/favicons?domain=are.na&sz=64"
+    },
+    {
+      "id": "demo-28", "url": "https://www.theguardian.com/", "title": "The Guardian — News and ideas",
+      "category_id": "demo-reading", "timestamp": 1789038000, "order": 8,
+      "favicon": "https://www.google.com/s2/favicons?domain=theguardian.com&sz=64"
+    },
+    {
+      "id": "demo-29", "url": "https://www.nationalgeographic.com/", "title": "National Geographic — Explore the world",
+      "category_id": "demo-reading", "timestamp": 1788951600, "order": 9,
+      "favicon": "https://www.google.com/s2/favicons?domain=nationalgeographic.com&sz=64"
+    },
+    {
+      "id": "demo-30", "url": "https://www.youtube.com/", "title": "YouTube — Watch and learn",
+      "category_id": "uncategorized", "timestamp": 1788865200, "order": 3,
+      "favicon": "https://www.google.com/s2/favicons?domain=youtube.com&sz=64"
     }
   ]
 }
